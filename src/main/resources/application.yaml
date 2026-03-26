@@ -1,0 +1,44 @@
+spring:
+  application:
+    name: RecruitmentCentre
+
+  # ── Database (MySQL) ───────────────────────────────────────────
+  datasource:
+    url: jdbc:mysql://localhost:3306/he_thong_tuyen_dung?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Ho_Chi_Minh
+    username: root
+    password: root
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  # ── JPA / Hibernate ───────────────────────────────────────────
+  jpa:
+    hibernate:
+      ddl-auto: none
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.MySQLDialect
+
+  # ── JSON serialization ────────────────────────────────────────
+  jackson:
+    date-format: yyyy-MM-dd HH:mm:ss
+    time-zone: Asia/Ho_Chi_Minh
+    serialization:
+      write-dates-as-timestamps: false
+
+  # ── File Upload ───────────────────────────────────────────────
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 10MB
+      max-request-size: 10MB
+
+# ── JWT (root-level, NOT inside spring:) ─────────────────────────
+jwt:
+  secret: "TuyenDungProSecretKey2026@RecruitmentCentre#OOAD"
+  expiration: 86400000        # 24 hours (ms)
+  refresh-expiration: 604800000  # 7 days (ms)
+
+# ── Server ────────────────────────────────────────────────────────
+server:
+  port: 8080

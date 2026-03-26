@@ -1,0 +1,38 @@
+/* ─── MainLayout.module.css ─── */
+
+.shell {
+  display: flex;
+  min-height: 100vh;
+  background: var(--color-bg);
+}
+
+/* ── Content area (right of sidebar) ── */
+.content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0; /* prevent flex blowout */
+  margin-left: 260px;
+  transition: margin-left var(--transition-base);
+}
+
+.content.collapsed {
+  margin-left: 72px;
+}
+
+/* ── Page body below header ── */
+.main {
+  flex: 1;
+  padding: var(--space-8) var(--space-8);
+  overflow-y: auto;
+  animation: fadeIn 0.3s ease;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .content { margin-left: 72px; }
+}
+@media (max-width: 640px) {
+  .content { margin-left: 0; }
+  .main { padding: var(--space-5) var(--space-4); }
+}

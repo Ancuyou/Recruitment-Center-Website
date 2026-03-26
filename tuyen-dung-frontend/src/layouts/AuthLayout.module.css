@@ -1,0 +1,140 @@
+/* AuthLayout.module.css */
+.wrapper {
+  display: flex;
+  min-height: 100vh;
+}
+
+/* ── Brand panel ── */
+.brandPanel {
+  flex: 0 0 45%;
+  background: linear-gradient(145deg, #4f46e5 0%, #6366f1 40%, #0ea5e9 100%);
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 48px;
+}
+
+.brandContent {
+  position: relative;
+  z-index: 1;
+  color: white;
+  max-width: 380px;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 22px;
+  font-weight: 800;
+  color: white;
+  margin-bottom: 48px;
+}
+
+.logoAccent { color: #fbbf24; }
+
+.brandHeading {
+  font-size: 32px;
+  font-weight: 800;
+  line-height: 1.25;
+  margin-bottom: 16px;
+}
+
+.brandSub {
+  font-size: 15px;
+  opacity: 0.85;
+  line-height: 1.65;
+  margin-bottom: 40px;
+}
+
+.features {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.features li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.checkIcon {
+  width: 24px;
+  height: 24px;
+  background: rgba(255 255 255 / 0.2);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  flex-shrink: 0;
+}
+
+/* Decorative blobs */
+.blob1 {
+  position: absolute;
+  width: 320px; height: 320px;
+  background: rgba(255 255 255 / 0.1);
+  border-radius: 50%;
+  top: -80px; right: -80px;
+}
+.blob2 {
+  position: absolute;
+  width: 200px; height: 200px;
+  background: rgba(255 255 255 / 0.07);
+  border-radius: 50%;
+  bottom: -40px; left: -40px;
+}
+
+/* ── Form panel ── */
+.formPanel {
+  flex: 1;
+  background: var(--color-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 32px;
+  overflow-y: auto;
+}
+
+.formCard {
+  width: 100%;
+  max-width: 440px;
+  background: var(--color-surface);
+  border-radius: var(--radius-xl);
+  padding: 40px;
+  box-shadow: var(--shadow-xl);
+  animation: fadeIn 0.4s ease;
+}
+
+.formHeader {
+  margin-bottom: 28px;
+}
+
+.formTitle {
+  font-size: var(--font-size-2xl);
+  font-weight: 700;
+  color: var(--color-text);
+  margin-bottom: 6px;
+}
+
+.formSubtitle {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .wrapper { flex-direction: column; }
+  .brandPanel { flex: none; padding: 40px 24px 48px; }
+  .brandHeading { font-size: 24px; }
+  .brandSub, .features { display: none; }
+  .formPanel { padding: 24px 16px; }
+  .formCard { padding: 28px 20px; }
+}

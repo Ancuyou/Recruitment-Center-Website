@@ -1,0 +1,224 @@
+/* ─── Sidebar.module.css ─── */
+
+.sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100vh;
+  width: 260px;
+  background: #1e1b4b;   /* deep indigo */
+  display: flex;
+  flex-direction: column;
+  z-index: 100;
+  transition: width var(--transition-base);
+  overflow: hidden;
+}
+
+.sidebar.collapsed {
+  width: 72px;
+}
+
+/* ── Logo ── */
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 24px 20px;
+  border-bottom: 1px solid rgba(255 255 255 / 0.08);
+  text-decoration: none;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.logoIcon {
+  width: 36px;
+  height: 36px;
+  background: linear-gradient(135deg, #6366f1, #0ea5e9);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.logoText {
+  font-size: 17px;
+  font-weight: 800;
+  color: white;
+}
+
+.logoAccent { color: #fbbf24; }
+
+/* ── Role badge ── */
+.roleBadge {
+  margin: 16px 16px 8px;
+  padding: 6px 12px;
+  background: rgba(255 255 255 / 0.08);
+  border-radius: var(--radius-sm);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: rgba(255 255 255 / 0.5);
+  white-space: nowrap;
+  overflow: hidden;
+}
+.sidebar.collapsed .roleBadge { display: none; }
+
+/* ── Nav ── */
+.nav {
+  flex: 1;
+  padding: 8px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow-y: auto;
+}
+
+.navItem {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 12px;
+  border-radius: var(--radius-md);
+  text-decoration: none;
+  color: rgba(255 255 255 / 0.65);
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  white-space: nowrap;
+  overflow: hidden;
+  border: none;
+  background: none;
+  width: 100%;
+  text-align: left;
+}
+
+.navItem:hover {
+  background: rgba(255 255 255 / 0.08);
+  color: white;
+}
+
+.navItem.active {
+  background: rgba(99 102 241 / 0.3);
+  color: white;
+  font-weight: 600;
+}
+
+.navItem.active .navIcon { opacity: 1; }
+
+.navIcon {
+  font-size: 18px;
+  width: 22px;
+  text-align: center;
+  flex-shrink: 0;
+  opacity: 0.75;
+}
+
+.navLabel { flex: 1; }
+
+.navBadge {
+  background: var(--color-primary);
+  color: white;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: var(--radius-full);
+}
+.sidebar.collapsed .navLabel,
+.sidebar.collapsed .navBadge { display: none; }
+
+/* ── Section separator ── */
+.navSection {
+  margin: 12px 12px 4px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: rgba(255 255 255 / 0.3);
+  white-space: nowrap;
+}
+.sidebar.collapsed .navSection { display: none; }
+
+/* ── Bottom area ── */
+.bottom {
+  padding: 12px;
+  border-top: 1px solid rgba(255 255 255 / 0.08);
+}
+
+.userCard {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: var(--radius-md);
+  background: rgba(255 255 255 / 0.06);
+  overflow: hidden;
+}
+
+.avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #6366f1, #0ea5e9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: 700;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.userInfo { flex: 1; min-width: 0; }
+
+.userName {
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: white;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.userRole {
+  font-size: var(--font-size-xs);
+  color: rgba(255 255 255 / 0.45);
+}
+
+.sidebar.collapsed .userInfo { display: none; }
+
+/* ── Toggle button ── */
+.toggleBtn {
+  position: absolute;
+  top: 24px;
+  right: -12px;
+  width: 24px;
+  height: 24px;
+  background: #6366f1;
+  border: 2px solid #1e1b4b;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 11px;
+  color: white;
+  transition: transform var(--transition-fast);
+  z-index: 101;
+}
+.sidebar.collapsed .toggleBtn { transform: rotate(180deg); }
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .sidebar { width: 72px; }
+  .sidebar .navLabel,
+  .sidebar .navBadge,
+  .sidebar .navSection,
+  .sidebar .roleBadge,
+  .sidebar .userInfo,
+  .sidebar .logoText { display: none; }
+  .toggleBtn { display: none; }
+}
