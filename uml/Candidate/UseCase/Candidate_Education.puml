@@ -1,0 +1,24 @@
+@startuml Candidate_Education
+
+title Candidate - Education & Experience (Module C)
+
+actor Candidate as "👤 Ứng Viên"
+
+rectangle "EDUCATION & EXPERIENCE" {
+    usecase "Add Education\nor Experience" as C8
+    usecase "List Education\nor Experience" as C9
+    usecase "Update\nEducation/Exp" as C10
+    usecase "Delete\nEducation/Exp" as C11
+}
+
+Candidate --> C8: 1. Add education
+Candidate --> C9: 2. View list
+C9 --> C10: 3. Update
+C9 --> C11: 4. Delete
+
+note right of C8
+  **Priority:** P0 (Critical)
+  **Status:** Need Validation
+end note
+
+@enduml

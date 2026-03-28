@@ -1,0 +1,24 @@
+@startuml Admin_Notifications
+
+title Admin - Notifications (Module D)
+
+actor Admin as "🔐 Admin"
+
+rectangle "NOTIFICATIONS" {
+    usecase "View System\nNotifications" as D15
+    usecase "Mark Notif\nAs Read" as D16
+    usecase "Send System\nAnnouncement" as NM1
+    usecase "View Notif\nLog History" as NM2
+}
+
+Admin --> D15: 1. View notifications
+D15 --> D16: Mark as read
+Admin --> NM1: 2. Send announcement
+Admin --> NM2: 3. View log history
+
+note right of D15
+  **Priority:** P1 (Important)
+  **Status:** Need Validation
+end note
+
+@enduml

@@ -1,0 +1,25 @@
+@startuml Activity_Recruiter_JobPosting
+title Nhà Tuyển Dụng - Đăng Tin Tuyển Dụng
+
+start
+
+:Click "Đăng tin mới";
+
+:Nhập tiêu đề & mô tả;
+:Nhập số lượng tuyển;
+:Nhập mức lương (min-max);
+:Chọn hình thức làm việc;
+:Chọn địa điểm;
+
+:Thêm yêu cầu kỹ năng;
+:Chọn từ danh sách kỹ năng hệ thống;
+:Xác định mức độ yêu cầu;
+
+:Lưu tin tuyển dụng;
+
+:Tin được đăng lên trang chủ;
+:Ứng viên có thể tìm thấy;
+
+stop
+
+@enduml

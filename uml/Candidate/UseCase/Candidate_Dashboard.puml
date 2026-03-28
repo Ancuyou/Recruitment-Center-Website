@@ -1,0 +1,20 @@
+@startuml Candidate_Dashboard
+
+title Candidate - Dashboard (Module D)
+
+actor Candidate as "👤 Ứng Viên"
+
+rectangle "DASHBOARD" {
+    usecase "View Candidate\nDashboard" as D19
+}
+
+Candidate --> D19: 1. Go to dashboard
+D19 --> D19: View applications summary
+D19 --> D19: View notifications
+
+note right of D19
+  **Priority:** P1 (Important)
+  **Status:** Need Validation
+end note
+
+@enduml

@@ -1,0 +1,78 @@
+@startuml Sequence_Admin_SystemConfiguration
+title Quản Trị - Cấu Hình Hệ Thống
+
+actor Admin as "🔐 Admin"
+participant FrontEnd as "Frontend\nApp"
+participant ConfigService as "Config\nService"
+database Database as "Database"
+
+== Quản Lý Ngành ==
+
+Admin -> FrontEnd: Click "Cấu hình" → "Ngành"
+FrontEnd -> ConfigService: GET /api/admin/industries?page=0&size=20
+ConfigService -> Database: Query nganh
+Database --> ConfigService: Return list
+ConfigService --> FrontEnd: Industries list
+FrontEnd --> Admin: Hiển thị danh sách ngành
+
+Admin -> FrontEnd: Click "Tạo ngành"
+FrontEnd -> FrontEnd: Show form
+Admin -> FrontEnd: Nhập tên ngành
+FrontEnd -> ConfigService: POST /api/admin/industries\n(tenNganh)
+ConfigService -> Database: Create nganh
+Database --> ConfigService: OK
+ConfigService --> FrontEnd: Created
+FrontEnd --> Admin: ✅ Tạo ngành thành công
+
+== Quản Lý Khu Vực ==
+
+Admin -> FrontEnd: Click "Khu vực"
+FrontEnd -> ConfigService: GET /api/admin/locations?page=0&size=20
+ConfigService -> Database: Query khu_vuc
+Database --> ConfigService: Return list
+ConfigService --> FrontEnd: Locations list
+FrontEnd --> Admin: Hiển thị danh sách
+
+Admin -> FrontEnd: Click "Tạo khu vực"
+Admin -> FrontEnd: Nhập tên khu vực
+FrontEnd -> ConfigService: POST /api/admin/locations\n(tenKhuVuc)
+ConfigService -> Database: Create khu_vuc
+Database --> ConfigService: OK
+ConfigService --> FrontEnd: Created
+FrontEnd --> Admin: ✅ Tạo khu vực thành công
+
+== Quản Lý Kỹ Năng ==
+
+Admin -> FrontEnd: Click "Kỹ năng"
+FrontEnd -> ConfigService: GET /api/admin/skills?page=0&size=20
+ConfigService -> Database: Query ky_nang
+Database --> ConfigService: Return list
+ConfigService --> FrontEnd: Skills list
+FrontEnd --> Admin: Hiển thị danh sách
+
+Admin -> FrontEnd: Click "Tạo kỹ năng"
+Admin -> FrontEnd: Nhập tên kỹ năng
+FrontEnd -> ConfigService: POST /api/admin/skills\n(tenKyNang)
+ConfigService -> Database: Create ky_nang
+Database --> ConfigService: OK
+ConfigService --> FrontEnd: Created
+FrontEnd --> Admin: ✅ Tạo kỹ năng thành công
+
+== Sửa & Xóa ==
+
+Admin -> FrontEnd: Click "Sửa"
+Admin -> FrontEnd: Nhập dữ liệu sửa
+FrontEnd -> ConfigService: PUT /api/admin/{type}/{id}
+ConfigService -> Database: Update data
+Database --> ConfigService: OK
+ConfigService --> FrontEnd: Updated
+FrontEnd --> Admin: ✅ Sửa thành công
+
+Admin -> FrontEnd: Click "Xóa"
+FrontEnd -> ConfigService: DELETE /api/admin/{type}/{id}
+ConfigService -> Database: Delete record
+Database --> ConfigService: OK
+ConfigService --> FrontEnd: Deleted
+FrontEnd --> Admin: ✅ Xóa thành công
+
+@enduml

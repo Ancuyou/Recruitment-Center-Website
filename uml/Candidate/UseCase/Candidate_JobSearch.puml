@@ -1,0 +1,33 @@
+@startuml Candidate_JobSearch
+
+title Candidate - Job Search (Module B, E)
+
+actor Candidate as "👤 Ứng Viên"
+
+rectangle "JOB SEARCH" {
+    usecase "View Public\nJob Listings" as B14
+    usecase "View Job\nDetails" as B15
+    usecase "Filter by\nSalary Range" as B16
+    usecase "Filter by\nLocation" as B17
+    usecase "Filter by\nIndustry" as B18
+    usecase "Search Job\nKeyword" as B19
+    usecase "Get Job\nRecommendations" as E2
+    usecase "Calculate Match\nScore" as E3
+}
+
+Candidate --> B14: 1. Browse jobs
+B14 --> B15: 2. View details
+Candidate --> B16: 3. Filter salary
+Candidate --> B17: 4. Filter location
+Candidate --> B18: 5. Filter industry
+Candidate --> B19: 6. Search keyword
+Candidate --> E2: 7. Get recommendations
+E2 --> E3: 8. Check match score
+B15 --> E3: Calculate score
+
+note right of B14
+  **Priority:** P0 (Critical)
+  **Status:** Need Validation
+end note
+
+@enduml

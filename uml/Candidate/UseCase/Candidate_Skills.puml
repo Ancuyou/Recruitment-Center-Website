@@ -1,0 +1,26 @@
+@startuml Candidate_Skills
+
+title Candidate - Skills (Module E, C)
+
+actor Candidate as "👤 Ứng Viên"
+
+rectangle "SKILLS" {
+    usecase "View System\nSkills" as C12
+    usecase "Add Skill\nto CV" as E4
+    usecase "View My\nCV Skills" as E5
+    usecase "Update Skill\nProficiency" as E6
+    usecase "Remove Skill\nfrom CV" as E7
+}
+
+Candidate --> C12: 1. View system skills
+Candidate --> E4: 2. Add skill
+Candidate --> E5: 3. View CV skills
+E5 --> E6: 4. Update proficiency
+E5 --> E7: 5. Remove skill
+
+note right of E4
+  **Priority:** P0 (Critical)
+  **Status:** Need Validation
+end note
+
+@enduml

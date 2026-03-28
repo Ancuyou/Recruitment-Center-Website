@@ -1,0 +1,66 @@
+@startuml Sequence_Admin_CompanyVerification
+title Quản Trị - Xác Thực Công Ty
+
+actor Admin as "🔐 Admin"
+participant FrontEnd as "Frontend\nApp"
+participant CompanyService as "Company\nService"
+database Database as "Database"
+
+== Danh Sách Công Ty Chờ Xác Thực ==
+
+Admin -> FrontEnd: Click "Xác thực công ty"
+FrontEnd -> CompanyService: GET /api/admin/companies/pending?page=0&size=20
+CompanyService -> Database: Query cong_ty (status=PENDING)
+Database --> CompanyService: Return list
+CompanyService --> FrontEnd: Companies list
+FrontEnd --> Admin: Hiển thị danh sách
+
+== Xem Chi Tiết Công Ty ==
+
+Admin -> FrontEnd: Click vào công ty
+FrontEnd -> CompanyService: GET /api/admin/companies/{companyId}
+CompanyService -> Database: Get company details
+Database --> CompanyService: Company info
+CompanyService --> FrontEnd: Full details
+FrontEnd --> Admin: Xem chi tiết\n(tên, tax ID, địa chỉ)
+
+== Kiểm Tra Mã Số Thuế ==
+
+Admin -> FrontEnd: Click "Kiểm tra MST"
+FrontEnd -> CompanyService: POST /api/admin/companies/{companyId}/verify-tax-id
+CompanyService -> CompanyService: Validate tax ID format
+CompanyService -> Database: Check tax ID unique
+Database --> CompanyService: OK
+CompanyService --> FrontEnd: Tax ID valid
+FrontEnd --> Admin: ✅ MST hợp lệ
+
+== Phê Duyệt Công Ty ==
+
+Admin -> FrontEnd: Click "Phê duyệt"
+FrontEnd -> CompanyService: POST /api/admin/companies/{companyId}/approve
+CompanyService -> Database: Update status = VERIFIED
+Database --> CompanyService: OK
+CompanyService --> FrontEnd: Approved
+FrontEnd --> Admin: ✅ Phê duyệt thành công
+
+== Từ Chối Công Ty ==
+
+Admin -> FrontEnd: Click "Từ chối"
+FrontEnd -> FrontEnd: Show reason form
+Admin -> FrontEnd: Nhập lý do từ chối
+FrontEnd -> CompanyService: POST /api/admin/companies/{companyId}/reject\n(reason)
+CompanyService -> Database: Update status = REJECTED
+Database --> CompanyService: OK
+CompanyService --> FrontEnd: Rejected
+FrontEnd --> Admin: ✅ Từ chối thành công
+
+== Cấm Công Ty ==
+
+Admin -> FrontEnd: Click "Cấm công ty"
+FrontEnd -> CompanyService: POST /api/admin/companies/{companyId}/ban
+CompanyService -> Database: Update status = BANNED
+Database --> CompanyService: OK
+CompanyService --> FrontEnd: Banned
+FrontEnd --> Admin: ✅ Cấm công ty thành công
+
+@enduml

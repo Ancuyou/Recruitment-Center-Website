@@ -1,0 +1,70 @@
+@startuml Sequence_Recruiter_Interviews
+title Nhà Tuyển Dụng - Sắp Xếp Phỏng Vấn
+
+actor Recruiter as "👔 Recruiter"
+participant FrontEnd as "Frontend\nApp"
+participant InterviewService as "Interview\nService"
+database Database as "Database"
+
+== Danh Sách Phỏng Vấn ==
+
+Recruiter -> FrontEnd: Click "Lịch phỏng vấn"
+FrontEnd -> InterviewService: GET /api/interviews?recruiterId={id}&page=0&size=20
+InterviewService -> Database: Query lich_phong_van
+Database --> InterviewService: Return list
+InterviewService --> FrontEnd: Interviews list
+FrontEnd --> Recruiter: Hiển thị danh sách
+
+== Tạo Lịch Phỏng Vấn ==
+
+Recruiter -> FrontEnd: Click "Tạo lịch"
+FrontEnd -> FrontEnd: Show interview form
+Recruiter -> FrontEnd: Chọn ứng viên & đơn
+Recruiter -> FrontEnd: Nhập: tiêu đề, thời gian, địa điểm, hình thức
+FrontEnd -> InterviewService: POST /api/interviews\n(donUngTuyenId, tieuDeVong, thoiGian, hinhThuc, diaDiem)
+InterviewService -> InterviewService: Validate time
+InterviewService -> Database: Create lich_phong_van
+Database --> InterviewService: Return id
+InterviewService --> FrontEnd: Created
+FrontEnd --> Recruiter: ✅ Tạo lịch thành công
+
+== Xem Chi Tiết ==
+
+Recruiter -> FrontEnd: Click vào lịch
+FrontEnd -> InterviewService: GET /api/interviews/{id}
+InterviewService -> Database: Get interview details
+Database --> InterviewService: Details
+InterviewService --> FrontEnd: Full info
+FrontEnd --> Recruiter: Hiển thị chi tiết
+
+== Cập Nhật Lịch ==
+
+Recruiter -> FrontEnd: Click "Sửa"
+Recruiter -> FrontEnd: Nhập thời gian/địa điểm mới
+FrontEnd -> InterviewService: PUT /api/interviews/{id}\n(newData)
+InterviewService -> Database: Update lich_phong_van
+Database --> InterviewService: OK
+InterviewService --> FrontEnd: Updated
+FrontEnd --> Recruiter: ✅ Cập nhật lịch
+
+== Hủy Lịch ==
+
+Recruiter -> FrontEnd: Click "Hủy"
+Recruiter -> FrontEnd: Xác nhận hủy
+FrontEnd -> InterviewService: DELETE /api/interviews/{id}
+InterviewService -> Database: Delete lich_phong_van
+Database --> InterviewService: OK
+InterviewService --> FrontEnd: Deleted
+FrontEnd --> Recruiter: ✅ Hủy lịch
+
+== Dời Lịch ==
+
+Recruiter -> FrontEnd: Click "Dời lịch"
+Recruiter -> FrontEnd: Chọn thời gian mới
+FrontEnd -> InterviewService: PATCH /api/interviews/{id}/reschedule\n(newTime)
+InterviewService -> Database: Update lich_phong_van
+Database --> InterviewService: OK
+InterviewService --> FrontEnd: Rescheduled
+FrontEnd --> Recruiter: ✅ Dời lịch thành công
+
+@enduml

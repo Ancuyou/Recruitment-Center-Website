@@ -1,0 +1,49 @@
+@startuml Sequence_Recruiter_Profile
+title Nhà Tuyển Dụng - Quản Lý Hồ Sơ
+
+actor Recruiter as "👔 Recruiter"
+participant FrontEnd as "Frontend\nApp"
+participant AuthService as "Auth\nService"
+database Database as "Database"
+
+== Xem Hồ Sơ ==
+
+Recruiter -> FrontEnd: Click "Hồ sơ của tôi"
+FrontEnd -> AuthService: GET /api/recruiters/{recruiterId}
+AuthService -> Database: Get recruiter info
+Database --> AuthService: Profile data
+AuthService --> FrontEnd: Profile info
+FrontEnd --> Recruiter: Hiển thị hồ sơ
+
+== Cập Nhật Hồ Sơ ==
+
+Recruiter -> FrontEnd: Click "Sửa thông tin"
+Recruiter -> FrontEnd: Nhập: tên, SĐT, địa chỉ
+FrontEnd -> AuthService: PUT /api/recruiters/{recruiterId}\n(hoTen, sdt, diaChi)
+AuthService -> Database: Update nha_tuyen_dung
+Database --> AuthService: OK
+AuthService --> FrontEnd: Updated
+FrontEnd --> Recruiter: ✅ Cập nhật thành công
+
+== Upload Avatar ==
+
+Recruiter -> FrontEnd: Click "Upload ảnh đại diện"
+Recruiter -> FrontEnd: Select image
+FrontEnd -> AuthService: POST /api/recruiters/{recruiterId}/avatar\n(file)
+AuthService -> Database: Update avatarUrl
+Database --> AuthService: OK
+AuthService --> FrontEnd: Uploaded
+FrontEnd --> Recruiter: ✅ Avatar cập nhật
+
+== Thay Đổi Mật Khẩu ==
+
+Recruiter -> FrontEnd: Click "Đổi mật khẩu"
+Recruiter -> FrontEnd: Nhập mật khẩu cũ & mới
+FrontEnd -> AuthService: POST /api/auth/doi-mat-khau\n(oldPassword, newPassword)
+AuthService -> AuthService: Verify old password
+AuthService -> Database: Update password
+Database --> AuthService: OK
+AuthService --> FrontEnd: Changed
+FrontEnd --> Recruiter: ✅ Mật khẩu thay đổi
+
+@enduml

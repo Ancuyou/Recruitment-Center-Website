@@ -1,0 +1,63 @@
+@startuml Sequence_Recruiter_Company
+title Nhà Tuyển Dụng - Quản Lý Công Ty
+
+actor Recruiter as "👔 Recruiter"
+participant FrontEnd as "Frontend\nApp"
+participant CompanyService as "Company\nService"
+database Database as "Database"
+
+== Danh Sách Công Ty ==
+
+Recruiter -> FrontEnd: Click "Công ty của tôi"
+FrontEnd -> CompanyService: GET /api/companies?recruiterId={id}
+CompanyService -> Database: Query cong_ty
+Database --> CompanyService: Return list
+CompanyService --> FrontEnd: Companies list
+FrontEnd --> Recruiter: Hiển thị danh sách
+
+== Tạo Công Ty ==
+
+Recruiter -> FrontEnd: Click "Tạo công ty"
+Recruiter -> FrontEnd: Nhập: tên, địa chỉ, mã thuế, logo
+FrontEnd -> CompanyService: POST /api/companies\n(tenCongTy, diaChi, maSoThue, logoUrl)
+CompanyService -> Database: Create cong_ty
+Database --> CompanyService: Return companyId
+CompanyService --> FrontEnd: Created
+FrontEnd --> Recruiter: ✅ Tạo công ty
+
+== Xem Chi Tiết ==
+
+Recruiter -> FrontEnd: Click vào công ty
+FrontEnd -> CompanyService: GET /api/companies/{companyId}
+CompanyService -> Database: Get company info
+Database --> CompanyService: Details
+CompanyService --> FrontEnd: Full info
+FrontEnd --> Recruiter: Hiển thị chi tiết
+
+== Thêm Ngành Nghề ==
+
+Recruiter -> FrontEnd: Click "Thêm ngành"
+FrontEnd -> CompanyService: GET /api/industries
+CompanyService -> Database: Get all industries
+Database --> CompanyService: Industries list
+CompanyService --> FrontEnd: List
+FrontEnd --> Recruiter: Show dropdown
+
+Recruiter -> FrontEnd: Chọn ngành
+FrontEnd -> CompanyService: POST /api/companies/{companyId}/industries\n(nganhId)
+CompanyService -> Database: Create ct_cty_nganh
+Database --> CompanyService: OK
+CompanyService --> FrontEnd: Added
+FrontEnd --> Recruiter: ✅ Thêm ngành thành công
+
+== Cập Nhật Công Ty ==
+
+Recruiter -> FrontEnd: Click "Sửa"
+Recruiter -> FrontEnd: Nhập dữ liệu mới
+FrontEnd -> CompanyService: PUT /api/companies/{companyId}
+CompanyService -> Database: Update cong_ty
+Database --> CompanyService: OK
+CompanyService --> FrontEnd: Updated
+FrontEnd --> Recruiter: ✅ Cập nhật thành công
+
+@enduml

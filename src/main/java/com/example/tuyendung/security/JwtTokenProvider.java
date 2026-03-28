@@ -2,8 +2,10 @@ package com.example.tuyendung.security;
 
 import com.example.tuyendung.entity.TaiKhoan;
 import com.example.tuyendung.entity.enums.VaiTroTaiKhoan;
+import com.example.tuyendung.util.TimeProvider;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
@@ -17,7 +19,10 @@ import java.util.stream.Collectors;
 
 @Component
 @Slf4j
+@RequiredArgsConstructor
 public class JwtTokenProvider {
+
+    private final TimeProvider timeProvider;
 
     @Value("${jwt.secret}")
     private String jwtSecret;
@@ -46,7 +51,7 @@ public class JwtTokenProvider {
                 .claim("vaiTro", taiKhoan.getVaiTro().name())
                 .claim("authorities", authorities)
                 .issuedAt(new Date())
-                .expiration(new Date(System.currentTimeMillis() + jwtExpiration))
+                .expiration(new Date(timeProvider.getCurrentTimeMillis() + jwtExpiration))
                 .signWith(getSigningKey())
                 .compact();
     }
@@ -58,7 +63,7 @@ public class JwtTokenProvider {
                 .subject(String.valueOf(taiKhoan.getId()))
                 .claim("type", "refresh")
                 .issuedAt(new Date())
-                .expiration(new Date(System.currentTimeMillis() + refreshExpiration))
+                .expiration(new Date(timeProvider.getCurrentTimeMillis() + refreshExpiration))
                 .signWith(getSigningKey())
                 .compact();
     }

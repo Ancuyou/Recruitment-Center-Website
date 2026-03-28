@@ -1,6 +1,5 @@
 package com.example.tuyendung.service.impl;
 
-import com.example.tuyendung.common.Constants;
 import com.example.tuyendung.dto.request.DangKyUngVienRequest;
 import com.example.tuyendung.dto.request.DangKyNhaTuyenDungRequest;
 import com.example.tuyendung.dto.request.DangNhapRequest;
@@ -8,18 +7,26 @@ import com.example.tuyendung.dto.response.AuthResponse;
 import com.example.tuyendung.dto.response.UserInfoResponse;
 import com.example.tuyendung.entity.*;
 import com.example.tuyendung.entity.enums.VaiTroTaiKhoan;
-import com.example.tuyendung.exception.BusinessException;
+import com.example.tuyendung.exception.DuplicateResourceException;
+import com.example.tuyendung.exception.ResourceNotFoundException;
+import com.example.tuyendung.exception.ValidationException;
 import com.example.tuyendung.repository.*;
+import com.example.tuyendung.security.CustomUserDetails;
 import com.example.tuyendung.security.JwtTokenProvider;
 import com.example.tuyendung.service.AuthService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
+import java.util.UUID;
+
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class AuthServiceImpl implements AuthService {
@@ -37,23 +44,27 @@ public class AuthServiceImpl implements AuthService {
     public AuthResponse dangKyUngVien(DangKyUngVienRequest request) {
         // Check email tồn tại
         if (taiKhoanRepository.existsByEmail(request.getEmail())) {
-            throw new BusinessException("Email đã được đăng ký");
+            throw new DuplicateResourceException("Email", request.getEmail());
         }
 
         // Check số điện thoại tồn tại
         if (request.getSoDienThoai() != null &&
                 ungVienRepository.existsBySoDienThoai(request.getSoDienThoai())) {
-            throw new BusinessException("Số điện thoại đã được đăng ký");
+            throw new DuplicateResourceException("Số điện thoại", request.getSoDienThoai());
         }
 
-        // Tạo tài khoản
+        // Tạo tài khoản (Chờ xác thực email)
+        String vToken = UUID.randomUUID().toString();
         TaiKhoan taiKhoan = TaiKhoan.builder()
                 .email(request.getEmail())
                 .matKhauHash(passwordEncoder.encode(request.getMatKhau()))
                 .vaiTro(VaiTroTaiKhoan.UNG_VIEN)
-                .laKichHoat(Constants.ACCOUNT_ACTIVE)
+                .laKichHoat(false) // Bắt buộc xác thực email
+                .verifyToken(vToken)
                 .build();
         taiKhoanRepository.save(taiKhoan);
+
+        log.info("A1: Vui lòng xác thực email ứng viên tại: http://localhost:8080/api/auth/verify-email?token={}", vToken);
 
         // Tạo ứng viên
         UngVien ungVien = new UngVien();
@@ -65,8 +76,9 @@ public class AuthServiceImpl implements AuthService {
         ungVienRepository.save(ungVien);
 
         // Generate token
+        CustomUserDetails userDetails = new CustomUserDetails(taiKhoan);
         Authentication authentication = new UsernamePasswordAuthenticationToken(
-                taiKhoan, null, java.util.Collections.emptyList()
+                userDetails, null, userDetails.getAuthorities()
         );
 
         return AuthResponse.builder()
@@ -89,7 +101,7 @@ public class AuthServiceImpl implements AuthService {
     public AuthResponse dangKyNhaTuyenDung(DangKyNhaTuyenDungRequest request) {
         // Check email tồn tại
         if (taiKhoanRepository.existsByEmail(request.getEmail())) {
-            throw new BusinessException("Email đã được đăng ký");
+            throw new DuplicateResourceException("Email", request.getEmail());
         }
 
         // Tìm hoặc tạo công ty
@@ -98,19 +110,22 @@ public class AuthServiceImpl implements AuthService {
                     CongTy newCongTy = new CongTy();
                     newCongTy.setMaSoThue(request.getMaSoThue());
                     newCongTy.setTenCongTy(request.getTenCongTy());
-                    newCongTy.setNganhNghe(request.getNganhNghe());
                     newCongTy.setWebsite(request.getWebsite());
                     return congTyRepository.save(newCongTy);
                 });
 
-        // Tạo tài khoản
+        // Tạo tài khoản (Chờ xác thực email)
+        String vToken = UUID.randomUUID().toString();
         TaiKhoan taiKhoan = TaiKhoan.builder()
                 .email(request.getEmail())
                 .matKhauHash(passwordEncoder.encode(request.getMatKhau()))
                 .vaiTro(VaiTroTaiKhoan.NHA_TUYEN_DUNG)
-                .laKichHoat(Constants.ACCOUNT_ACTIVE)
+                .laKichHoat(false) // Bắt buộc xác thực email
+                .verifyToken(vToken)
                 .build();
         taiKhoanRepository.save(taiKhoan);
+
+        log.info("A2: Vui lòng xác thực email NTD tại: http://localhost:8080/api/auth/verify-email?token={}", vToken);
 
         // Tạo nhà tuyển dụng
         NhaTuyenDung nhaTuyenDung = new NhaTuyenDung();
@@ -122,8 +137,9 @@ public class AuthServiceImpl implements AuthService {
         nhaTuyenDungRepository.save(nhaTuyenDung);
 
         // Generate token
+        CustomUserDetails userDetails = new CustomUserDetails(taiKhoan);
         Authentication authentication = new UsernamePasswordAuthenticationToken(
-                taiKhoan, null, java.util.Collections.emptyList()
+                userDetails, null, userDetails.getAuthorities()
         );
 
         return AuthResponse.builder()
@@ -148,7 +164,12 @@ public class AuthServiceImpl implements AuthService {
                 new UsernamePasswordAuthenticationToken(request.getEmail(), request.getMatKhau())
         );
 
-        TaiKhoan taiKhoan = (TaiKhoan) authentication.getPrincipal();
+        CustomUserDetails customUserDetails = (CustomUserDetails) authentication.getPrincipal();
+        TaiKhoan taiKhoan = customUserDetails.getTaiKhoan();
+
+        if (!taiKhoan.getLaKichHoat()) {
+            throw new ValidationException("Tài khoản chưa được kích hoạt. Vui lòng kiểm tra email.");
+        }
 
         // Load thêm thông tin profile
         AuthResponse.UserInfoDTO userInfo = null;
@@ -187,19 +208,20 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public AuthResponse refreshToken(String refreshToken) {
         if (!jwtTokenProvider.validateToken(refreshToken)) {
-            throw new BusinessException("Refresh token không hợp lệ");
+            throw new ValidationException("Refresh token không hợp lệ");
         }
 
         Long taiKhoanId = jwtTokenProvider.getUserIdFromToken(refreshToken);
         TaiKhoan taiKhoan = taiKhoanRepository.findById(taiKhoanId)
-                .orElseThrow(() -> new BusinessException("Không tìm thấy tài khoản"));
+                .orElseThrow(() -> new ResourceNotFoundException("TaiKhoan", taiKhoanId));
 
         if (!taiKhoan.getLaKichHoat()) {
-            throw new BusinessException("Tài khoản đã bị khóa");
+            throw new ValidationException("Tài khoản đã bị khóa");
         }
 
+        CustomUserDetails userDetails = new CustomUserDetails(taiKhoan);
         Authentication authentication = new UsernamePasswordAuthenticationToken(
-                taiKhoan, null, java.util.Collections.emptyList()
+                userDetails, null, userDetails.getAuthorities()
         );
 
         return AuthResponse.builder()
@@ -215,7 +237,7 @@ public class AuthServiceImpl implements AuthService {
     @Transactional(readOnly = true)
     public UserInfoResponse getThongTinUser(Long taiKhoanId) {
         TaiKhoan taiKhoan = taiKhoanRepository.findById(taiKhoanId)
-                .orElseThrow(() -> new BusinessException("Không tìm thấy tài khoản"));
+                .orElseThrow(() -> new ResourceNotFoundException("TaiKhoan", taiKhoanId));
 
         UserInfoResponse.UserInfoResponseBuilder builder = UserInfoResponse.builder()
                 .taiKhoanId(taiKhoan.getId())
@@ -242,5 +264,53 @@ public class AuthServiceImpl implements AuthService {
         }
 
         return builder.build();
+    }
+
+    @Override
+    public void logout(String token) {
+        // Với JWT stateless, ta có thể yêu cầu client xoá token.
+        // Thực tế có thể lưu token vào Redis blacklist. Ở đây giả lập thành công.
+        log.info("A4: User đã đăng xuất khỏi hệ thống.");
+    }
+
+    @Override
+    @Transactional
+    public void forgotPassword(com.example.tuyendung.dto.request.ForgotPasswordRequest request) {
+        TaiKhoan tk = taiKhoanRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new ResourceNotFoundException("TaiKhoan", request.getEmail()));
+
+        String resetToken = UUID.randomUUID().toString();
+        tk.setResetToken(resetToken);
+        tk.setResetTokenExpiry(LocalDateTime.now().plusMinutes(15));
+        taiKhoanRepository.save(tk);
+
+        log.info("A6: Vui lòng click vào link sau để đặt lại mật khẩu của bạn (Hạn 15 phút): http://localhost:8080/api/auth/reset-password?token={}", resetToken);
+    }
+
+    @Override
+    @Transactional
+    public void resetPassword(com.example.tuyendung.dto.request.ResetPasswordRequest request) {
+        TaiKhoan tk = taiKhoanRepository.findByResetToken(request.getToken())
+                .orElseThrow(() -> new ValidationException("Token không hợp lệ hoặc không tồn tại"));
+
+        if (tk.getResetTokenExpiry().isBefore(LocalDateTime.now())) {
+            throw new ValidationException("Token đã hết hạn");
+        }
+
+        tk.setMatKhauHash(passwordEncoder.encode(request.getNewPassword()));
+        tk.setResetToken(null);
+        tk.setResetTokenExpiry(null);
+        taiKhoanRepository.save(tk);
+    }
+
+    @Override
+    @Transactional
+    public void verifyEmail(String token) {
+        TaiKhoan tk = taiKhoanRepository.findByVerifyToken(token)
+                .orElseThrow(() -> new ValidationException("Token xác thực không hợp lệ"));
+
+        tk.setLaKichHoat(true);
+        tk.setVerifyToken(null);
+        taiKhoanRepository.save(tk);
     }
 }

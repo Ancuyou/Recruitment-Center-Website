@@ -1,0 +1,30 @@
+@startuml Recruiter_Authentication
+
+title Recruiter - Authentication (Module A)
+
+actor Recruiter as "👔 Nhà Tuyển Dụng"
+
+rectangle "AUTHENTICATION" {
+    usecase "Register as\nRecruiter" as A2
+    usecase "Login" as A3
+    usecase "Logout" as A4
+    usecase "Refresh Token" as A5
+    usecase "Forgot\nPassword" as A6
+    usecase "Reset Password" as A7
+    usecase "Verify Email" as A8
+}
+
+Recruiter --> A2: 1. Register
+Recruiter --> A3: 2. Login
+A3 --> A5: Keep session
+Recruiter --> A4: 3. Logout
+Recruiter --> A6: Forgot password?
+A6 --> A7: 4. Reset password
+Recruiter --> A8: 5. Verify email
+
+note right of A2
+  **Priority:** P0 (Critical)
+  **Status:** Implemented ✅
+end note
+
+@enduml

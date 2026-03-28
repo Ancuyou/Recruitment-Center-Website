@@ -1,0 +1,192 @@
+@startuml Sequence_Recruiter_MainFlow
+title Nhà Tuyển Dụng - Workflow Chính: Tuyển & Quản Lý Phỏng Vấn
+
+actor Recruiter as "👔 HR/Recruiter"
+participant FrontEnd as "Frontend\nApp"
+participant AuthService as "Auth\nService"
+participant CompanyService as "Company\nService"
+participant JobService as "Job\nService"
+participant ApplicationService as "Application\nService"
+participant InterviewService as "Interview\nService"
+participant MatchingService as "Matching\nService"
+participant NotificationService as "Notification\nService"
+database Database as "Database"
+
+== 1. Đăng ký & Xác thực ==
+
+Recruiter -> FrontEnd: 1.1 Mở app
+FrontEnd -> AuthService: 1.2 POST /api/auth/dang-ky-nha-tuyen-dung\n(email, password, companyName, fullName)
+AuthService -> Database: 1.3 Create tai_khoan (RECRUITER role)
+Database --> AuthService: 1.4 Return taiKhoanId
+AuthService --> FrontEnd: 1.5 Account created
+FrontEnd --> Recruiter: 1.6 Đăng ký thành công
+
+Recruiter -> FrontEnd: 1.7 Đăng nhập
+FrontEnd -> AuthService: 1.8 POST /api/auth/dang-nhap
+AuthService -> Database: 1.9 Verify
+Database --> AuthService: 1.10 OK
+AuthService --> FrontEnd: 1.11 JWT Token
+FrontEnd --> Recruiter: 1.11 Logged in ✅
+
+== 2. Tạo & Xác thực Công Ty ==
+
+Recruiter -> FrontEnd: 2.1 Click "Tạo công ty"
+FrontEnd -> CompanyService: 2.2 POST /api/companies\n(tenCongTy, diaChi, maSoThue, logoUrl)
+CompanyService -> Database: 2.3 Create cong_ty
+Database --> CompanyService: 2.4 Return companyId
+CompanyService --> FrontEnd: 2.5 Company created
+FrontEnd --> Recruiter: 2.6 Công ty được tạo
+
+Recruiter -> FrontEnd: 2.7 Thêm ngành nghề
+FrontEnd -> CompanyService: 2.8 POST /api/companies/{companyId}/industries\n(nganhId)
+CompanyService -> Database: 2.9 Create ct_cty_nganh
+Database --> CompanyService: 2.10 OK
+CompanyService --> FrontEnd: 2.11 Return
+FrontEnd --> Recruiter: 2.12 Ngành được thêm
+
+note over Recruiter, FrontEnd
+  Admin sẽ duyệt công ty
+  (B6: Xác thực mã số thuế)
+end note
+
+== 3. Đăng Tin Tuyển Dụng ==
+
+Recruiter -> FrontEnd: 3.1 Click "Đăng tin"
+FrontEnd -> JobService: 3.2 POST /api/jobs\n(tieuDe, moTa, soLuong, muc_luong, yeuCau, diaChi)
+JobService -> Database: 3.3 Create tin_tuyen_dung
+Database --> JobService: 3.4 Return jobId
+JobService --> FrontEnd: 3.5 Job posted
+FrontEnd --> Recruiter: 3.6 Tin tuyển dụng được đăng
+
+Recruiter -> FrontEnd: 3.7 Thêm yêu cầu kỹ năng
+FrontEnd -> JobService: 3.8 POST /api/jobs/{jobId}/skills\n(skillId, mucYeuCau)
+JobService -> Database: 3.9 Create ct_ky_nang_tin
+Database --> JobService: 3.10 OK
+JobService --> FrontEnd: 3.11 Return
+FrontEnd --> Recruiter: 3.12 Kỹ năng yêu cầu thêm ✅
+
+Recruiter -> FrontEnd: 3.13 Thêm khu vực làm việc
+FrontEnd -> JobService: 3.14 POST /api/jobs/{jobId}/locations\n(locationId)
+JobService -> Database: 3.15 Create ct_kv_tin
+Database --> JobService: 3.16 OK
+JobService --> FrontEnd: 3.17 Return
+FrontEnd --> Recruiter: 3.18 Khu vực được thêm ✅
+
+== 4. Nhận & Xử Lý Đơn Ứng Tuyển ==
+
+NotificationService -> Recruiter: 4.1 Thông báo ứng tuyển mới\n(Candidate nộp đơn)
+
+Recruiter -> FrontEnd: 4.2 Click "Đơn ứng tuyển"
+FrontEnd -> ApplicationService: 4.3 GET /api/applications/recruiter?tinTuyenDungId={jobId}\n(page=0, size=20)
+ApplicationService -> Database: 4.4 Query don_ung_tuyen (của công ty)
+Database --> ApplicationService: 4.5 Return list (15 applications)
+ApplicationService --> FrontEnd: 4.6 Applications list
+FrontEnd --> Recruiter: 4.7 Hiển thị danh sách đơn
+
+Recruiter -> FrontEnd: 4.8 Chọn 1 đơn
+FrontEnd -> ApplicationService: 4.9 GET /api/applications/{appId}
+ApplicationService -> Database: 4.10 Get don_ung_tuyen + CV snapshot
+Database --> ApplicationService: 4.11 Return details
+ApplicationService --> FrontEnd: 4.12 Application details
+FrontEnd --> Recruiter: 4.13 Hiển thị chi tiết đơn\n(Candidate info + Cover letter)
+
+Recruiter -> FrontEnd: 4.14 Xem CV PDF
+FrontEnd -> ApplicationService: 4.15 GET /api/applications/{appId}/cv-snapshot
+ApplicationService -> Database: 4.16 Get banSaoCvUrl
+Database --> ApplicationService: 4.17 Return URL
+ApplicationService --> FrontEnd: 4.18 CV URL
+FrontEnd --> Recruiter: 4.19 Mở PDF (preview)
+
+Recruiter -> FrontEnd: 4.20 Xem "Lịch sử trạng thái"
+FrontEnd -> ApplicationService: 4.21 GET /api/applications/{appId}/history\n(page=0, size=10)
+ApplicationService -> Database: 4.22 Query lich_su_trang_thai
+Database --> ApplicationService: 4.23 Return history
+ApplicationService --> FrontEnd: 4.24 Status history
+FrontEnd --> Recruiter: 4.25 Hiển thị timeline
+
+== 5. Cập Nhật Trạng Thái ==
+
+Recruiter -> FrontEnd: 5.1 Click "Cập nhật trạng thái"
+FrontEnd -> FrontEnd: 5.2 Show status dropdown\n(MOI → REVIEW → PHONG_VAN → OFFER → TU_CHOI)
+Recruiter -> FrontEnd: 5.3 Chọn PHONG_VAN
+FrontEnd -> ApplicationService: 5.4 PATCH /api/applications/{appId}/status\n(trangThaiMoi=PHỎNG_VẤN)
+ApplicationService -> ApplicationService: 5.5 Verify authorization (Recruiter owns job)
+ApplicationService -> Database: 5.6 Update don_ung_tuyen\n(TrangThaiHienTai = PHỎNG_VẤN)
+Database --> ApplicationService: 5.7 OK
+ApplicationService -> Database: 5.8 Create lich_su_trang_thai\n(REVIEW → PHỎNG_VẤN)
+Database --> ApplicationService: 5.9 OK
+ApplicationService --> FrontEnd: 5.10 Status updated
+ApplicationService -> NotificationService: 5.11 Notify Candidate\n(Status changed)
+NotificationService -> Database: 5.12 Create thong_bao\n(UNG_TUYEN_VE_PHONG_VAN)
+Database --> NotificationService: 5.13 OK
+FrontEnd --> Recruiter: 5.14 Trạng thái cập nhật ✅
+
+== 6. Sắp Xếp Lịch Phỏng Vấn ==
+
+Recruiter -> FrontEnd: 6.1 Click "Tạo lịch phỏng vấn"
+FrontEnd -> InterviewService: 6.2 POST /api/interviews\n(donUngTuyenId, tieuDeVong, thoiGianBatDau,\nthoiGianKetThuc, hinhThuc, diaDiemHoacLink)
+InterviewService -> InterviewService: 6.3 Validate time\nInvalidInterviewTimeException
+InterviewService -> Database: 6.4 Create lich_phong_van\n(CHO_PHONG_VAN)
+Database --> InterviewService: 6.5 Return id
+InterviewService --> FrontEnd: 6.6 Interview scheduled
+InterviewService -> NotificationService: 6.7 Notify Candidate\n(New interview scheduled)
+NotificationService -> Database: 6.8 Create thong_bao\n(PHONG_VAN_TAO_MOI)
+Database --> NotificationService: 6.9 OK
+FrontEnd --> Recruiter: 6.10 Lịch phỏng vấn tạo ✅
+
+Recruiter -> FrontEnd: 6.11 Click "Quản lý lịch"
+FrontEnd -> InterviewService: 6.12 GET /api/interviews?recruiterId={id}\n(page=0, size=10)
+InterviewService -> Database: 6.13 Query lich_phong_van
+Database --> InterviewService: 6.14 Return list (5 interviews)
+InterviewService --> FrontEnd: 6.15 Interview list
+FrontEnd --> Recruiter: 6.16 Hiển thị danh sách lịch
+
+Recruiter -> FrontEnd: 6.17 Chọn 1 lịch để sửa
+FrontEnd -> InterviewService: 6.18 PUT /api/interviews/{interviewId}\n(tieuDeVong, newThoiGian, etc)
+InterviewService -> Database: 6.19 Update lich_phong_van
+Database --> InterviewService: 6.20 OK
+InterviewService -> NotificationService: 6.21 Notify Candidate\n(Interview rescheduled)
+NotificationService -> Database: 6.22 Create thong_bao\n(PHONG_VAN_CAP_NHAT)
+Database --> NotificationService: 6.23 OK
+FrontEnd --> Recruiter: 6.24 Lịch được cập nhật ✅
+
+== 7. Gợi Ý Ứng Viên ==
+
+Recruiter -> FrontEnd: 7.1 Click "Gợi ý ứng viên"
+FrontEnd -> MatchingService: 7.2 GET /api/matching/candidates/{jobId}\n(page=0, size=20)
+MatchingService -> Database: 7.3 Get job requirements
+Database --> MatchingService: 7.4 Return job skills
+MatchingService -> Database: 7.5 Search CVs with similar skills
+Database --> MatchingService: 7.6 Return candidate profiles (top 20)
+MatchingService -> MatchingService: 7.7 Calculate match scores\n(70-95%)
+MatchingService --> FrontEnd: 7.8 Ranked candidates
+FrontEnd --> Recruiter: 7.9 Hiển thị danh sách ứng viên\n(Sắp xếp theo điểm match)
+
+== 8. Thông Báo & Dashboard ==
+
+Recruiter -> FrontEnd: 8.1 Click "Thông báo"
+FrontEnd -> NotificationService: 8.2 GET /api/notifications\n(page=0, size=20)
+NotificationService -> Database: 8.3 Query thong_bao (taiKhoanId)
+Database --> NotificationService: 8.4 Return notifications (8 unread)
+NotificationService --> FrontEnd: 8.5 Notification list
+FrontEnd --> Recruiter: 8.6 Hiển thị thông báo
+
+Recruiter -> FrontEnd: 8.7 Click "Dashboard"
+FrontEnd -> JobService: 8.8 GET /api/dashboard/recruiter
+JobService -> Database: 8.9 Get statistics\n(active jobs, applications, interviews)
+Database --> JobService: 8.10 Return stats
+JobService --> FrontEnd: 8.11 Dashboard data
+FrontEnd --> Recruiter: 8.12 Hiển thị dashboard\n(Tin: 5 | Đơn: 23 | Phỏng vấn: 3)
+
+note over Recruiter, Database
+  **Quy trình hoàn tất**
+  1. ✅ Đăng ký & Xác thực công ty
+  2. ✅ Đăng tin tuyển dụng
+  3. ✅ Nhận & xử lý đơn
+  4. ✅ Cập nhật trạng thái
+  5. ✅ Sắp xếp lịch phỏng vấn
+  6. ✅ Gợi ý ứng viên
+  7. ✅ Nhận thông báo & Dashboard
+end note
+
+@enduml

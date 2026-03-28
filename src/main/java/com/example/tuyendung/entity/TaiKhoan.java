@@ -45,6 +45,17 @@ public class TaiKhoan {
     @Column(name = "ngay_cap_nhat", insertable = false, updatable = false)
     private LocalDateTime ngayCapNhat;
 
+    // --- Bổ sung cho tính năng Auth mở rộng (Module A) ---
+    @Column(name = "reset_token", length = 255)
+    private String resetToken;
+
+    @Column(name = "reset_token_expiry")
+    private LocalDateTime resetTokenExpiry;
+
+    @Column(name = "verify_token", length = 255)
+    private String verifyToken;
+    // -----------------------------------------------------
+
     @OneToOne(mappedBy = "taiKhoan", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private UngVien ungVien;
 
@@ -52,5 +63,6 @@ public class TaiKhoan {
     private NhaTuyenDung nhaTuyenDung;
 
     @OneToMany(mappedBy = "nguoiThucHien", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @Builder.Default
     private Set<LichSuTrangThai> lichSuTrangThais = new HashSet<>();
 }

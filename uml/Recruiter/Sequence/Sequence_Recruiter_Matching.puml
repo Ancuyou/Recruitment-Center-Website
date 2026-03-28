@@ -1,0 +1,56 @@
+@startuml Sequence_Recruiter_Matching
+title Nhà Tuyển Dụng - Gợi Ý Ứng Viên
+
+actor Recruiter as "👔 Recruiter"
+participant FrontEnd as "Frontend\nApp"
+participant MatchingService as "Matching\nService"
+database Database as "Database"
+
+== Xem Gợi Ý Ứng Viên ==
+
+Recruiter -> FrontEnd: Click "Gợi ý ứng viên"
+FrontEnd -> MatchingService: GET /api/matching/candidates?jobId={id}&page=0&size=20
+MatchingService -> Database: Get job requirements
+Database --> MatchingService: Job details
+MatchingService -> Database: Query CVs with similar skills
+Database --> MatchingService: Candidate profiles
+MatchingService -> MatchingService: Calculate match scores
+MatchingService --> FrontEnd: Ranked candidates
+FrontEnd --> Recruiter: Hiển thị danh sách
+
+== Xem Chi Tiết Ứng Viên ==
+
+Recruiter -> FrontEnd: Click vào candidate
+FrontEnd -> MatchingService: GET /api/matching/candidates/{candidateId}/details\n?jobId={jobId}
+MatchingService -> Database: Get candidate profile & CV
+Database --> MatchingService: Full data
+MatchingService -> MatchingService: Calculate match specifics
+MatchingService --> FrontEnd: Detailed profile
+FrontEnd --> Recruiter: Xem chi tiết\n(Match score, skills, CV)
+
+== Xem Match Score ==
+
+Recruiter -> FrontEnd: (on candidate detail page)
+FrontEnd --> Recruiter: Match score: 85%
+:Xem phân tích match;
+:Kỹ năng trùng khớp;
+:Kỹ năng thiếu;
+
+== Liên Hệ Ứng Viên ==
+
+Recruiter -> FrontEnd: Click "Liên hệ"
+FrontEnd -> FrontEnd: Show contact options
+Recruiter -> FrontEnd: Chọn: email / phone
+FrontEnd --> Recruiter: Hiển thị thông tin liên hệ
+:Gửi email mời phỏng vấn;
+
+== Lưu Ứng Viên ==
+
+Recruiter -> FrontEnd: Click "Lưu"
+FrontEnd -> MatchingService: POST /api/matching/candidates/{candidateId}/save
+MatchingService -> Database: Create saved candidate
+Database --> MatchingService: OK
+MatchingService --> FrontEnd: Saved
+FrontEnd --> Recruiter: ✅ Lưu ứng viên
+
+@enduml
