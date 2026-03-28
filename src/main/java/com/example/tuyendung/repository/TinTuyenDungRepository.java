@@ -1,0 +1,82 @@
+package com.example.tuyendung.repository;
+
+import com.example.tuyendung.entity.TinTuyenDung;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
+
+import java.math.BigDecimal;
+import java.util.List;
+import java.util.Optional;
+
+/**
+ * Repository cho tin tuyển dụng (Job Postings)
+ * 
+ * SOLID Principles:
+ * - Dependency Inversion: Interface-based, services depend on abstraction
+ * - Single Responsibility: Chỉ handle data persistence for job postings
+ */
+@Repository
+public interface TinTuyenDungRepository extends JpaRepository<TinTuyenDung, Long> {
+
+    /**
+     * Tìm job by ID (với checking trang_thai > 0, tức là không bị xóa)
+     * trang_thai = 0 nghĩa là bị xóa logic, > 0 là đang hoạt động
+     */
+    @Query("SELECT t FROM TinTuyenDung t WHERE t.id = :jobId AND t.trangThai > 0")
+    Optional<TinTuyenDung> findByIdAndNotDeleted(@Param("jobId") Long jobId);
+
+    /**
+     * Tìm job by ID (trả về cả những job bị xóa)
+     */
+    @Query("SELECT t FROM TinTuyenDung t WHERE t.id = :jobId")
+    Optional<TinTuyenDung> findByIdIncludingDeleted(@Param("jobId") Long jobId);
+
+    /**
+     * Tìm tất cả job đang hoạt động của 1 nhà tuyển dụng
+     */
+    @Query("SELECT t FROM TinTuyenDung t WHERE t.nhaTuyenDung.id = :ntdId AND t.trangThai > 0 ORDER BY t.ngayTao DESC")
+    List<TinTuyenDung> findByNhaTuyenDungIdOrderByNgayTaoDesc(@Param("ntdId") Long ntdId);
+
+    /**
+     * Tìm tất cả job đang hoạt động (phân trang)
+     */
+    @Query("SELECT t FROM TinTuyenDung t WHERE t.trangThai > 0")
+    Page<TinTuyenDung> findActiveJobs(Pageable pageable);
+
+    /**
+     * Tìm job theo điều kiện lọc
+     */
+    @Query("SELECT t FROM TinTuyenDung t WHERE t.trangThai > 0 " +
+            "AND (LOWER(t.tieuDe) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(t.moTa) LIKE LOWER(CONCAT('%', :keyword, '%'))) " +
+            "AND (:capBac IS NULL OR t.capBac = :capBac) " +
+            "AND (:hinhThuc IS NULL OR t.hinhThucLamViec = :hinhThuc) " +
+            "AND (:mucLuongMin IS NULL OR t.mucLuong >= :mucLuongMin)")
+    Page<TinTuyenDung> searchJobs(
+            @Param("keyword") String keyword,
+            @Param("capBac") Object capBac,
+            @Param("hinhThuc") Object hinhThuc,
+            @Param("mucLuongMin") BigDecimal mucLuongMin,
+            Pageable pageable);
+
+    /**
+     * Đếm tổng số đơn cho 1 job
+     */
+    @Query("SELECT COUNT(d) FROM DonUngTuyen d WHERE d.tinTuyenDung.id = :tinId")
+    long countTotalApplications(@Param("tinId") Long tinId);
+
+    /**
+     * Đếm số đơn theo trạng thái
+     */
+    @Query("SELECT COUNT(d) FROM DonUngTuyen d WHERE d.tinTuyenDung.id = :tinId AND d.trangThai = :status")
+    long countApplicationsByStatus(@Param("tinId") Long tinId, @Param("status") int status);
+
+    /**
+     * Đếm số job đang hoạt động của 1 nhà tuyển dụng
+     */
+    @Query("SELECT COUNT(t) FROM TinTuyenDung t WHERE t.nhaTuyenDung.id = :ntdId AND t.trangThai > 0")
+    long countActiveJobsByNhaTuyenDungId(@Param("ntdId") Long ntdId);
+}

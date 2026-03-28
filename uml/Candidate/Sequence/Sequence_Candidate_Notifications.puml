@@ -1,0 +1,61 @@
+@startuml Sequence_Candidate_Notifications
+title Ứng Viên - Quản Lý Thông Báo (Module D)
+
+actor Candidate as "👤 Ứng viên"
+participant FrontEnd as "Frontend\nApp"
+participant NotificationService as "Notification\nService"
+database Database as "Database"
+
+== Xem Danh Sách Thông Báo ==
+
+Candidate -> FrontEnd: Click "Thông báo"
+FrontEnd -> NotificationService: GET /api/notifications?page=0&size=20
+NotificationService -> Database: Query thong_bao (candidateId)
+Database --> NotificationService: Return notifications
+NotificationService --> FrontEnd: Notifications list
+FrontEnd --> Candidate: Hiển thị danh sách thông báo
+
+== Xem Chi Tiết Thông Báo ==
+
+Candidate -> FrontEnd: Click vào 1 thông báo
+FrontEnd -> NotificationService: GET /api/notifications/{notificationId}
+NotificationService -> Database: Get thong_bao details
+Database --> NotificationService: Notification details
+NotificationService --> FrontEnd: Full notification info
+FrontEnd --> Candidate: Hiển thị chi tiết thông báo
+
+== Đánh Dấu Đã Xem ==
+
+Candidate -> FrontEnd: Click notification
+FrontEnd -> NotificationService: PATCH /api/notifications/{notificationId}/read
+NotificationService -> Database: Update isRead = true
+Database --> NotificationService: OK
+NotificationService --> FrontEnd: Marked as read
+FrontEnd --> Candidate: Notification gray out (no longer bold)
+
+== Đánh Dấu Tất Cả Đã Xem ==
+
+Candidate -> FrontEnd: Click "Đánh dấu đã xem tất cả"
+FrontEnd -> NotificationService: PATCH /api/notifications/mark-all-read
+NotificationService -> Database: Update all isRead = true (for candidateId)
+Database --> NotificationService: OK
+NotificationService --> FrontEnd: All marked as read
+FrontEnd --> Candidate: ✅ Tất cả thông báo đã xem
+
+== Xem Số Thông Báo Chưa Xem ==
+
+Candidate -> FrontEnd: (on header/badge)
+FrontEnd -> NotificationService: GET /api/notifications/unread-count
+NotificationService -> Database: Count unread notifications
+Database --> NotificationService: Unread count (5)
+NotificationService --> FrontEnd: Unread count
+FrontEnd --> Candidate: Show badge: "5" (red circle)
+
+== Cài Đặt Thông Báo ==
+
+Candidate -> FrontEnd: Click "Cài đặt thông báo"
+FrontEnd -> FrontEnd: Show preferences
+Candidate -> FrontEnd: Toggle: ứng tuyển / phỏng vấn / offer
+FrontEnd --> Candidate: Save preferences
+
+@enduml

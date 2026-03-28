@@ -1,0 +1,38 @@
+@startuml Activity_Recruiter_CompanySetup
+title Nhà Tuyển Dụng - Tạo & Xác Thực Công Ty
+
+start
+
+:Đăng nhập thành công;
+
+if (Có công ty?) then (Không)
+  :Nhấp "Tạo công ty mới";
+  :Nhập thông tin công ty\n(tên, địa chỉ, mã số thuế, logo);
+  :Validate dữ liệu;
+  :Lưu công ty;
+  :Công ty được tạo (chờ xác thực);
+  
+  note right
+    Admin cần kiểm tra & xác thực
+    mã số thuế trước khi hoạt động
+  end note
+else (Có)
+  :Chọn công ty hiện có;
+endif
+
+:Xem thông tin công ty;
+
+:Thêm ngành nghề hoạt động;
+:Chọn từ danh sách ngành hệ thống;
+:Lưu ngành;
+
+if (Mã số thuế chưa xác thực?) then (Đúng)
+  :Chờ Admin xác thực;
+  :Nhận thông báo khi xác thực xong;
+else (Đã xác thực)
+  :Có thể bắt đầu đăng tin tuyển dụng;
+endif
+
+stop
+
+@enduml

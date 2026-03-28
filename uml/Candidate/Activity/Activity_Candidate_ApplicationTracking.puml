@@ -1,0 +1,38 @@
+@startuml Activity_Candidate_ApplicationTracking
+title Ứng Viên - Theo Dõi Đơn Ứng Tuyển
+
+start
+
+:Nhấp "Đơn của tôi";
+:Xem danh sách đơn ứng tuyển;
+
+:Tìm kiếm/lọc đơn\n(theo trạng thái, công ty, ngày);
+
+partition "Với mỗi đơn" {
+  :Click vào đơn;
+  :Xem chi tiết\n(công ty, vị trí, cover letter);
+  
+  :Xem lịch sử trạng thái;
+  :Theo dõi status timeline\n(MOI → REVIEW → PHỎNG_VẤN);
+  
+  if (Status = PHỎNG_VẤN?) then (Có)
+    :Xem lịch phỏng vấn;
+    :Kiểm tra thời gian & địa điểm;
+    :Ôn tập thông tin công ty;
+  else (Không)
+    :Chờ cập nhật;
+  endif
+  
+  if (Status = MOI?) then (Có)
+    if (Muốn hủy?) then (Có)
+      :Xác nhận hủy;
+      :Hủy đơn;
+      :Status → TU_CHOI;
+    else (Không)
+    endif
+  endif
+}
+
+stop
+
+@enduml

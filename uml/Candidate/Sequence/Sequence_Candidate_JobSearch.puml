@@ -1,0 +1,86 @@
+@startuml Sequence_Candidate_JobSearch
+title Ứng Viên - Tìm Kiếm Công Việc (Module B, E)
+
+actor Candidate as "👤 Ứng viên"
+participant FrontEnd as "Frontend\nApp"
+participant JobService as "Job\nService"
+participant MatchingService as "Matching\nService"
+database Database as "Database"
+
+== Tìm Kiếm Công Việc ==
+
+Candidate -> FrontEnd: Click "Tìm việc làm"
+FrontEnd -> FrontEnd: Show search/filter form
+Candidate -> FrontEnd: Nhập: từ khóa, filter location/salary
+FrontEnd -> JobService: GET /api/jobs?keyword=java&location=...&page=0&size=20
+JobService -> Database: Query tin_tuyen_dung
+Database --> JobService: Return jobs list
+JobService --> FrontEnd: Jobs (20 results)
+FrontEnd --> Candidate: Hiển thị danh sách công việc
+
+== Xem Chi Tiết Công Việc ==
+
+Candidate -> FrontEnd: Click vào 1 công việc
+FrontEnd -> JobService: GET /api/jobs/{jobId}
+JobService -> Database: Get tin_tuyen_dung + details
+Database --> JobService: Job details
+JobService --> FrontEnd: Full job info
+FrontEnd --> Candidate: Hiển thị chi tiết job
+
+== Xem Match Score ==
+
+Candidate -> FrontEnd: (on job detail page)
+FrontEnd -> MatchingService: GET /api/matching/score\n(cvId={candidateDefaultCV}, jobId={jobId})
+MatchingService -> Database: Get CV skills & job requirements
+Database --> MatchingService: Skills & requirements
+MatchingService -> MatchingService: Calculate match score
+MatchingService --> FrontEnd: Match score (80%)
+FrontEnd --> Candidate: Hiển thị "Độ phù hợp: 80%"
+
+== Lọc Công Việc ==
+
+Candidate -> FrontEnd: Click "Bộ lọc nâng cao"
+FrontEnd -> FrontEnd: Show filter modal
+Candidate -> FrontEnd: Chọn: ngành, địa điểm, mức lương, loại hình
+FrontEnd -> JobService: GET /api/jobs\n?industries=...&locations=...\n&salaryMin=...&salaryMax=...\n&employmentTypes=...&page=0&size=20
+JobService -> Database: Query with filters
+Database --> JobService: Filtered results
+JobService --> FrontEnd: Jobs list
+FrontEnd --> Candidate: Hiển thị kết quả lọc
+
+== Tìm Kiếm Theo Địa Điểm ==
+
+Candidate -> FrontEnd: Filter by location
+FrontEnd -> JobService: GET /api/jobs?locations=TP.HCM,Hà Nội&page=0&size=20
+JobService -> Database: Query tin_tuyen_dung (locations)
+Database --> JobService: Jobs
+JobService --> FrontEnd: Filtered jobs
+FrontEnd --> Candidate: Hiển thị công việc theo địa điểm
+
+== Tìm Kiếm Theo Mức Lương ==
+
+Candidate -> FrontEnd: Set salary range
+FrontEnd -> JobService: GET /api/jobs?salaryMin=10000000&salaryMax=30000000&page=0&size=20
+JobService -> Database: Query by salary range
+Database --> JobService: Jobs matching salary
+JobService --> FrontEnd: Jobs list
+FrontEnd --> Candidate: Hiển thị công việc theo mức lương
+
+== Tìm Kiếm Theo Ngành ==
+
+Candidate -> FrontEnd: Select industries
+FrontEnd -> JobService: GET /api/jobs?industries=IT,BANKING&page=0&size=20
+JobService -> Database: Query tin_tuyen_dung (industries)
+Database --> JobService: Jobs in selected industries
+JobService --> FrontEnd: Jobs list
+FrontEnd --> Candidate: Hiển thị công việc theo ngành
+
+== Lưu Tìm Kiếm (Future) ==
+
+Candidate -> FrontEnd: Click "Lưu tìm kiếm này"
+note right of Candidate
+  Future feature:
+  Save search criteria for recommendations
+end note
+
+@enduml

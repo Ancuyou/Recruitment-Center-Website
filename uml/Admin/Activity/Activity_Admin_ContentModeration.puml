@@ -1,0 +1,31 @@
+@startuml Activity_Admin_ContentModeration
+title Quản Trị - Duyệt Nội Dung
+
+start
+
+:Click "Duyệt nội dung";
+
+:Xem danh sách tin tuyển dụng;
+
+:Kiểm tra nội dung, chất lượng;
+
+if (Phù hợp?) then (Có)
+  :Phê duyệt tin;
+else (Không)
+  :Từ chối tin;
+  :Yêu cầu chỉnh sửa;
+endif
+
+:Xem danh sách đơn ứng tuyển;
+
+:Kiểm tra spam, hành vi lạm dụng;
+
+if (Phát hiện vi phạm?) then (Có)
+  :Cảnh báo ứng viên / nhà tuyển dụng;
+  :Xóa nội dung vi phạm;
+else (Không)
+endif
+
+stop
+
+@enduml

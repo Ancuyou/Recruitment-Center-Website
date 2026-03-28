@@ -1,0 +1,36 @@
+@startuml Admin_SystemConfiguration
+
+title Admin - System Configuration (Module B)
+
+actor Admin as "🔐 Admin"
+
+rectangle "INDUSTRIES" {
+    usecase "List All\nIndustries" as B9
+    usecase "Create Industry" as B10
+    usecase "Update Industry" as B9_1
+    usecase "Delete Industry" as B9_2
+}
+
+rectangle "LOCATIONS" {
+    usecase "List All\nLocations" as B11
+    usecase "Create Location" as B12
+    usecase "Update Location" as B11_1
+    usecase "Delete Location" as B11_2
+}
+
+Admin --> B9: 1. List industries
+B9 --> B10: 2. Create
+B9 --> B9_1: 3. Update
+B9 --> B9_2: 4. Delete
+
+Admin --> B11: 5. List locations
+B11 --> B12: 6. Create
+B11 --> B11_1: 7. Update
+B11 --> B11_2: 8. Delete
+
+note right of B9
+  **Priority:** P1 (Important)
+  **Status:** Need Validation
+end note
+
+@enduml

@@ -1,0 +1,39 @@
+@startuml Sequence_Recruiter_Authentication
+title Nhà Tuyển Dụng - Đăng Ký & Đăng Nhập
+
+actor Recruiter as "👔 Recruiter"
+participant FrontEnd as "Frontend\nApp"
+participant AuthService as "Auth\nService"
+database Database as "Database"
+
+== Đăng Ký Nhà Tuyển Dụng ==
+
+Recruiter -> FrontEnd: Click "Đăng ký nhà tuyển dụng"
+FrontEnd -> FrontEnd: Show registration form
+Recruiter -> FrontEnd: Nhập email, password, tên, công ty
+FrontEnd -> AuthService: POST /api/auth/dang-ky-nha-tuyen-dung\n(email, password, hoTen, tenCongTy)
+AuthService -> Database: Create tai_khoan (RECRUITER role)
+Database --> AuthService: Return taiKhoanId
+AuthService -> Database: Create nha_tuyen_dung
+Database --> AuthService: OK
+AuthService --> FrontEnd: Account created
+FrontEnd --> Recruiter: ✅ Đăng ký thành công
+
+== Đăng Nhập ==
+
+Recruiter -> FrontEnd: Click "Đăng nhập"
+FrontEnd -> FrontEnd: Show login form
+Recruiter -> FrontEnd: Enter email, password
+FrontEnd -> AuthService: POST /api/auth/dang-nhap\n(email, password)
+AuthService -> Database: Verify credentials
+Database --> AuthService: OK
+AuthService --> FrontEnd: Return JWT token
+FrontEnd --> Recruiter: ✅ Logged in
+
+== Đăng Xuất ==
+
+Recruiter -> FrontEnd: Click "Đăng xuất"
+FrontEnd -> FrontEnd: Clear JWT
+FrontEnd --> Recruiter: ✅ Logged out
+
+@enduml

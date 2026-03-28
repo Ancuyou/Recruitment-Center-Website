@@ -1,0 +1,67 @@
+@startuml Sequence_Candidate_Interviews
+title Ứng Viên - Xem Lịch Phỏng Vấn
+
+actor Candidate as "👤 Ứng viên"
+participant FrontEnd as "Frontend\nApp"
+participant InterviewService as "Interview\nService"
+database Database as "Database"
+
+== Danh Sách Lịch Phỏng Vấn ==
+
+Candidate -> FrontEnd: Click "Lịch phỏng vấn của tôi"
+FrontEnd -> InterviewService: GET /api/interviews?candidateId=...&page=0&size=20
+InterviewService -> Database: Query lich_phong_van (candidateId)
+Database --> InterviewService: Return list
+InterviewService --> FrontEnd: Interviews list
+FrontEnd --> Candidate: Hiển thị danh sách lịch phỏng vấn
+
+== Xem Chi Tiết Lịch Phỏng Vấn ==
+
+Candidate -> FrontEnd: Click vào 1 lịch
+FrontEnd -> InterviewService: GET /api/interviews/{id}
+InterviewService -> Database: Get lich_phong_van details
+Database --> InterviewService: Interview details
+InterviewService --> FrontEnd: Full interview info
+FrontEnd --> Candidate: Hiển thị chi tiết phỏng vấn\n(Thời gian, hình thức, địa điểm)
+
+== Lọc Theo Trạng Thái ==
+
+Candidate -> FrontEnd: Filter by status
+FrontEnd -> InterviewService: GET /api/interviews?status=CHO_PHONG_VAN&page=0&size=20
+InterviewService -> Database: Query with status filter
+Database --> InterviewService: Filtered interviews
+InterviewService --> FrontEnd: Interviews list
+FrontEnd --> Candidate: Hiển thị lịch sắp tới
+
+== Lọc Theo Khoảng Thời Gian ==
+
+Candidate -> FrontEnd: Filter by date range
+FrontEnd -> InterviewService: GET /api/interviews?fromDate=2024-04-01&toDate=2024-04-30
+InterviewService -> Database: Query by date range
+Database --> InterviewService: Interviews in range
+InterviewService --> FrontEnd: Interviews list
+FrontEnd --> Candidate: Hiển thị lịch trong tháng
+
+== Nhận Thông Báo Phỏng Vấn ==
+
+Candidate -> FrontEnd: (Recruiter schedules interview)
+FrontEnd --> Candidate: ✅ Thông báo phỏng vấn mới\n"Phỏng vấn lúc 14:00 ngày 15/4"
+
+Candidate -> FrontEnd: Click notification
+FrontEnd -> InterviewService: GET /api/interviews/{id}
+InterviewService -> Database: Get interview details
+Database --> InterviewService: Details
+InterviewService --> FrontEnd: Interview info
+FrontEnd --> Candidate: Jump to interview detail
+
+== Theo Dõi Trạng Thái Phỏng Vấn ==
+
+Candidate -> FrontEnd: Check interview status
+FrontEnd --> Candidate: Status badge\n(CHO_PHONG_VAN / DANG_PHONG_VAN / DA_PHONG_VAN)
+
+== Ôn Tập Thông Tin ==
+
+Candidate -> FrontEnd: View interview preparation info
+FrontEnd --> Candidate: Show job & company info
+
+@enduml

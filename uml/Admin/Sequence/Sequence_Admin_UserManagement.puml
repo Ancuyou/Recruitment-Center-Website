@@ -1,0 +1,63 @@
+@startuml Sequence_Admin_UserManagement
+title Quản Trị - Quản Lý Người Dùng
+
+actor Admin as "🔐 Admin"
+participant FrontEnd as "Frontend\nApp"
+participant UserService as "User\nService"
+database Database as "Database"
+
+== Danh Sách Người Dùng ==
+
+Admin -> FrontEnd: Click "Quản lý người dùng"
+FrontEnd -> UserService: GET /api/admin/users?type=CANDIDATE&page=0&size=20
+UserService -> Database: Query users
+Database --> UserService: Return list
+UserService --> FrontEnd: Users list
+FrontEnd --> Admin: Hiển thị danh sách ứng viên
+
+== Tìm Kiếm Người Dùng ==
+
+Admin -> FrontEnd: Nhập tên/email tìm kiếm
+FrontEnd -> UserService: GET /api/admin/users?search=...&type=CANDIDATE
+UserService -> Database: Query with search
+Database --> UserService: Results
+UserService --> FrontEnd: Results list
+FrontEnd --> Admin: Hiển thị kết quả
+
+== Xem Chi Tiết Người Dùng ==
+
+Admin -> FrontEnd: Click vào người dùng
+FrontEnd -> UserService: GET /api/admin/users/{userId}
+UserService -> Database: Get user details
+Database --> UserService: User info
+UserService --> FrontEnd: Full details
+FrontEnd --> Admin: Xem chi tiết hồ sơ
+
+== Khóa Tài Khoản ==
+
+Admin -> FrontEnd: Click "Khóa tài khoản"
+FrontEnd -> FrontEnd: Show reason form
+Admin -> FrontEnd: Nhập lý do khóa
+FrontEnd -> UserService: POST /api/admin/users/{userId}/lock\n(reason)
+UserService -> Database: Update status = LOCKED
+Database --> UserService: OK
+UserService --> FrontEnd: Account locked
+FrontEnd --> Admin: ✅ Khóa thành công
+
+== Mở Khóa Tài Khoản ==
+
+Admin -> FrontEnd: Chọn tài khoản bị khóa
+FrontEnd -> UserService: GET /api/admin/users?status=LOCKED
+UserService -> Database: Query locked accounts
+Database --> UserService: List
+UserService --> FrontEnd: Locked users
+FrontEnd --> Admin: Hiển thị
+
+Admin -> FrontEnd: Click "Mở khóa"
+FrontEnd -> UserService: POST /api/admin/users/{userId}/unlock
+UserService -> Database: Update status = ACTIVE
+Database --> UserService: OK
+UserService --> FrontEnd: Unlocked
+FrontEnd --> Admin: ✅ Mở khóa thành công
+
+@enduml

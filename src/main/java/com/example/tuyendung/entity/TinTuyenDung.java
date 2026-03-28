@@ -2,7 +2,10 @@ package com.example.tuyendung.entity;
 
 import com.example.tuyendung.entity.enums.CapBacYeuCau;
 import com.example.tuyendung.entity.enums.HinhThucLamViec;
+import com.example.tuyendung.entity.enums.KhuVucEnum;
+import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
+import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -24,6 +27,10 @@ import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
 
+/**
+ * Entity cho bảng tin_tuyen_dung
+ * Khu vực áp dụng được lưu dạng @ElementCollection (không cần bảng entity riêng)
+ */
 @Getter
 @Setter
 @NoArgsConstructor
@@ -81,10 +88,22 @@ public class TinTuyenDung {
     @Column(name = "ngay_cap_nhat", insertable = false, updatable = false)
     private LocalDateTime ngayCapNhat;
 
+    /**
+     * Khu vực áp dụng — lưu dạng String vào bảng ct_kv_tin
+     * Không cần entity KhuVuc hay repository riêng
+     */
+    @ElementCollection(fetch = FetchType.LAZY)
+    @CollectionTable(
+            name = "ct_kv_tin",
+            joinColumns = @JoinColumn(name = "tin_tuyen_dung_id")
+    )
+    @Enumerated(EnumType.STRING)
+    @Column(name = "khu_vuc", length = 30)
+    private Set<KhuVucEnum> khuVucs = new HashSet<>();
+
     @OneToMany(mappedBy = "tinTuyenDung")
     private Set<ChiTietKyNangTin> chiTietKyNangTins = new HashSet<>();
 
     @OneToMany(mappedBy = "tinTuyenDung")
     private Set<DonUngTuyen> donUngTuyens = new HashSet<>();
 }
-

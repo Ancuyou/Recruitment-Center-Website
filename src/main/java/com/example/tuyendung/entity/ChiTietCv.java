@@ -31,8 +31,12 @@ public class ChiTietCv {
     @JoinColumn(name = "ho_so_cv_id", nullable = false)
     private HoSoCv hoSoCv;
 
+    /**
+     * Loại bản ghi: HOC_VAN(1), KINH_NGHIEM(2), CHUNG_CHI(3)
+     * Lưu dưới dạng integer trong DB cho backward compatibility
+     */
     @Column(name = "loai_ban_ghi", nullable = false)
-    private Integer loaiBanGhi;
+    private Integer loaiBanGhi; // Stored as int, mapped to LoaiBanGhi enum in service layer
 
     @Column(name = "ten_to_chuc", nullable = false, length = 200)
     private String tenToChuc;

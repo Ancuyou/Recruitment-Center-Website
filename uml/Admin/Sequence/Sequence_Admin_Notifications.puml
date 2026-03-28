@@ -1,0 +1,59 @@
+@startuml Sequence_Admin_Notifications
+title Quản Trị - Quản Lý Thông Báo
+
+actor Admin as "🔐 Admin"
+participant FrontEnd as "Frontend\nApp"
+participant NotificationService as "Notification\nService"
+database Database as "Database"
+
+== Danh Sách Thông Báo ==
+
+Admin -> FrontEnd: Click "Thông báo"
+FrontEnd -> NotificationService: GET /api/admin/notifications?page=0&size=20
+NotificationService -> Database: Query thong_bao
+Database --> NotificationService: Return list
+NotificationService --> FrontEnd: Notifications list
+FrontEnd --> Admin: Hiển thị danh sách
+
+== Xem Chi Tiết Thông Báo ==
+
+Admin -> FrontEnd: Click vào thông báo
+FrontEnd -> NotificationService: GET /api/admin/notifications/{notificationId}
+NotificationService -> Database: Get notification details
+Database --> NotificationService: Details
+NotificationService --> FrontEnd: Full info
+FrontEnd --> Admin: Xem chi tiết
+
+== Tạo Thông Báo Tin Tức ==
+
+Admin -> FrontEnd: Click "Tạo thông báo"
+FrontEnd -> FrontEnd: Show announcement form
+Admin -> FrontEnd: Nhập tiêu đề & nội dung
+FrontEnd -> NotificationService: POST /api/admin/announcements\n(title, content)
+NotificationService -> Database: Create announcement
+Database --> NotificationService: OK
+NotificationService -> NotificationService: Send to all users
+NotificationService -> Database: Create thong_bao for each user
+Database --> NotificationService: OK
+NotificationService --> FrontEnd: Sent
+FrontEnd --> Admin: ✅ Gửi thông báo thành công
+
+== Xem Lịch Sử Thông Báo ==
+
+Admin -> FrontEnd: Click "Lịch sử"
+FrontEnd -> NotificationService: GET /api/admin/announcements?page=0&size=20
+NotificationService -> Database: Query announcements
+Database --> NotificationService: Return list
+NotificationService --> FrontEnd: History list
+FrontEnd --> Admin: Hiển thị lịch sử
+
+== Xem Log Hoạt Động ==
+
+Admin -> FrontEnd: Click "Log hoạt động"
+FrontEnd -> NotificationService: GET /api/admin/audit-logs?page=0&size=20
+NotificationService -> Database: Query audit logs
+Database --> NotificationService: Log data
+NotificationService --> FrontEnd: Logs list
+FrontEnd --> Admin: Xem ai làm gì, khi nào
+
+@enduml

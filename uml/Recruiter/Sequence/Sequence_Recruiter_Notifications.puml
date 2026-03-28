@@ -1,0 +1,64 @@
+@startuml Sequence_Recruiter_Notifications
+title Nhà Tuyển Dụng - Quản Lý Thông Báo
+
+actor Recruiter as "👔 Recruiter"
+participant FrontEnd as "Frontend\nApp"
+participant NotificationService as "Notification\nService"
+database Database as "Database"
+
+== Danh Sách Thông Báo ==
+
+Recruiter -> FrontEnd: Click "Thông báo"
+FrontEnd -> NotificationService: GET /api/notifications?page=0&size=20
+NotificationService -> Database: Query thong_bao (recruiterId)
+Database --> NotificationService: Return list
+NotificationService --> FrontEnd: Notifications list
+FrontEnd --> Recruiter: Hiển thị danh sách
+
+== Xem Chi Tiết ==
+
+Recruiter -> FrontEnd: Click vào thông báo
+FrontEnd -> NotificationService: GET /api/notifications/{notificationId}
+NotificationService -> Database: Get details
+Database --> NotificationService: Full info
+NotificationService --> FrontEnd: Details
+FrontEnd --> Recruiter: Xem chi tiết
+
+== Đánh Dấu Đã Xem ==
+
+Recruiter -> FrontEnd: Click on notification
+FrontEnd -> NotificationService: PATCH /api/notifications/{notificationId}/read
+NotificationService -> Database: Update isRead = true
+Database --> NotificationService: OK
+NotificationService --> FrontEnd: Marked as read
+FrontEnd --> Recruiter: Gray out notification
+
+== Đánh Dấu Tất Cả Đã Xem ==
+
+Recruiter -> FrontEnd: Click "Đánh dấu đã xem tất cả"
+FrontEnd -> NotificationService: PATCH /api/notifications/mark-all-read
+NotificationService -> Database: Update all isRead = true
+Database --> NotificationService: OK
+NotificationService --> FrontEnd: All marked
+FrontEnd --> Recruiter: ✅ Tất cả đã xem
+
+== Xem Số Chưa Xem ==
+
+Recruiter -> FrontEnd: (on header)
+FrontEnd -> NotificationService: GET /api/notifications/unread-count
+NotificationService -> Database: Count unread
+Database --> NotificationService: Count (5)
+NotificationService --> FrontEnd: Count
+FrontEnd --> Recruiter: Show badge: 5
+
+== Thông Báo Tự Động ==
+
+note over Recruiter, NotificationService
+  Recruiter receives notifications for:
+  • Ứng viên nộp đơn mới
+  • Cập nhật trạng thái từ candidate
+  • Nhắc nhở lịch phỏng vấn
+  • Hệ thống thông báo
+end note
+
+@enduml

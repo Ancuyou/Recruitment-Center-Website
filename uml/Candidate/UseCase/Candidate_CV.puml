@@ -1,0 +1,30 @@
+@startuml Candidate_CV
+
+title Candidate - CV Management (Module C)
+
+actor Candidate as "👤 Ứng Viên"
+
+rectangle "CV MANAGEMENT" {
+    usecase "Create New\nCV" as C1
+    usecase "List My\nCVs" as C2
+    usecase "View CV\nDetails" as C3
+    usecase "Update CV\nInformation" as C4
+    usecase "Delete CV" as C5
+    usecase "Set Default\nCV" as C6
+    usecase "Upload CV\nPDF File" as C7
+}
+
+Candidate --> C1: 1. Create CV
+Candidate --> C2: 2. View CVs
+C2 --> C3: View details
+C3 --> C4: 3. Update info
+C3 --> C7: 4. Upload PDF
+Candidate --> C5: 5. Delete CV
+Candidate --> C6: 6. Set as default
+
+note right of C1
+  **Priority:** P0 (Critical)
+  **Status:** Need Validation
+end note
+
+@enduml

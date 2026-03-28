@@ -1,0 +1,56 @@
+@startuml Activity_Candidate_CVManagement
+title Ứng Viên - Quản Lý CV
+
+start
+
+:Vào phần "CV của tôi";
+
+if (Có CV?) then (Không)
+  :Nhấp "Tạo CV mới";
+  :Nhập tên CV & mô tả;
+  :Lưu CV;
+  :CV được tạo với trạng thái rỗng;
+else (Có)
+  :Xem danh sách CV có sẵn;
+endif
+
+:Chọn CV để sửa;
+
+partition "Điền thông tin CV" {
+  :Thêm kinh nghiệm làm việc;
+  :Nhập: công ty, vị trí, thời gian;
+  
+  :Thêm học vấn;
+  :Nhập: trường, độ, chuyên ngành;
+}
+
+:Thêm kỹ năng;
+:Chọn từ danh sách hệ thống;
+:Chọn mức độ thành thạo;
+
+:Upload file PDF CV;
+if (File hợp lệ?) then (Có)
+  :Lưu file;
+  :CV đủ đầy đủ;
+else (Không)
+  :Hiển thị lỗi "File không hợp lệ";
+endif
+
+if (Muốn set mặc định?) then (Có)
+  :Đặt CV này làm mặc định;
+  :CV mặc định được dùng khi nộp đơn;
+else (Không)
+endif
+
+:Lưu CV;
+
+if (Muốn xóa?) then (Có)
+  :Xác nhận xóa;
+  :Xóa CV;
+else (Không)
+  :Quay về danh sách;
+endif
+
+stop
+
+@enduml

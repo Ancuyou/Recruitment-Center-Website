@@ -1,0 +1,24 @@
+@startuml Admin_SkillsManagement
+
+title Admin - Skills Management (Module C, E)
+
+actor Admin as "🔐 Admin"
+
+rectangle "SKILLS" {
+    usecase "List All Skills" as SM1
+    usecase "Create New Skill" as C13
+    usecase "Update Skill" as SM2
+    usecase "Delete Skill" as SM3
+}
+
+Admin --> SM1: 1. List skills
+SM1 --> C13: 2. Create skill
+SM1 --> SM2: 3. Update skill
+SM1 --> SM3: 4. Delete skill
+
+note right of SM1
+  **Priority:** P1 (Important)
+  **Status:** Need Validation
+end note
+
+@enduml

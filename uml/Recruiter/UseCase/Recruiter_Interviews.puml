@@ -1,0 +1,28 @@
+@startuml Recruiter_Interviews
+
+title Recruiter - Interviews (Module D)
+
+actor Recruiter as "👔 Nhà Tuyển Dụng"
+
+rectangle "INTERVIEWS" {
+    usecase "Schedule\nInterview" as D9
+    usecase "List\nInterviews" as D10
+    usecase "View Interview\nDetails" as D11
+    usecase "Update\nInterview" as D12
+    usecase "Cancel\nInterview" as D13
+    usecase "Reschedule\nInterview" as D14
+}
+
+Recruiter --> D10: 1. View interviews
+D10 --> D11: 2. View details
+D11 --> D12: 3. Update interview
+D11 --> D13: 4. Cancel interview
+D11 --> D14: 5. Reschedule
+Recruiter --> D9: 6. Schedule interview
+
+note right of D9
+  **Priority:** P0 (Critical)
+  **Status:** Need Validation
+end note
+
+@enduml
