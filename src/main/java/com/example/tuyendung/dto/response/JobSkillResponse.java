@@ -5,6 +5,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
+
 /**
  * DTO cho response kỹ năng Job
  * SOLID: Single Responsibility - chỉ xử lý output data
@@ -21,7 +23,7 @@ public class JobSkillResponse {
     private String tenKyNang;
     private Integer yeucau;
     private String moTa;
-    private Long ngayTao;
+    private LocalDateTime ngayTao;
 
     /**
      * Helper method: lấy tên mức yêu cầu

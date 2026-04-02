@@ -37,9 +37,9 @@ public interface LichPhongVanRepository extends JpaRepository<LichPhongVan, Long
     Page<LichPhongVan> findByNguoiPhongVanId(@Param("nguoiPhongVanId") Long nguoiPhongVanId, Pageable pageable);
 
     // Dashboard metrics
-    @Query("SELECT COUNT(l) FROM LichPhongVan l WHERE l.donUngTuyen.hoSoCv.ungVien.id = :ungVienId AND l.trangThaiPhongVan = 'CHO_PHONG_VAN'")
+    @Query("SELECT COUNT(l) FROM LichPhongVan l WHERE l.donUngTuyen.hoSoCv.ungVien.id = :ungVienId AND l.trangThaiPhongVan = com.example.tuyendung.entity.enums.TrangThaiPhongVan.CHO_PHONG_VAN")
     long countUpcomingByUngVienId(@Param("ungVienId") Long ungVienId);
 
-    @Query("SELECT COUNT(l) FROM LichPhongVan l WHERE l.nguoiPhongVan.id = :ntdId AND l.trangThaiPhongVan = 'CHO_PHONG_VAN'")
+    @Query("SELECT COUNT(l) FROM LichPhongVan l WHERE l.nguoiPhongVan.id = :ntdId AND l.trangThaiPhongVan = com.example.tuyendung.entity.enums.TrangThaiPhongVan.CHO_PHONG_VAN")
     long countUpcomingByNhaTuyenDungId(@Param("ntdId") Long ntdId);
 }

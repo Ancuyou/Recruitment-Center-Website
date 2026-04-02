@@ -1,5 +1,6 @@
 package com.example.tuyendung.entity;
 
+import com.example.tuyendung.entity.id.ChiTietKyNangTin;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;

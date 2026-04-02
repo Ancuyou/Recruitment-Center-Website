@@ -10,8 +10,8 @@ import com.example.tuyendung.entity.enums.HinhThucLamViec;
 import com.example.tuyendung.entity.enums.KhuVucEnum;
 import com.example.tuyendung.entity.enums.TrangThaiDon;
 import com.example.tuyendung.entity.enums.TrangThaiTin;
-import com.example.tuyendung.exception.BusinessException;
-import com.example.tuyendung.exception.ResourceNotFoundException;
+import com.example.tuyendung.exception.BaseBusinessException;
+import com.example.tuyendung.exception.ErrorCode;
 import com.example.tuyendung.repository.NhaTuyenDungRepository;
 import com.example.tuyendung.repository.TinTuyenDungRepository;
 import com.example.tuyendung.service.TinTuyenDungService;
@@ -58,7 +58,7 @@ public class TinTuyenDungServiceImpl implements TinTuyenDungService {
         tin.setNhaTuyenDung(ntd);
         tin.setCongTy(ntd.getCongTy());
         applyRequest(request, tin);
-        tin.setTrangThai(TrangThaiTin.MO.getValue());
+        tin.setTrangThai(TrangThaiTin.MO);
 
         TinTuyenDung saved = tinTuyenDungRepository.save(tin);
         log.info("Tạo tin thành công, ID: {}", saved.getId());
@@ -80,7 +80,8 @@ public class TinTuyenDungServiceImpl implements TinTuyenDungService {
     @Transactional(readOnly = true)
     public TinTuyenDungResponse getTinById(Long id) {
         TinTuyenDung tin = tinTuyenDungRepository.findByIdAndNotDeleted(id)
-                .orElseThrow(() -> new ResourceNotFoundException("TinTuyenDung", id));
+                .orElseThrow(() -> new BaseBusinessException(ErrorCode.JOB_NOT_FOUND,
+                        "Không tìm thấy tin tuyển dụng ID: " + id));
         return mapToResponse(tin);
     }
 
@@ -107,7 +108,7 @@ public class TinTuyenDungServiceImpl implements TinTuyenDungService {
         NhaTuyenDung ntd = findNtdOrThrow(taiKhoanId);
         TinTuyenDung tin = findActiveTinOrThrow(id);
         verifyTinOwnership(ntd, tin);
-        tin.setTrangThai(TrangThaiTin.DONG.getValue());
+        tin.setTrangThai(TrangThaiTin.DONG);
         tinTuyenDungRepository.save(tin);
     }
 
@@ -164,17 +165,18 @@ public class TinTuyenDungServiceImpl implements TinTuyenDungService {
     public JobStatisticsResponse getJobStatistics(Long tinId, Long taiKhoanId) {
         NhaTuyenDung ntd = findNtdOrThrow(taiKhoanId);
         TinTuyenDung tin = tinTuyenDungRepository.findByIdIncludingDeleted(tinId)
-                .orElseThrow(() -> new BusinessException("Tin không tồn tại: " + tinId));
+                .orElseThrow(() -> new BaseBusinessException(ErrorCode.JOB_NOT_FOUND,
+                        "Không tìm thấy tin tuyển dụng ID: " + tinId));
         verifyTinOwnership(ntd, tin);
         return JobStatisticsResponse.builder()
                 .tinId(tinId)
                 .tieuDe(tin.getTieuDe())
                 .tongSoDon(tinTuyenDungRepository.countTotalApplications(tinId))
-                .soMoi(tinTuyenDungRepository.countApplicationsByStatus(tinId, TrangThaiDon.MOI.getValue()))
-                .soReview(tinTuyenDungRepository.countApplicationsByStatus(tinId, TrangThaiDon.REVIEW.getValue()))
-                .soPhongVan(tinTuyenDungRepository.countApplicationsByStatus(tinId, TrangThaiDon.PHONG_VAN.getValue()))
-                .soOffer(tinTuyenDungRepository.countApplicationsByStatus(tinId, TrangThaiDon.OFFER.getValue()))
-                .soTuChoi(tinTuyenDungRepository.countApplicationsByStatus(tinId, TrangThaiDon.TU_CHOI.getValue()))
+                .soMoi(tinTuyenDungRepository.countApplicationsByStatus(tinId, TrangThaiDon.MOI))
+                .soReview(tinTuyenDungRepository.countApplicationsByStatus(tinId, TrangThaiDon.REVIEW))
+                .soPhongVan(tinTuyenDungRepository.countApplicationsByStatus(tinId, TrangThaiDon.PHONG_VAN))
+                .soOffer(tinTuyenDungRepository.countApplicationsByStatus(tinId, TrangThaiDon.OFFER))
+                .soTuChoi(tinTuyenDungRepository.countApplicationsByStatus(tinId, TrangThaiDon.TU_CHOI))
                 .build();
     }
 
@@ -182,12 +184,13 @@ public class TinTuyenDungServiceImpl implements TinTuyenDungService {
 
     private NhaTuyenDung findNtdOrThrow(Long taiKhoanId) {
         return nhaTuyenDungRepository.findByTaiKhoanId(taiKhoanId)
-                .orElseThrow(() -> new BusinessException("Không tìm thấy nhà tuyển dụng"));
+                .orElseThrow(() -> new BaseBusinessException(ErrorCode.RECRUITER_NOT_FOUND));
     }
 
     private TinTuyenDung findActiveTinOrThrow(Long id) {
         return tinTuyenDungRepository.findByIdAndNotDeleted(id)
-                .orElseThrow(() -> new BusinessException("Tin không tồn tại hoặc đã bị đóng: " + id));
+                .orElseThrow(() -> new BaseBusinessException(ErrorCode.JOB_NOT_FOUND,
+                        "Tin tuyển dụng không tồn tại hoặc đã bị đóng: " + id));
     }
 
     /**
@@ -197,13 +200,14 @@ public class TinTuyenDungServiceImpl implements TinTuyenDungService {
      */
     private void verifyTinOwnership(NhaTuyenDung ntd, TinTuyenDung tin) {
         if (!tin.getNhaTuyenDung().getId().equals(ntd.getId())) {
-            throw new BusinessException("Bạn không có quyền thao tác với tin này");
+            throw new BaseBusinessException(ErrorCode.UNAUTHORIZED_ACCESS,
+                    "Bạn không có quyền thao tác với tin này");
         }
     }
 
     private void validateSalary(BigDecimal min, BigDecimal max) {
         if (min != null && max != null && min.compareTo(max) > 0) {
-            throw new BusinessException("Mức lương min không được lớn hơn max");
+            throw new BaseBusinessException(ErrorCode.SALARY_RANGE_INVALID);
         }
     }
 
@@ -220,7 +224,7 @@ public class TinTuyenDungServiceImpl implements TinTuyenDungService {
     }
 
     private TinTuyenDungResponse mapToResponse(TinTuyenDung tin) {
-        TrangThaiTin trangThai = TrangThaiTin.fromValue(tin.getTrangThai());
+        TrangThaiTin trangThai = tin.getTrangThai();
         return TinTuyenDungResponse.builder()
                 .id(tin.getId())
                 .nhaTuyenDungId(tin.getNhaTuyenDung().getId())
@@ -237,7 +241,7 @@ public class TinTuyenDungServiceImpl implements TinTuyenDungService {
                 .capBacYeuCau(tin.getCapBacYeuCau())
                 .hinhThucLamViec(tin.getHinhThucLamViec())
                 .hanNop(tin.getHanNop())
-                .trangThai(tin.getTrangThai())
+                .trangThai(tin.getTrangThai().getValue())
                 .trangThaiLabel(trangThai.getLabel())
                 .ngayTao(tin.getNgayTao())
                 .ngayCapNhat(tin.getNgayCapNhat())

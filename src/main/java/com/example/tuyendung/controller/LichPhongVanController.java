@@ -1,6 +1,7 @@
 package com.example.tuyendung.controller;
 
 import com.example.tuyendung.common.ApiResponse;
+import com.example.tuyendung.common.Constants;
 import com.example.tuyendung.dto.request.LichPhongVanRequest;
 import com.example.tuyendung.dto.request.RescheduleRequest;
 import com.example.tuyendung.dto.response.LichPhongVanResponse;
@@ -48,7 +49,7 @@ public class LichPhongVanController {
      * D9: Tạo lịch phỏng vấn (chỉ RECRUITER).
      * POST /api/interviews
      */
-    @PreAuthorize("hasRole('RECRUITER') or hasRole('NHA_TUYEN_DUNG')")
+    @PreAuthorize(Constants.ROLE_NTD_EXPR)
     @PostMapping
     public ResponseEntity<ApiResponse<LichPhongVanResponse>> createInterview(
             @Valid @RequestBody LichPhongVanRequest request,
@@ -68,7 +69,7 @@ public class LichPhongVanController {
      * không có endpoint nào gọi → expose ra đây để loại bỏ dead code.
      * Không xung đột route vì "/my" khác với "/{applicationId}/list".
      */
-    @PreAuthorize("hasRole('RECRUITER') or hasRole('NHA_TUYEN_DUNG')")
+    @PreAuthorize(Constants.ROLE_NTD_EXPR)
     @GetMapping("/my")
     public ResponseEntity<ApiResponse<Page<LichPhongVanResponse>>> getMyInterviews(
             @RequestParam(defaultValue = "0") int page,
@@ -116,7 +117,7 @@ public class LichPhongVanController {
      * D12: Cập nhật toàn bộ thông tin lịch phỏng vấn (chỉ RECRUITER).
      * PUT /api/interviews/{id}
      */
-    @PreAuthorize("hasRole('RECRUITER') or hasRole('NHA_TUYEN_DUNG')")
+    @PreAuthorize(Constants.ROLE_NTD_EXPR)
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<LichPhongVanResponse>> updateInterview(
             @PathVariable Long id,
@@ -131,7 +132,7 @@ public class LichPhongVanController {
      * D13: Hủy lịch phỏng vấn (chỉ RECRUITER).
      * DELETE /api/interviews/{id}
      */
-    @PreAuthorize("hasRole('RECRUITER') or hasRole('NHA_TUYEN_DUNG')")
+    @PreAuthorize(Constants.ROLE_NTD_EXPR)
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> cancelInterview(
             @PathVariable Long id,
@@ -148,7 +149,7 @@ public class LichPhongVanController {
      * Dùng RescheduleRequest (chỉ có thoiGianBatDau, thoiGianKetThuc, diaDiemHoacLink)
      * thay vì LichPhongVanRequest để tránh client gửi nhầm tieuDeVong/hinhThuc bị ignore.
      */
-    @PreAuthorize("hasRole('RECRUITER') or hasRole('NHA_TUYEN_DUNG')")
+    @PreAuthorize(Constants.ROLE_NTD_EXPR)
     @PatchMapping("/{id}/reschedule")
     public ResponseEntity<ApiResponse<LichPhongVanResponse>> rescheduleInterview(
             @PathVariable Long id,

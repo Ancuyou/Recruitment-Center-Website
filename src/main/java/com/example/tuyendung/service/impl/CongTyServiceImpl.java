@@ -5,9 +5,8 @@ import com.example.tuyendung.dto.response.CongTyResponse;
 import com.example.tuyendung.entity.CongTy;
 import com.example.tuyendung.entity.NhaTuyenDung;
 import com.example.tuyendung.entity.enums.NganhNgheEnum;
-import com.example.tuyendung.exception.BusinessException;
-import com.example.tuyendung.exception.DuplicateResourceException;
-import com.example.tuyendung.exception.ResourceNotFoundException;
+import com.example.tuyendung.exception.BaseBusinessException;
+import com.example.tuyendung.exception.ErrorCode;
 import com.example.tuyendung.repository.CongTyRepository;
 import com.example.tuyendung.repository.NhaTuyenDungRepository;
 import com.example.tuyendung.service.CongTyService;
@@ -44,9 +43,12 @@ public class CongTyServiceImpl implements CongTyService {
     @Transactional
     public CongTyResponse createCongTy(CongTyRequest request, Long taiKhoanId) {
         log.info("B1: Tạo công ty mới bởi tài khoản {}", taiKhoanId);
+
         if (request.getMaSoThue() != null && congTyRepository.existsByMaSoThue(request.getMaSoThue())) {
-            throw new DuplicateResourceException("Mã số thuế", request.getMaSoThue());
+            throw new BaseBusinessException(ErrorCode.DUPLICATE_RESOURCE,
+                    "Mã số thuế '" + request.getMaSoThue() + "' đã được đăng ký");
         }
+
         CongTy congTy = new CongTy();
         applyRequest(request, congTy);
         CongTy saved = congTyRepository.save(congTy);
@@ -86,7 +88,8 @@ public class CongTyServiceImpl implements CongTyService {
         if (request.getMaSoThue() != null
                 && !request.getMaSoThue().equals(congTy.getMaSoThue())
                 && congTyRepository.existsByMaSoThue(request.getMaSoThue())) {
-            throw new DuplicateResourceException("Mã số thuế", request.getMaSoThue());
+            throw new BaseBusinessException(ErrorCode.DUPLICATE_RESOURCE,
+                    "Mã số thuế '" + request.getMaSoThue() + "' đã được đăng ký");
         }
         applyRequest(request, congTy);
         return mapToResponse(congTyRepository.save(congTy));
@@ -99,13 +102,13 @@ public class CongTyServiceImpl implements CongTyService {
     public void deleteCongTy(Long id) {
         log.info("B5: Xóa công ty ID: {}", id);
         CongTy congTy = findOrThrow(id);
-        
-        // Guard Clause: Tránh lỗi 500 Internal Server Error (Foreign Key Constraint Violation)
-        // Không thể xóa cứng công ty nếu vẫn còn dữ liệu con ràng buộc trong database
+
+        // Guard Clause: Không thể xóa cứng công ty khi vẫn còn ràng buộc FK trong DB
         if (!congTy.getNhaTuyenDungs().isEmpty() || !congTy.getTinTuyenDungs().isEmpty()) {
-            throw new BusinessException("Không thể xóa công ty vì đang chứa dữ liệu nhà tuyển dụng hoặc tin tuyển dụng.");
+            throw new BaseBusinessException(ErrorCode.VALIDATION_ERROR,
+                    "Không thể xóa công ty vì vẫn còn dữ liệu nhà tuyển dụng hoặc tin tuyển dụng liên kết");
         }
-        
+
         congTyRepository.delete(congTy);
         log.info("Xóa công ty thành công");
     }
@@ -146,20 +149,29 @@ public class CongTyServiceImpl implements CongTyService {
     @Transactional(readOnly = true)
     public Long getCongTyIdByTaiKhoan(Long taiKhoanId) {
         return nhaTuyenDungRepository.findByTaiKhoanId(taiKhoanId)
-                .orElseThrow(() -> new BusinessException("Không tìm thấy nhà tuyển dụng"))
+                .orElseThrow(() -> new BaseBusinessException(ErrorCode.RECRUITER_NOT_FOUND))
                 .getCongTy().getId();
     }
 
+    /**
+     * Guard: tìm CongTy hoặc throw lỗi chuẩn.
+     */
     private CongTy findOrThrow(Long id) {
         return congTyRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("CongTy", id));
+                .orElseThrow(() -> new BaseBusinessException(ErrorCode.RESOURCE_NOT_FOUND,
+                        "Không tìm thấy công ty ID: " + id));
     }
 
+    /**
+     * Guard: kiểm tra tài khoản có quyền sở hữu công ty không.
+     * SRP – tách biệt authorization logic khỏi business logic.
+     */
     private void verifyOwnership(Long taiKhoanId, Long congTyId) {
         NhaTuyenDung ntd = nhaTuyenDungRepository.findByTaiKhoanId(taiKhoanId)
-                .orElseThrow(() -> new BusinessException("Không tìm thấy nhà tuyển dụng"));
+                .orElseThrow(() -> new BaseBusinessException(ErrorCode.RECRUITER_NOT_FOUND));
         if (!ntd.getCongTy().getId().equals(congTyId)) {
-            throw new BusinessException("Bạn không có quyền thao tác với công ty này");
+            throw new BaseBusinessException(ErrorCode.UNAUTHORIZED_ACCESS,
+                    "Bạn không có quyền thao tác với công ty này");
         }
     }
 

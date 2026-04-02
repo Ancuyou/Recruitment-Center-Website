@@ -4,7 +4,8 @@ import com.example.tuyendung.dto.response.ThongBaoResponse;
 import com.example.tuyendung.entity.TaiKhoan;
 import com.example.tuyendung.entity.ThongBao;
 import com.example.tuyendung.entity.enums.LoaiThongBao;
-import com.example.tuyendung.exception.BusinessException;
+import com.example.tuyendung.exception.BaseBusinessException;
+import com.example.tuyendung.exception.ErrorCode;
 import com.example.tuyendung.repository.TaiKhoanRepository;
 import com.example.tuyendung.repository.ThongBaoRepository;
 import com.example.tuyendung.service.ThongBaoService;
@@ -42,7 +43,8 @@ public class ThongBaoServiceImpl implements ThongBaoService {
     public void createNotification(Long taiKhoanId, String tieuDe, String noiDung,
                                    LoaiThongBao loai, String lienKet) {
         TaiKhoan tk = taiKhoanRepository.findById(taiKhoanId)
-                .orElseThrow(() -> new BusinessException("Không tìm thấy tài khoản người nhận"));
+                .orElseThrow(() -> new BaseBusinessException(ErrorCode.USER_NOT_FOUND,
+                        "Không tìm thấy tài khoản người nhận (ID: " + taiKhoanId + ")"));
 
         ThongBao tb = ThongBao.builder()
                 .taiKhoan(tk)
@@ -75,14 +77,16 @@ public class ThongBaoServiceImpl implements ThongBaoService {
     @Transactional
     public void markAsRead(Long id, Long taiKhoanId) {
         ThongBao tb = thongBaoRepository.findById(id)
-                .orElseThrow(() -> new BusinessException("Không tìm thấy thông báo"));
+                .orElseThrow(() -> new BaseBusinessException(ErrorCode.NOTIFICATION_NOT_FOUND));
 
         if (!tb.getTaiKhoan().getId().equals(taiKhoanId)) {
-            throw new BusinessException(403, "Không có quyền thao tác thông báo này");
+            throw new BaseBusinessException(ErrorCode.UNAUTHORIZED_ACCESS,
+                    "Không có quyền thao tác thông báo này");
         }
 
         tb.setDaDoc(true);
         thongBaoRepository.save(tb);
+        log.debug("Đã đánh dấu thông báo {} là đã đọc", id);
     }
 
     @Override

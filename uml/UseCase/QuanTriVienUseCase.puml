@@ -1,0 +1,57 @@
+@startuml UC03_Admin
+left to right direction
+skinparam actorStyle awesome
+skinparam defaultFontName Arial
+skinparam nodesep 70
+skinparam ranksep 280
+skinparam linetype ortho
+
+skinparam usecase {
+  BackgroundColor #FCE4EC
+  BorderColor #880E4F
+  FontSize 12
+}
+skinparam package {
+  BackgroundColor #FDF6F9
+  BorderColor #F48FB1
+  FontSize 12
+  FontStyle bold
+  Padding 18
+}
+skinparam rectangle {
+  BackgroundColor #FCE4EC
+  BorderColor #880E4F
+  FontSize 14
+  FontStyle bold
+}
+
+actor "Quan tri vien" as ADMIN
+
+rectangle "He thong Tuyen dung - Goc nhin Quan tri vien" {
+
+  package "Xac thuc" {
+    usecase "UC01\nXac thuc tai khoan"                     as UC01
+  }
+
+  package "Quan ly danh muc he thong" {
+    usecase "UC03\nQuan ly danh muc\n(Nganh nghe, Khu vuc)" as UC03
+    usecase "UC17\nQuan ly ky nang he thong"               as UC17
+  }
+
+  package "Giam sat noi dung" {
+    usecase "UC11\nQuan ly cong ty"                        as UC11
+    usecase "UC12\nQuan ly tin tuyen dung"                 as UC12
+  }
+
+  package "Quan ly nguoi dung" {
+    usecase "UC18\nQuan ly tai khoan nguoi dung"           as UC18
+  }
+}
+
+ADMIN -[#880E4F]-> UC01
+ADMIN -[#880E4F]-> UC03
+ADMIN -[#880E4F]-> UC17
+ADMIN -[#880E4F]-> UC11
+ADMIN -[#880E4F]-> UC12
+ADMIN -[#880E4F]-> UC18
+@enduml

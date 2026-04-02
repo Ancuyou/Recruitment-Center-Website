@@ -6,17 +6,20 @@ import com.example.tuyendung.dto.response.LichPhongVanResponse;
 import com.example.tuyendung.entity.DonUngTuyen;
 import com.example.tuyendung.entity.LichPhongVan;
 import com.example.tuyendung.entity.NhaTuyenDung;
+import com.example.tuyendung.entity.TaiKhoan;
+import com.example.tuyendung.entity.UngVien;
 import com.example.tuyendung.entity.enums.LoaiThongBao;
 import com.example.tuyendung.entity.enums.TrangThaiPhongVan;
-import com.example.tuyendung.exception.ApplicationNotFoundException;
-import com.example.tuyendung.exception.InterviewNotFoundException;
-import com.example.tuyendung.exception.InvalidInterviewTimeException;
-import com.example.tuyendung.exception.UnauthorizedApplicationAccessException;
+import com.example.tuyendung.entity.enums.VaiTroTaiKhoan;
+import com.example.tuyendung.exception.BaseBusinessException;
+import com.example.tuyendung.exception.ErrorCode;
 import com.example.tuyendung.repository.DonUngTuyenRepository;
 import com.example.tuyendung.repository.LichPhongVanRepository;
+import com.example.tuyendung.repository.NhaTuyenDungRepository;
+import com.example.tuyendung.repository.TaiKhoanRepository;
+import com.example.tuyendung.repository.UngVienRepository;
 import com.example.tuyendung.service.LichPhongVanService;
 import com.example.tuyendung.service.ThongBaoService;
-import com.example.tuyendung.service.util.ApplicationAccessVerifier;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -49,7 +52,9 @@ public class LichPhongVanServiceImpl implements LichPhongVanService {
     private final LichPhongVanRepository lichPhongVanRepository;
     private final DonUngTuyenRepository donUngTuyenRepository;
     private final ThongBaoService thongBaoService;
-    private final ApplicationAccessVerifier accessVerifier;
+    private final UngVienRepository ungVienRepository;
+    private final NhaTuyenDungRepository nhaTuyenDungRepository;
+    private final TaiKhoanRepository taiKhoanRepository;
 
     // =========================================================================
     // D9: Tạo lịch phỏng vấn
@@ -65,7 +70,7 @@ public class LichPhongVanServiceImpl implements LichPhongVanService {
         NhaTuyenDung ntd = findNhaTuyenDungByTaiKhoan(taiKhoanId);
 
         DonUngTuyen don = donUngTuyenRepository.findByIdWithDetails(request.getDonUngTuyenId())
-                .orElseThrow(() -> new ApplicationNotFoundException(request.getDonUngTuyenId()));
+                .orElseThrow(() -> new BaseBusinessException(ErrorCode.APPLICATION_NOT_FOUND));
 
         verifyNtdOwnsDon(don, ntd);
 
@@ -99,7 +104,7 @@ public class LichPhongVanServiceImpl implements LichPhongVanService {
     public List<LichPhongVanResponse> getInterviewsByApplication(Long donUngTuyenId, Long taiKhoanId) {
         // Verify đơn tồn tại
         DonUngTuyen don = donUngTuyenRepository.findByIdWithDetails(donUngTuyenId)
-                .orElseThrow(() -> new ApplicationNotFoundException(donUngTuyenId));
+                .orElseThrow(() -> new BaseBusinessException(ErrorCode.APPLICATION_NOT_FOUND));
 
         // Kiểm tra quyền: UV chủ đơn hoặc NTD chủ tin
         verifyInterviewAccess(don, taiKhoanId);
@@ -211,7 +216,7 @@ public class LichPhongVanServiceImpl implements LichPhongVanService {
         verifyNtdOwnsLich(lich, ntd);
 
         if (lich.getTrangThaiPhongVan() == TrangThaiPhongVan.HUY) {
-            throw new InvalidInterviewTimeException("Lịch này đã được hủy trước đó");
+            throw new BaseBusinessException(ErrorCode.INVALID_INTERVIEW_TIME, "Lịch này đã được hủy trước đó");
         }
 
         lich.setTrangThaiPhongVan(TrangThaiPhongVan.HUY);
@@ -227,31 +232,32 @@ public class LichPhongVanServiceImpl implements LichPhongVanService {
 
     private LichPhongVan findLichById(Long id) {
         return lichPhongVanRepository.findById(id)
-                .orElseThrow(() -> new InterviewNotFoundException(id));
+                .orElseThrow(() -> new BaseBusinessException(ErrorCode.INTERVIEW_NOT_FOUND));
     }
 
     private NhaTuyenDung findNhaTuyenDungByTaiKhoan(Long taiKhoanId) {
-        return accessVerifier.findNhaTuyenDungByTaiKhoan(taiKhoanId);
+        return nhaTuyenDungRepository.findByTaiKhoanId(taiKhoanId)
+                .orElseThrow(() -> new BaseBusinessException(ErrorCode.USER_NOT_FOUND, "Không tìm thấy nhà tuyển dụng"));
     }
 
     /** Validate khoảng thời gian phỏng vấn hợp lệ. */
     private void validateTimeRange(LocalDateTime start, LocalDateTime end) {
         if (!end.isAfter(start)) {
-            throw new InvalidInterviewTimeException();
+            throw new BaseBusinessException(ErrorCode.INVALID_INTERVIEW_TIME);
         }
     }
 
     /** Kiểm tra NTD là chủ sở hữu của tin liên quan đến đơn. */
     private void verifyNtdOwnsDon(DonUngTuyen don, NhaTuyenDung ntd) {
         if (!don.getTinTuyenDung().getNhaTuyenDung().getId().equals(ntd.getId())) {
-            throw new UnauthorizedApplicationAccessException(don.getId());
+            throw new BaseBusinessException(ErrorCode.UNAUTHORIZED_ACCESS);
         }
     }
 
     /** Kiểm tra NTD là người phỏng vấn của lịch. */
     private void verifyNtdOwnsLich(LichPhongVan lich, NhaTuyenDung ntd) {
         if (!lich.getDonUngTuyen().getTinTuyenDung().getNhaTuyenDung().getId().equals(ntd.getId())) {
-            throw new UnauthorizedApplicationAccessException();
+            throw new BaseBusinessException(ErrorCode.UNAUTHORIZED_ACCESS);
         }
     }
 
@@ -261,7 +267,18 @@ public class LichPhongVanServiceImpl implements LichPhongVanService {
      * - NHA_TUYEN_DUNG: chỉ xem lịch thuộc tin của mình.
      */
     private void verifyInterviewAccess(DonUngTuyen don, Long taiKhoanId) {
-        accessVerifier.verifyApplicationAccess(don, taiKhoanId);
+        TaiKhoan tk = taiKhoanRepository.findById(taiKhoanId)
+                .orElseThrow(() -> new BaseBusinessException(ErrorCode.USER_NOT_FOUND));
+
+        if (tk.getVaiTro() == VaiTroTaiKhoan.UNG_VIEN) {
+            UngVien uv = ungVienRepository.findByTaiKhoanId(taiKhoanId).orElse(null);
+            if (uv == null || !don.getHoSoCv().getUngVien().getId().equals(uv.getId())) {
+                throw new BaseBusinessException(ErrorCode.UNAUTHORIZED_ACCESS);
+            }
+        } else if (tk.getVaiTro() == VaiTroTaiKhoan.NHA_TUYEN_DUNG) {
+            verifyNtdOwnsDon(don, findNhaTuyenDungByTaiKhoan(taiKhoanId));
+        }
+        // ADMIN: cho phép bỏ qua
     }
 
     /** Gửi thông báo đến ứng viên của đơn. */

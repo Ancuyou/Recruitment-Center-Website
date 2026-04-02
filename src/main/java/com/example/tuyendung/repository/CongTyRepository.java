@@ -17,8 +17,8 @@ public interface CongTyRepository extends JpaRepository<CongTy, Long> {
 
     /**
      * Đếm số tin đang mở (trangThai=1) của một công ty — dùng thay vì lazy-load toàn collection
-     * trangThai = 1 tương ứng TrangThaiTin.MO.getValue()
+     * so sánh theo enum TrangThaiTin.MO để khớp với kiểu của entity
      */
-    @Query("SELECT COUNT(t) FROM TinTuyenDung t WHERE t.congTy.id = :congTyId AND t.trangThai = 1")
+    @Query("SELECT COUNT(t) FROM TinTuyenDung t WHERE t.congTy.id = :congTyId AND t.trangThai = com.example.tuyendung.entity.enums.TrangThaiTin.MO")
     long countActiveJobsByCongTyId(@Param("congTyId") Long congTyId);
-}
+}

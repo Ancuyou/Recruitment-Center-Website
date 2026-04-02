@@ -5,16 +5,16 @@ import com.example.tuyendung.dto.response.JobSuggestionResponse;
 import com.example.tuyendung.dto.response.MatchScoreResponse;
 import com.example.tuyendung.entity.ChiTietKyNangCv;
 import com.example.tuyendung.entity.CongTy;
-import com.example.tuyendung.entity.CtKyNangTin;
+import com.example.tuyendung.entity.id.ChiTietKyNangTin;
 import com.example.tuyendung.entity.HoSoCv;
 import com.example.tuyendung.entity.TinTuyenDung;
 import com.example.tuyendung.entity.UngVien;
-import com.example.tuyendung.exception.ResourceNotFoundException;
+import com.example.tuyendung.exception.BaseBusinessException;
+import com.example.tuyendung.exception.ErrorCode;
 import com.example.tuyendung.repository.*;
 import com.example.tuyendung.service.MatchingService;
 import com.example.tuyendung.strategy.SkillMatchingStrategy;
 import com.example.tuyendung.util.TimeProvider;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
@@ -25,13 +25,13 @@ import java.util.stream.Collectors;
 
 /**
  * Service Implementation cho Matching Algorithm (E1-E3)
- * 
+ *
  * SOLID Principles Applied:
  * - Strategy Pattern: Uses pluggable SkillMatchingStrategy
  * - Dependency Inversion: Depends on strategy interface
  * - Single Responsibility: Orchestrates matching logic
  * - Open/Closed: Can add new strategies without modifying this
- * 
+ *
  * Design Patterns:
  * - Strategy Pattern: Multiple matching algorithms
  * - Factory Pattern: Select strategy by name
@@ -39,7 +39,6 @@ import java.util.stream.Collectors;
  */
 @Slf4j
 @Service
-@RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class MatchingServiceImpl implements MatchingService {
 
@@ -49,14 +48,33 @@ public class MatchingServiceImpl implements MatchingService {
     private final TinTuyenDungRepository tinTuyenDungRepository;
     private final ChiTietKyNangCvRepository chiTietKyNangCvRepository;
     private final CtKyNangTinRepository ctKyNangTinRepository;
-    
+
     @Qualifier("cosineSimilarityStrategy")
     private final SkillMatchingStrategy defaultStrategy;
-    
+
     @Qualifier("keywordMatchingStrategy")
     private final SkillMatchingStrategy keywordStrategy;
 
     private static final Integer DEFAULT_LIMIT = 10;
+
+    public MatchingServiceImpl(
+            TimeProvider timeProvider,
+            MatchingRepository matchingRepository,
+            HoSoCvRepository hoSoCvRepository,
+            TinTuyenDungRepository tinTuyenDungRepository,
+            ChiTietKyNangCvRepository chiTietKyNangCvRepository,
+            CtKyNangTinRepository ctKyNangTinRepository,
+            @Qualifier("cosineSimilarityStrategy") SkillMatchingStrategy defaultStrategy,
+            @Qualifier("keywordMatchingStrategy") SkillMatchingStrategy keywordStrategy) {
+        this.timeProvider = timeProvider;
+        this.matchingRepository = matchingRepository;
+        this.hoSoCvRepository = hoSoCvRepository;
+        this.tinTuyenDungRepository = tinTuyenDungRepository;
+        this.chiTietKyNangCvRepository = chiTietKyNangCvRepository;
+        this.ctKyNangTinRepository = ctKyNangTinRepository;
+        this.defaultStrategy = defaultStrategy;
+        this.keywordStrategy = keywordStrategy;
+    }
 
     @Override
     public List<CandidateSuggestionResponse> suggestCandidatesForJob(Long jobId, Integer limit) {
@@ -64,14 +82,15 @@ public class MatchingServiceImpl implements MatchingService {
 
         // Verify job exists
         TinTuyenDung job = tinTuyenDungRepository.findByIdAndNotDeleted(jobId)
-                .orElseThrow(() -> new ResourceNotFoundException("TinTuyenDung", jobId));
+                .orElseThrow(() -> new BaseBusinessException(ErrorCode.JOB_NOT_FOUND,
+                        "Không tìm thấy tin tuyển dụng ID: " + jobId));
 
         Integer finalLimit = limit != null ? limit : DEFAULT_LIMIT;
 
         // Get job skills
-        List<CtKyNangTin> jobSkills = ctKyNangTinRepository.findByJobIdWithKyNang(jobId);
+        List<ChiTietKyNangTin> jobSkills = ctKyNangTinRepository.findByJobIdWithKyNang(jobId);
         if (jobSkills.isEmpty()) {
-            log.warn("Job {} không có kỽ năng yêu cầu", jobId);
+            log.warn("Job {} chưa có kỹ năng yêu cầu – không thể gợi ý ứng viên", jobId);
             return new ArrayList<>();
         }
 
@@ -81,6 +100,7 @@ public class MatchingServiceImpl implements MatchingService {
         // Calculate scores for each candidate and limit results
         List<CandidateSuggestionResponse> suggestions = candidateCvIds.stream()
                 .map(cvId -> calculateCandidateSuggestion(cvId, jobId, job, jobSkills))
+                .filter(Objects::nonNull)
                 .sorted(Comparator.comparingDouble(CandidateSuggestionResponse::getMatchScore).reversed())
                 .limit(finalLimit)
                 .collect(Collectors.toList());
@@ -95,18 +115,20 @@ public class MatchingServiceImpl implements MatchingService {
 
         // Verify candidate exists
         hoSoCvRepository.findByIdAndNotDeleted(candidateId)
-                .orElseThrow(() -> new ResourceNotFoundException("HoSoCV", candidateId));
+                .orElseThrow(() -> new BaseBusinessException(ErrorCode.CV_NOT_FOUND,
+                        "Không tìm thấy hồ sơ CV ID: " + candidateId));
 
         Integer finalLimit = limit != null ? limit : DEFAULT_LIMIT;
 
         // Get candidate's default CV
         HoSoCv cv = hoSoCvRepository.findDefaultCvByUngVienId(candidateId)
-                .orElseThrow(() -> new ResourceNotFoundException("Ứng viên không có CV chính"));
+                .orElseThrow(() -> new BaseBusinessException(ErrorCode.CV_NOT_FOUND,
+                        "Ứng viên chưa có CV chính, vui lòng thiết lập CV chính trước"));
 
         // Get candidate's skills
         List<ChiTietKyNangCv> candidateSkills = chiTietKyNangCvRepository.findByHoSoCvId(cv.getId());
         if (candidateSkills.isEmpty()) {
-            log.warn("CV {} không có kỽ năng", cv.getId());
+            log.warn("CV {} chưa có kỹ năng – không thể gợi ý công việc", cv.getId());
             return new ArrayList<>();
         }
 
@@ -116,6 +138,7 @@ public class MatchingServiceImpl implements MatchingService {
         // Calculate scores for each job and limit results
         List<JobSuggestionResponse> suggestions = matchingJobIds.stream()
                 .map(jobId -> calculateJobSuggestion(cv.getId(), jobId, candidateSkills))
+                .filter(Objects::nonNull)
                 .sorted(Comparator.comparingDouble(JobSuggestionResponse::getMatchScore).reversed())
                 .limit(finalLimit)
                 .collect(Collectors.toList());
@@ -136,14 +159,16 @@ public class MatchingServiceImpl implements MatchingService {
 
         // Verify CV and Job exist
         hoSoCvRepository.findByIdAndNotDeleted(cvId)
-                .orElseThrow(() -> new ResourceNotFoundException("HoSoCV", cvId));
+                .orElseThrow(() -> new BaseBusinessException(ErrorCode.CV_NOT_FOUND,
+                        "Không tìm thấy hồ sơ CV ID: " + cvId));
 
         tinTuyenDungRepository.findByIdAndNotDeleted(jobId)
-                .orElseThrow(() -> new ResourceNotFoundException("TinTuyenDung", jobId));
+                .orElseThrow(() -> new BaseBusinessException(ErrorCode.JOB_NOT_FOUND,
+                        "Không tìm thấy tin tuyển dụng ID: " + jobId));
 
         // Get skills
         List<ChiTietKyNangCv> cvSkills = chiTietKyNangCvRepository.findByHoSoCvId(cvId);
-        List<CtKyNangTin> jobSkills = ctKyNangTinRepository.findByJobIdAndNotDeleted(jobId);
+        List<ChiTietKyNangTin> jobSkills = ctKyNangTinRepository.findByJobIdAndNotDeleted(jobId);
 
         // Build skill maps
         List<Long> cvSkillIds = cvSkills.stream()
@@ -163,7 +188,7 @@ public class MatchingServiceImpl implements MatchingService {
         Map<Long, Integer> jobSkillRequirements = jobSkills.stream()
                 .collect(Collectors.toMap(
                         s -> s.getKyNang().getId(),
-                        CtKyNangTin::getYeucau
+                        ChiTietKyNangTin::getYeucau
                 ));
 
         // Select strategy
@@ -188,12 +213,13 @@ public class MatchingServiceImpl implements MatchingService {
      * Helper: Calculate suggestion for candidate
      */
     private CandidateSuggestionResponse calculateCandidateSuggestion(
-            Long cvId, Long jobId, TinTuyenDung job, List<CtKyNangTin> jobSkills) {
+            Long cvId, Long jobId, TinTuyenDung job, List<ChiTietKyNangTin> jobSkills) {
 
         MatchScoreResponse matchScore = calculateMatchScore(cvId, jobId);
         HoSoCv cv = hoSoCvRepository.findById(cvId).orElse(null);
 
         if (cv == null) {
+            log.warn("Bỏ qua CV {} – không tìm thấy trong DB", cvId);
             return null;
         }
 
@@ -217,11 +243,13 @@ public class MatchingServiceImpl implements MatchingService {
     /**
      * Helper: Calculate suggestion for job
      */
-    private JobSuggestionResponse calculateJobSuggestion(Long cvId, Long jobId, List<ChiTietKyNangCv> cvSkills) {
+    private JobSuggestionResponse calculateJobSuggestion(Long cvId, Long jobId,
+                                                          List<ChiTietKyNangCv> cvSkills) {
         MatchScoreResponse matchScore = calculateMatchScore(cvId, jobId);
         TinTuyenDung job = tinTuyenDungRepository.findById(jobId).orElse(null);
 
         if (job == null) {
+            log.warn("Bỏ qua Job {} – không tìm thấy trong DB", jobId);
             return null;
         }
 
@@ -251,5 +279,4 @@ public class MatchingServiceImpl implements MatchingService {
         }
         return defaultStrategy; // Default: Cosine Similarity
     }
-
 }

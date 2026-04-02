@@ -5,7 +5,8 @@ import com.example.tuyendung.dto.response.DashboardRecruiterResponse;
 import com.example.tuyendung.entity.NhaTuyenDung;
 import com.example.tuyendung.entity.UngVien;
 import com.example.tuyendung.entity.enums.TrangThaiDon;
-import com.example.tuyendung.exception.BusinessException;
+import com.example.tuyendung.exception.BaseBusinessException;
+import com.example.tuyendung.exception.ErrorCode;
 import com.example.tuyendung.repository.DonUngTuyenRepository;
 import com.example.tuyendung.repository.LichPhongVanRepository;
 import com.example.tuyendung.repository.NhaTuyenDungRepository;
@@ -33,16 +34,18 @@ public class DashboardServiceImpl implements DashboardService {
     @Override
     @Transactional(readOnly = true)
     public DashboardCandidateResponse getCandidateDashboard(Long taiKhoanId) {
-        UngVien uv = ungVienRepository.findByTaiKhoanId(taiKhoanId)
-                .orElseThrow(() -> new BusinessException("Không tìm thấy thông tin Ứng Viên"));
+        log.info("Lấy dashboard ứng viên cho tài khoản {}", taiKhoanId);
 
-        long tongDon = donUngTuyenRepository.countByUngVienId(uv.getId());
-        // Số đơn đang chờ = MỚI (MOI) + REVIEW
-        long soDonMoi = donUngTuyenRepository.countByUngVienIdAndTrangThai(uv.getId(), TrangThaiDon.MOI.getValue());
-        long soDonReview = donUngTuyenRepository.countByUngVienIdAndTrangThai(uv.getId(), TrangThaiDon.REVIEW.getValue());
-        
-        long soLich = lichPhongVanRepository.countUpcomingByUngVienId(uv.getId());
-        long soThongBao = thongBaoRepository.countUnreadByTaiKhoanId(taiKhoanId);
+        UngVien uv = ungVienRepository.findByTaiKhoanId(taiKhoanId)
+                .orElseThrow(() -> new BaseBusinessException(ErrorCode.CANDIDATE_NOT_FOUND,
+                        "Không tìm thấy thông tin ứng viên cho tài khoản ID: " + taiKhoanId));
+
+        long tongDon  = donUngTuyenRepository.countByUngVienId(uv.getId());
+        // Số đơn đang chờ xử lý = MỚI + REVIEW
+        long soDonMoi    = donUngTuyenRepository.countByUngVienIdAndTrangThai(uv.getId(), TrangThaiDon.MOI);
+        long soDonReview = donUngTuyenRepository.countByUngVienIdAndTrangThai(uv.getId(), TrangThaiDon.REVIEW);
+        long soLich      = lichPhongVanRepository.countUpcomingByUngVienId(uv.getId());
+        long soThongBao  = thongBaoRepository.countUnreadByTaiKhoanId(taiKhoanId);
 
         return DashboardCandidateResponse.builder()
                 .tongSoDonDaNop(tongDon)
@@ -55,13 +58,16 @@ public class DashboardServiceImpl implements DashboardService {
     @Override
     @Transactional(readOnly = true)
     public DashboardRecruiterResponse getRecruiterDashboard(Long taiKhoanId) {
-        NhaTuyenDung ntd = nhaTuyenDungRepository.findByTaiKhoanId(taiKhoanId)
-                .orElseThrow(() -> new BusinessException("Không tìm thấy thông tin Nhà Tuyển Dụng"));
+        log.info("Lấy dashboard nhà tuyển dụng cho tài khoản {}", taiKhoanId);
 
-        long tongTin = tinTuyenDungRepository.countActiveJobsByNhaTuyenDungId(ntd.getId());
-        long tongDon = donUngTuyenRepository.countByNhaTuyenDungId(ntd.getId());
-        long soDonMoi = donUngTuyenRepository.countByNhaTuyenDungIdAndTrangThai(ntd.getId(), TrangThaiDon.MOI.getValue());
-        long soLich = lichPhongVanRepository.countUpcomingByNhaTuyenDungId(ntd.getId());
+        NhaTuyenDung ntd = nhaTuyenDungRepository.findByTaiKhoanId(taiKhoanId)
+                .orElseThrow(() -> new BaseBusinessException(ErrorCode.RECRUITER_NOT_FOUND,
+                        "Không tìm thấy thông tin nhà tuyển dụng cho tài khoản ID: " + taiKhoanId));
+
+        long tongTin  = tinTuyenDungRepository.countActiveJobsByNhaTuyenDungId(ntd.getId());
+        long tongDon  = donUngTuyenRepository.countByNhaTuyenDungId(ntd.getId());
+        long soDonMoi = donUngTuyenRepository.countByNhaTuyenDungIdAndTrangThai(ntd.getId(), TrangThaiDon.MOI);
+        long soLich   = lichPhongVanRepository.countUpcomingByNhaTuyenDungId(ntd.getId());
 
         return DashboardRecruiterResponse.builder()
                 .tongSoTinDangMo(tongTin)

@@ -70,7 +70,9 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(List.of("*"));  // Đổi thành frontend URL khi prod
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
+        // [H3] Bổ sung PATCH vì hệ thống dùng @PatchMapping tại DonUngTuyenController, ThongBaoController, LichPhongVanController.
+        // [H3] TODO: Đổi wildcard "*" thành URL cượng định Frontend khi deploy Production.
         configuration.setAllowedHeaders(Arrays.asList("*"));
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();

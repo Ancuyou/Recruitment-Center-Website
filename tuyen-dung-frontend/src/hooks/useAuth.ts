@@ -4,18 +4,23 @@ import { authService } from '@/services/auth.service';
 /**
  * Hook to access auth state and actions.
  * Wraps Zustand store + service calls.
+ *
+ * getProfile() — lấy thông tin người dùng hiện tại từ GET /api/users/profile
  */
 export function useAuth() {
   const { user, isAuthenticated, setAuth, logout } = useAuthStore();
 
-  const getMe = async () => {
+  const getProfile = async () => {
     try {
-      return await authService.getMe();
+      return await authService.getProfile();
     } catch {
       logout();
       return null;
     }
   };
 
-  return { user, isAuthenticated, setAuth, logout, getMe };
+  /** @deprecated Dùng getProfile() thay thế */
+  const getMe = getProfile;
+
+  return { user, isAuthenticated, setAuth, logout, getProfile, getMe };
 }

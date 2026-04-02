@@ -3,6 +3,8 @@ package com.example.tuyendung.entity;
 import com.example.tuyendung.entity.enums.CapBacYeuCau;
 import com.example.tuyendung.entity.enums.HinhThucLamViec;
 import com.example.tuyendung.entity.enums.KhuVucEnum;
+import com.example.tuyendung.entity.enums.TrangThaiTin;
+import com.example.tuyendung.entity.id.ChiTietKyNangTin;
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
 import jakarta.persistence.ElementCollection;
@@ -79,8 +81,9 @@ public class TinTuyenDung {
     @Column(name = "han_nop", nullable = false)
     private LocalDate hanNop;
 
-    @Column(name = "trang_thai")
-    private Integer trangThai = 1;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "trang_thai", nullable = false, length = 20)
+    private TrangThaiTin trangThai = TrangThaiTin.MO;
 
     @Column(name = "ngay_tao", insertable = false, updatable = false)
     private LocalDateTime ngayTao;
@@ -101,6 +104,10 @@ public class TinTuyenDung {
     @Column(name = "khu_vuc", length = 30)
     private Set<KhuVucEnum> khuVucs = new HashSet<>();
 
+    /**
+     * Kỹ năng yêu cầu cho vị trí tuyển dụng
+     * Quan hệ với CtKyNangTin (bảng ct_ky_nang_tin)
+     */
     @OneToMany(mappedBy = "tinTuyenDung")
     private Set<ChiTietKyNangTin> chiTietKyNangTins = new HashSet<>();
 

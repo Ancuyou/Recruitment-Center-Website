@@ -1,6 +1,7 @@
 package com.example.tuyendung.controller;
 
 import com.example.tuyendung.common.ApiResponse;
+import com.example.tuyendung.common.Constants;
 import com.example.tuyendung.dto.request.JobSkillRequest;
 import com.example.tuyendung.dto.response.JobSkillResponse;
 import com.example.tuyendung.service.JobSkillService;
@@ -37,7 +38,7 @@ public class JobSkillController {
      * E8: Thêm kỽ năng yêu cầu vào Job (POST)
      * Chỉ recruiter có thể thêm
      */
-    @PreAuthorize("hasRole('RECRUITER')")
+    @PreAuthorize(Constants.ROLE_NTD_EXPR)
     @PostMapping
     public ResponseEntity<ApiResponse<JobSkillResponse>> addSkillToJob(
             @PathVariable Long jobId,
@@ -68,7 +69,7 @@ public class JobSkillController {
      * E10: Cập nhật mức yêu cầu (PUT)
      * Chỉ recruiter có thể cập nhật
      */
-    @PreAuthorize("hasRole('RECRUITER')")
+    @PreAuthorize(Constants.ROLE_NTD_EXPR)
     @PutMapping("/{skillId}")
     public ResponseEntity<ApiResponse<JobSkillResponse>> updateJobSkillRequirement(
             @PathVariable Long jobId,
@@ -85,7 +86,7 @@ public class JobSkillController {
      * Xóa kỽ năng yêu cầu (DELETE)
      * Chỉ recruiter có thể xóa
      */
-    @PreAuthorize("hasRole('RECRUITER')")
+    @PreAuthorize(Constants.ROLE_NTD_EXPR)
     @DeleteMapping("/{skillId}")
     public ResponseEntity<ApiResponse<Void>> deleteJobSkill(
             @PathVariable Long jobId,

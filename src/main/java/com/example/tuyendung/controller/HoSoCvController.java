@@ -1,16 +1,20 @@
 package com.example.tuyendung.controller;
 
 import com.example.tuyendung.common.ApiResponse;
-import com.example.tuyendung.common.JwtTokenExtractor;
+import com.example.tuyendung.common.Constants;
 import com.example.tuyendung.dto.request.HoSoCvRequest;
 import com.example.tuyendung.dto.response.HoSoCvResponse;
+import com.example.tuyendung.security.CustomUserDetails;
 import com.example.tuyendung.service.HoSoCvService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -28,115 +32,92 @@ import java.util.List;
 @CrossOrigin(origins = "*")
 public class HoSoCvController {
 
-    // Dependency Injection
     private final HoSoCvService hoSoCvService;
-    private final JwtTokenExtractor jwtTokenExtractor;
 
-    /**
-     * C1: Tạo CV mới (POST)
-     */
+    /** C1: Tạo CV mới (POST) */
     @PostMapping
+    @PreAuthorize(Constants.ROLE_UV_EXPR)
     public ResponseEntity<ApiResponse<HoSoCvResponse>> createCv(
             @Valid @RequestBody HoSoCvRequest request,
-            @RequestHeader("Authorization") String authorization) {
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
         log.info("POST /api/cvs - Tạo CV mới");
-
-        Long ungVienId = jwtTokenExtractor.extractUserIdFromToken(authorization);
-        HoSoCvResponse response = hoSoCvService.createCv(ungVienId, request);
-
+        HoSoCvResponse response = hoSoCvService.createCv(userDetails.getId(), request);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success("Tạo CV thành công", response));
     }
 
-    /**
-     * C2: Danh sách CV (GET)
-     */
+    /** C2: Danh sách CV (GET) */
     @GetMapping
+    @PreAuthorize(Constants.ROLE_UV_EXPR)
     public ResponseEntity<ApiResponse<List<HoSoCvResponse>>> getCvList(
-            @RequestHeader("Authorization") String authorization) {
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
         log.info("GET /api/cvs - Danh sách CV");
-
-        Long ungVienId = jwtTokenExtractor.extractUserIdFromToken(authorization);
-        List<HoSoCvResponse> cvList = hoSoCvService.getCvsByUngVienId(ungVienId);
-
+        List<HoSoCvResponse> cvList = hoSoCvService.getCvsByUngVienId(userDetails.getId());
         return ResponseEntity.ok(ApiResponse.success("Lấy danh sách CV thành công", cvList));
     }
 
-    /**
-     * C3: Chi tiết CV (GET)
-     */
+    /** C3: Chi tiết CV (GET) */
     @GetMapping("/{id}")
+    @PreAuthorize(Constants.ROLE_UV_EXPR)
     public ResponseEntity<ApiResponse<HoSoCvResponse>> getCvDetail(
             @PathVariable Long id,
-            @RequestHeader("Authorization") String authorization) {
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
         log.info("GET /api/cvs/{} - Chi tiết CV", id);
-
-        Long ungVienId = jwtTokenExtractor.extractUserIdFromToken(authorization);
-        HoSoCvResponse response = hoSoCvService.getCvById(id, ungVienId);
-
+        HoSoCvResponse response = hoSoCvService.getCvById(id, userDetails.getId());
         return ResponseEntity.ok(ApiResponse.success("Lấy chi tiết CV thành công", response));
     }
 
-    /**
-     * C4: Cập nhật CV (PUT)
-     */
+    /** C4: Cập nhật CV (PUT) */
     @PutMapping("/{id}")
+    @PreAuthorize(Constants.ROLE_UV_EXPR)
     public ResponseEntity<ApiResponse<HoSoCvResponse>> updateCv(
             @PathVariable Long id,
             @Valid @RequestBody HoSoCvRequest request,
-            @RequestHeader("Authorization") String authorization) {
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
         log.info("PUT /api/cvs/{} - Cập nhật CV", id);
-
-        Long ungVienId = jwtTokenExtractor.extractUserIdFromToken(authorization);
-        HoSoCvResponse response = hoSoCvService.updateCv(id, ungVienId, request);
-
+        HoSoCvResponse response = hoSoCvService.updateCv(id, userDetails.getId(), request);
         return ResponseEntity.ok(ApiResponse.success("Cập nhật CV thành công", response));
     }
 
-    /**
-     * C5: Xóa mềm CV (DELETE)
-     */
+    /** C5: Xóa mềm CV (DELETE) */
     @DeleteMapping("/{id}")
+    @PreAuthorize(Constants.ROLE_UV_EXPR)
     public ResponseEntity<ApiResponse<Void>> deleteCv(
             @PathVariable Long id,
-            @RequestHeader("Authorization") String authorization) {
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
         log.info("DELETE /api/cvs/{} - Xóa mềm CV", id);
-
-        Long ungVienId = jwtTokenExtractor.extractUserIdFromToken(authorization);
-        hoSoCvService.softDeleteCv(id, ungVienId);
-
+        hoSoCvService.softDeleteCv(id, userDetails.getId());
         return ResponseEntity.ok(ApiResponse.success("Xóa CV thành công", null));
     }
 
-    /**
-     * C6: Đặt CV chính (POST)
-     */
+    /** C6: Đặt CV chính (POST) */
     @PostMapping("/{id}/set-default")
+    @PreAuthorize(Constants.ROLE_UV_EXPR)
     public ResponseEntity<ApiResponse<Void>> setDefaultCv(
             @PathVariable Long id,
-            @RequestHeader("Authorization") String authorization) {
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
         log.info("POST /api/cvs/{}/set-default - Đặt CV chính", id);
-
-        Long ungVienId = jwtTokenExtractor.extractUserIdFromToken(authorization);
-        hoSoCvService.setDefaultCv(ungVienId, id);
-
+        hoSoCvService.setDefaultCv(userDetails.getId(), id);
         return ResponseEntity.ok(ApiResponse.success("Đặt CV chính thành công", null));
     }
 
     /**
-     * C7: Upload file PDF CV (POST)
+     * C7: Upload file PDF CV thực tế (POST multipart/form-data)
+     * [H8] Nhận file vật lý từ user thay vì nọn String URL giả lập từ Client.
      */
-    @PostMapping("/{id}/upload-file")
+    @PostMapping(value = "/{id}/upload-file", consumes = "multipart/form-data")
+    @PreAuthorize(Constants.ROLE_UV_EXPR)
     public ResponseEntity<ApiResponse<HoSoCvResponse>> uploadCvFile(
             @PathVariable Long id,
-            @RequestParam String fileUrl,
-            @RequestHeader("Authorization") String authorization) {
-        log.info("POST /api/cvs/{}/upload-file - Upload file PDF", id);
-
-        Long ungVienId = jwtTokenExtractor.extractUserIdFromToken(authorization);
-        HoSoCvResponse response = hoSoCvService.uploadCvFile(id, ungVienId, fileUrl);
-
+            @RequestParam("file") MultipartFile file,
+            @AuthenticationPrincipal CustomUserDetails userDetails) throws Exception {
+        log.info("POST /api/cvs/{}/upload-file - Upload file PDF thực tế, size={}", id, file.getSize());
+        HoSoCvResponse response = hoSoCvService.uploadCvFile(
+                id,
+                userDetails.getId(),
+                file.getBytes(),
+                file.getContentType(),
+                file.getOriginalFilename());
         return ResponseEntity.ok(ApiResponse.success("Upload file thành công", response));
     }
-
 }

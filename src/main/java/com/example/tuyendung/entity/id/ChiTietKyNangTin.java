@@ -1,18 +1,30 @@
-package com.example.tuyendung.entity;
+package com.example.tuyendung.entity.id;
 
+import com.example.tuyendung.entity.KyNang;
+import com.example.tuyendung.entity.TinTuyenDung;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
+
+import java.time.LocalDateTime;
 
 /**
  * Entity cho kỹ năng yêu cầu trong job
  * Bảng: ct_ky_nang_tin
- * 
+ *
  * SOLID Principles:
  * - Single Responsibility: Đại diện duy nhất cho một kỹ năng yêu cầu
  * - Dependency Inversion: Không phụ thuộc vào chi tiết thực thi
+ *
+ * [H1] Dùng @Getter @Setter thay @Data để tránh vòng lặp equals/hashCode vô hạn
+ *      với JPA lazy-loaded relations (StackOverflowError khi serialize).
+ * [H2] Dùng LocalDateTime + @CreationTimestamp/@UpdateTimestamp thay vì Long epoch
+ *      để đồng nhất với tất cả entity khác trong hệ thống; dễ đọc và Jackson tự format.
  */
 @Entity
 @Table(name = "ct_ky_nang_tin", indexes = {
@@ -20,11 +32,12 @@ import lombok.NoArgsConstructor;
         @Index(name = "idx_ky_nang_id", columnList = "ky_nang_id"),
         @Index(name = "idx_unique_tin_skill", columnList = "tin_tuyendung_id, ky_nang_id", unique = true)
 })
-@Data
+@Getter
+@Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class CtKyNangTin {
+public class ChiTietKyNangTin {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -48,16 +61,15 @@ public class CtKyNangTin {
     @Column(name = "mo_ta", length = 500)
     private String moTa;
 
-    @Column(name = "ngay_tao", nullable = false)
-    @Builder.Default
-    private Long ngayTao = System.currentTimeMillis();
+    @CreationTimestamp
+    @Column(name = "ngay_tao", nullable = false, updatable = false)
+    private LocalDateTime ngayTao;
 
+    @UpdateTimestamp
     @Column(name = "ngay_cap_nhat")
-    private Long ngayCapNhat;
+    private LocalDateTime ngayCapNhat;
 
-    /**
-     * Soft delete flag
-     */
+    /** Soft delete flag */
     @Column(name = "da_xoa", nullable = false)
     @Builder.Default
     private Boolean daXoa = false;

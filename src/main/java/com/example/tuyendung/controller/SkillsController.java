@@ -1,6 +1,7 @@
 package com.example.tuyendung.controller;
 
 import com.example.tuyendung.common.ApiResponse;
+import com.example.tuyendung.common.Constants;
 import com.example.tuyendung.dto.request.KyNangRequest;
 import com.example.tuyendung.dto.response.KyNangResponse;
 import com.example.tuyendung.service.KyNangService;
@@ -47,7 +48,7 @@ public class SkillsController {
      * C13: Tạo kỹ năng mới (POST)
      * Chỉ admin mới có thể tạo kỹ năng
      */
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize(Constants.ROLE_ADMIN_EXPR)
     @PostMapping
     public ResponseEntity<ApiResponse<KyNangResponse>> createSkill(
             @Valid @RequestBody KyNangRequest request) {
@@ -87,7 +88,9 @@ public class SkillsController {
 
     /**
      * Cập nhật kỹ năng (PUT)
+     * Chỉ admin mới có thể cập nhật kỹ năng hệ thống
      */
+    @PreAuthorize(Constants.ROLE_ADMIN_EXPR)
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<KyNangResponse>> updateSkill(
             @PathVariable Long id,
@@ -101,7 +104,9 @@ public class SkillsController {
 
     /**
      * Xóa kỹ năng (DELETE)
+     * Chỉ admin mới có thể xóa kỹ năng hệ thống
      */
+    @PreAuthorize(Constants.ROLE_ADMIN_EXPR)
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> deleteSkill(
             @PathVariable Long id) {

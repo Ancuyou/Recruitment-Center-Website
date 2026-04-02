@@ -4,7 +4,8 @@ import com.example.tuyendung.dto.request.ChiTietCvRequest;
 import com.example.tuyendung.dto.response.ChiTietCvResponse;
 import com.example.tuyendung.entity.ChiTietCv;
 import com.example.tuyendung.entity.HoSoCv;
-import com.example.tuyendung.exception.BusinessException;
+import com.example.tuyendung.exception.BaseBusinessException;
+import com.example.tuyendung.exception.ErrorCode;
 import com.example.tuyendung.repository.ChiTietCvRepository;
 import com.example.tuyendung.repository.HoSoCvRepository;
 import com.example.tuyendung.service.ChiTietCvService;
@@ -32,16 +33,20 @@ public class ChiTietCvServiceImpl implements ChiTietCvService {
 
         // Tìm CV
         HoSoCv hoSoCv = hoSoCvRepository.findByIdAndNotDeleted(cvId)
-                .orElseThrow(() -> new BusinessException("CV không tồn tại"));
+                .orElseThrow(() -> new BaseBusinessException(ErrorCode.CV_NOT_FOUND,
+                        "Không tìm thấy hồ sơ CV ID: " + cvId));
 
         // Kiểm tra loại bản ghi hợp lệ (1: Học vấn, 2: Kinh nghiệm, 3: Chứng chỉ)
         if (request.getLoaiBanGhi() < 1 || request.getLoaiBanGhi() > 3) {
-            throw new BusinessException("Loại bản ghi không hợp lệ (1-3)");
+            throw new BaseBusinessException(ErrorCode.VALIDATION_ERROR,
+                    "Loại bản ghi không hợp lệ – chỉ chấp nhận 1 (Học vấn), 2 (Kinh nghiệm), 3 (Chứng chỉ)");
         }
 
         // Kiểm tra ngày hợp lệ
-        if (request.getNgayKetThuc() != null && request.getNgayKetThuc().isBefore(request.getNgayBatDau())) {
-            throw new BusinessException("Ngày kết thúc không được sớm hơn ngày bắt đầu");
+        if (request.getNgayKetThuc() != null
+                && request.getNgayKetThuc().isBefore(request.getNgayBatDau())) {
+            throw new BaseBusinessException(ErrorCode.VALIDATION_ERROR,
+                    "Ngày kết thúc không được sớm hơn ngày bắt đầu");
         }
 
         // Tạo chi tiết CV
@@ -66,9 +71,9 @@ public class ChiTietCvServiceImpl implements ChiTietCvService {
         log.info("Lấy danh sách chi tiết CV ID: {}", cvId);
 
         // Kiểm tra CV tồn tại
-        if (!hoSoCvRepository.findByIdAndNotDeleted(cvId).isPresent()) {
-            throw new BusinessException("CV không tồn tại");
-        }
+        hoSoCvRepository.findByIdAndNotDeleted(cvId)
+                .orElseThrow(() -> new BaseBusinessException(ErrorCode.CV_NOT_FOUND,
+                        "Không tìm thấy hồ sơ CV ID: " + cvId));
 
         return chiTietCvRepository.findByHoSoCvId(cvId).stream()
                 .map(this::mapToResponse)
@@ -82,15 +87,19 @@ public class ChiTietCvServiceImpl implements ChiTietCvService {
 
         // Kiểm tra CV tồn tại
         hoSoCvRepository.findByIdAndNotDeleted(cvId)
-                .orElseThrow(() -> new BusinessException("CV không tồn tại"));
+                .orElseThrow(() -> new BaseBusinessException(ErrorCode.CV_NOT_FOUND,
+                        "Không tìm thấy hồ sơ CV ID: " + cvId));
 
         // Tìm chi tiết CV
         ChiTietCv chiTietCv = chiTietCvRepository.findByIdAndHoSoCvId(chiTietCvId, cvId)
-                .orElseThrow(() -> new BusinessException("Chi tiết CV không tồn tại"));
+                .orElseThrow(() -> new BaseBusinessException(ErrorCode.RESOURCE_NOT_FOUND,
+                        "Không tìm thấy chi tiết CV ID: " + chiTietCvId));
 
         // Kiểm tra ngày hợp lệ
-        if (request.getNgayKetThuc() != null && request.getNgayKetThuc().isBefore(request.getNgayBatDau())) {
-            throw new BusinessException("Ngày kết thúc không được sớm hơn ngày bắt đầu");
+        if (request.getNgayKetThuc() != null
+                && request.getNgayKetThuc().isBefore(request.getNgayBatDau())) {
+            throw new BaseBusinessException(ErrorCode.VALIDATION_ERROR,
+                    "Ngày kết thúc không được sớm hơn ngày bắt đầu");
         }
 
         // Cập nhật
@@ -114,11 +123,13 @@ public class ChiTietCvServiceImpl implements ChiTietCvService {
 
         // Kiểm tra CV tồn tại
         hoSoCvRepository.findByIdAndNotDeleted(cvId)
-                .orElseThrow(() -> new BusinessException("CV không tồn tại"));
+                .orElseThrow(() -> new BaseBusinessException(ErrorCode.CV_NOT_FOUND,
+                        "Không tìm thấy hồ sơ CV ID: " + cvId));
 
         // Tìm và xóa chi tiết CV
         ChiTietCv chiTietCv = chiTietCvRepository.findByIdAndHoSoCvId(chiTietCvId, cvId)
-                .orElseThrow(() -> new BusinessException("Chi tiết CV không tồn tại"));
+                .orElseThrow(() -> new BaseBusinessException(ErrorCode.RESOURCE_NOT_FOUND,
+                        "Không tìm thấy chi tiết CV ID: " + chiTietCvId));
 
         chiTietCvRepository.delete(chiTietCv);
         log.info("Xóa chi tiết CV thành công");
@@ -131,11 +142,13 @@ public class ChiTietCvServiceImpl implements ChiTietCvService {
 
         // Kiểm tra CV tồn tại
         hoSoCvRepository.findByIdAndNotDeleted(cvId)
-                .orElseThrow(() -> new BusinessException("CV không tồn tại"));
+                .orElseThrow(() -> new BaseBusinessException(ErrorCode.CV_NOT_FOUND,
+                        "Không tìm thấy hồ sơ CV ID: " + cvId));
 
         // Kiểm tra loại bản ghi hợp lệ
         if (loaiBanGhi < 1 || loaiBanGhi > 3) {
-            throw new BusinessException("Loại bản ghi không hợp lệ (1-3)");
+            throw new BaseBusinessException(ErrorCode.VALIDATION_ERROR,
+                    "Loại bản ghi không hợp lệ – chỉ chấp nhận 1 (Học vấn), 2 (Kinh nghiệm), 3 (Chứng chỉ)");
         }
 
         return chiTietCvRepository.findByHoSoCvIdAndLoaiBanGhi(cvId, loaiBanGhi).stream()

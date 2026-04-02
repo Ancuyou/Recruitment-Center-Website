@@ -1,0 +1,65 @@
+@startuml UC01_UngVien
+left to right direction
+skinparam actorStyle awesome
+skinparam defaultFontName Arial
+skinparam nodesep 70
+skinparam ranksep 280
+skinparam linetype ortho
+
+skinparam usecase {
+  BackgroundColor #E8F5E9
+  BorderColor #2E7D32
+  FontSize 12
+}
+skinparam package {
+  BackgroundColor #F9FBE7
+  BorderColor #9CCC65
+  FontSize 12
+  FontStyle bold
+  Padding 18
+}
+skinparam rectangle {
+  BackgroundColor #E8F5E9
+  BorderColor #2E7D32
+  FontSize 14
+  FontStyle bold
+}
+
+actor "Ung vien" as UV
+
+rectangle "He thong Tuyen dung - Goc nhin Ung vien" {
+
+  package "Cong khai" {
+    usecase "UC01\nXac thuc tai khoan"            as UC01
+    usecase "UC02\nXem & Tim kiem tin tuyen dung" as UC02
+    usecase "UC03\nTra cuu danh muc"              as UC03
+  }
+
+  package "Ho so ca nhan & CV" {
+    usecase "UC04\nQuan ly ho so ca nhan"         as UC04
+    usecase "UC06\nQuan ly ho so CV"              as UC06
+  }
+
+  package "Ung tuyen & Phong van" {
+    usecase "UC07\nNop don & Theo doi ung tuyen"  as UC07
+    usecase "UC08\nXem lich phong van"            as UC08
+  }
+
+  package "Ho tro & Tien ich" {
+    usecase "UC05\nQuan ly thong bao"             as UC05
+    usecase "UC09\nXem dashboard ung vien"        as UC09
+    usecase "UC10\nNhan goi y viec lam phu hop"   as UC10
+  }
+}
+
+UV -[#2E7D32]-> UC01
+UV -[#2E7D32]-> UC02
+UV -[#2E7D32]-> UC03
+UV -[#2E7D32]-> UC04
+UV -[#2E7D32]-> UC05
+UV -[#2E7D32]-> UC06
+UV -[#2E7D32]-> UC07
+UV -[#2E7D32]-> UC08
+UV -[#2E7D32]-> UC09
+UV -[#2E7D32]-> UC10
+@enduml

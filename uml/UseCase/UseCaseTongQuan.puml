@@ -1,0 +1,115 @@
+@startuml UC00_TongQuan
+left to right direction
+skinparam actorStyle awesome
+skinparam defaultFontName Arial
+skinparam nodesep 80
+skinparam ranksep 280
+skinparam linetype ortho
+
+skinparam usecase {
+  BackgroundColor #FFFDE7
+  BorderColor #E65100
+  FontSize 12
+}
+skinparam package {
+  BackgroundColor #FAFAFA
+  BorderColor #90A4AE
+  FontSize 12
+  FontStyle bold
+  Padding 20
+}
+skinparam rectangle {
+  BackgroundColor #EDE7F6
+  BorderColor #5E35B1
+  FontSize 14
+  FontStyle bold
+}
+
+actor "Khach"          as KHACH
+actor "Ung vien"       as UV
+actor "Nha tuyen dung" as NTD
+actor "Quan tri vien"  as ADMIN
+
+' ── Gia cach doc giua cac actor ───────────
+KHACH -[hidden]d-> UV
+UV    -[hidden]d-> UV
+UV    -[hidden]d-> UV
+UV    -[hidden]d-> NTD
+NTD   -[hidden]d-> NTD
+NTD   -[hidden]d-> NTD
+NTD   -[hidden]d-> ADMIN
+
+rectangle "He thong Tuyen dung Truc tuyen" {
+
+  package "Cong khai" {
+    usecase "UC01\nXac thuc tai khoan"             as UC01
+    usecase "UC02\nXem & Tim kiem tin tuyen dung"  as UC02
+    usecase "UC03\nTra cuu danh muc"               as UC03
+  }
+
+  package "Dung chung - UV & NTD" {
+    usecase "UC04\nQuan ly ho so ca nhan"          as UC04
+    usecase "UC05\nQuan ly thong bao"              as UC05
+  }
+
+  package "Rieng - Ung vien" {
+    usecase "UC06\nQuan ly ho so CV"               as UC06
+    usecase "UC07\nNop don & Theo doi ung tuyen"   as UC07
+    usecase "UC08\nXem lich phong van"             as UC08
+    usecase "UC09\nXem dashboard ung vien"         as UC09
+    usecase "UC10\nNhan goi y viec lam phu hop"    as UC10
+  }
+
+  package "Rieng - Nha tuyen dung" {
+    usecase "UC11\nQuan ly cong ty"                as UC11
+    usecase "UC12\nQuan ly tin tuyen dung"         as UC12
+    usecase "UC13\nXet duyet don ung tuyen"        as UC13
+    usecase "UC14\nQuan ly lich phong van"         as UC14
+    usecase "UC15\nXem dashboard nha tuyen dung"   as UC15
+    usecase "UC16\nNhan goi y ung vien phu hop"    as UC16
+  }
+
+  package "Rieng - Quan tri vien" {
+    usecase "UC17\nQuan ly ky nang he thong"       as UC17
+    usecase "UC18\nQuan ly tai khoan nguoi dung"   as UC18
+  }
+}
+
+' ── KHACH: cam ────────────────────────────
+KHACH -[#E65100]-> UC01
+KHACH -[#E65100]-> UC02
+KHACH -[#E65100]-> UC03
+
+' ── UNGEN VIEN: xanh la ──────────────────
+UV -[#2E7D32]-> UC01
+UV -[#2E7D32]-> UC02
+UV -[#2E7D32]-> UC03
+UV -[#2E7D32]-> UC04
+UV -[#2E7D32]-> UC05
+UV -[#2E7D32]-> UC06
+UV -[#2E7D32]-> UC07
+UV -[#2E7D32]-> UC08
+UV -[#2E7D32]-> UC09
+UV -[#2E7D32]-> UC10
+
+' ── NHA TUYEN DUNG: xanh duong ───────────
+NTD -[#1565C0]-> UC01
+NTD -[#1565C0]-> UC02
+NTD -[#1565C0]-> UC03
+NTD -[#1565C0]-> UC04
+NTD -[#1565C0]-> UC05
+NTD -[#1565C0]-> UC11
+NTD -[#1565C0]-> UC12
+NTD -[#1565C0]-> UC13
+NTD -[#1565C0]-> UC14
+NTD -[#1565C0]-> UC15
+NTD -[#1565C0]-> UC16
+
+' ── ADMIN: do ────────────────────────────
+ADMIN -[#880E4F]-> UC01
+ADMIN -[#880E4F]-> UC03
+ADMIN -[#880E4F]-> UC11
+ADMIN -[#880E4F]-> UC12
+ADMIN -[#880E4F]-> UC17
+ADMIN -[#880E4F]-> UC18
+@enduml

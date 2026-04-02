@@ -1,6 +1,7 @@
 package com.example.tuyendung.controller;
 
 import com.example.tuyendung.common.ApiResponse;
+import com.example.tuyendung.common.Constants;
 import com.example.tuyendung.dto.request.ChangePasswordRequest;
 import com.example.tuyendung.dto.request.UpdateCandidateProfileRequest;
 import com.example.tuyendung.dto.request.UpdateRecruiterProfileRequest;
@@ -24,16 +25,20 @@ public class UserController {
 
     private final UserService userService;
 
-    // A9: Read profile
+    /**
+     * A9: Lấy thông tin tài khoản hiện tại (canonical endpoint — thay thế /api/auth/me đã bỏ).
+     * Yêu cầu đăng nhập; trả về profile theo role (UV / NTD).
+     */
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/profile")
     public ResponseEntity<ApiResponse<UserInfoResponse>> getProfile(
             @AuthenticationPrincipal CustomUserDetails userDetails) {
-        return ResponseEntity.ok(ApiResponse.success("Thông tin hồ sơ", 
+        return ResponseEntity.ok(ApiResponse.success("Thông tin hồ sơ",
                 userService.getUserProfile(userDetails.getId())));
     }
 
     // A10: Update Candidate Profile
-    @PreAuthorize("hasRole('UNG_VIEN') or hasRole('CANDIDATE')")
+    @PreAuthorize(Constants.ROLE_UV_EXPR)
     @PutMapping("/profile/candidate")
     public ResponseEntity<ApiResponse<UserInfoResponse>> updateCandidateProfile(
             @Valid @RequestBody UpdateCandidateProfileRequest request,
@@ -43,7 +48,7 @@ public class UserController {
     }
 
     // A10: Update Recruiter Profile
-    @PreAuthorize("hasRole('NHA_TUYEN_DUNG') or hasRole('RECRUITER')")
+    @PreAuthorize(Constants.ROLE_NTD_EXPR)
     @PutMapping("/profile/recruiter")
     public ResponseEntity<ApiResponse<UserInfoResponse>> updateRecruiterProfile(
             @Valid @RequestBody UpdateRecruiterProfileRequest request,

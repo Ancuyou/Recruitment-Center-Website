@@ -39,6 +39,11 @@ jwt:
   expiration: 86400000        # 24 hours (ms)
   refresh-expiration: 604800000  # 7 days (ms)
 
+# ── Authentication Lifecycles ─────────────────────────────────────
+auth:
+  verification-expiration-hours: 24
+  reset-expiration-minutes: 15
+
 # ── Server ────────────────────────────────────────────────────────
 server:
   port: 8080

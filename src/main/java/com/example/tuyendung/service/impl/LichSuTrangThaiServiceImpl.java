@@ -4,12 +4,20 @@ import com.example.tuyendung.dto.response.LichSuTrangThaiResponse;
 import com.example.tuyendung.entity.DonUngTuyen;
 import com.example.tuyendung.entity.LichSuTrangThai;
 import com.example.tuyendung.entity.enums.TrangThaiDon;
-import com.example.tuyendung.exception.ApplicationNotFoundException;
-import com.example.tuyendung.exception.UnauthorizedApplicationAccessException;
+
+
 import com.example.tuyendung.repository.DonUngTuyenRepository;
 import com.example.tuyendung.repository.LichSuTrangThaiRepository;
 import com.example.tuyendung.service.LichSuTrangThaiService;
-import com.example.tuyendung.service.util.ApplicationAccessVerifier;
+import com.example.tuyendung.entity.NhaTuyenDung;
+import com.example.tuyendung.entity.TaiKhoan;
+import com.example.tuyendung.entity.UngVien;
+import com.example.tuyendung.entity.enums.VaiTroTaiKhoan;
+import com.example.tuyendung.exception.BaseBusinessException;
+import com.example.tuyendung.exception.ErrorCode;
+import com.example.tuyendung.repository.NhaTuyenDungRepository;
+import com.example.tuyendung.repository.TaiKhoanRepository;
+import com.example.tuyendung.repository.UngVienRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -36,7 +44,9 @@ public class LichSuTrangThaiServiceImpl implements LichSuTrangThaiService {
 
     private final LichSuTrangThaiRepository lichSuTrangThaiRepository;
     private final DonUngTuyenRepository donUngTuyenRepository;
-    private final ApplicationAccessVerifier accessVerifier;
+    private final UngVienRepository ungVienRepository;
+    private final NhaTuyenDungRepository nhaTuyenDungRepository;
+    private final TaiKhoanRepository taiKhoanRepository;
 
     // =========================================================================
     // D8: Lịch sử trạng thái
@@ -49,7 +59,7 @@ public class LichSuTrangThaiServiceImpl implements LichSuTrangThaiService {
 
         // Lấy đơn ứng tuyển (kèm theo tin + công ty)
         DonUngTuyen don = donUngTuyenRepository.findByIdWithDetails(id)
-                .orElseThrow(() -> new ApplicationNotFoundException(id));
+                .orElseThrow(() -> new BaseBusinessException(ErrorCode.APPLICATION_NOT_FOUND));
 
         // Kiểm tra quyền: Chỉ ứng viên chủ đơn hoặc HR chủ tin mới được xem
         verifyApplicationAccess(don, taiKhoanId);
@@ -64,16 +74,23 @@ public class LichSuTrangThaiServiceImpl implements LichSuTrangThaiService {
     // Private Helpers
     // =========================================================================
 
-    /**
-     * GUARD CLAUSE PATTERN: Verify người dùng có quyền xem đơn này.
-     * 
-     * - Nếu người dùng là ứng viên → phải là chủ sở hữu đơn
-     * - Nếu người dùng là HR → phải quản lý tin tuyển dụng này
-     *
-     * @throws UnauthorizedApplicationAccessException nếu không có quyền
-     */
     private void verifyApplicationAccess(DonUngTuyen don, Long taiKhoanId) {
-        accessVerifier.verifyApplicationAccess(don, taiKhoanId);
+        TaiKhoan tk = taiKhoanRepository.findById(taiKhoanId)
+                .orElseThrow(() -> new BaseBusinessException(ErrorCode.USER_NOT_FOUND));
+
+        if (tk.getVaiTro() == VaiTroTaiKhoan.UNG_VIEN) {
+            UngVien uv = ungVienRepository.findByTaiKhoanId(taiKhoanId).orElse(null);
+            if (uv == null || !don.getHoSoCv().getUngVien().getId().equals(uv.getId())) {
+                throw new BaseBusinessException(ErrorCode.UNAUTHORIZED_ACCESS);
+            }
+        } else if (tk.getVaiTro() == VaiTroTaiKhoan.NHA_TUYEN_DUNG) {
+            NhaTuyenDung ntd = nhaTuyenDungRepository.findByTaiKhoanId(taiKhoanId)
+                    .orElseThrow(() -> new BaseBusinessException(ErrorCode.USER_NOT_FOUND, "Không tìm thấy nhà tuyển dụng"));
+            if (!don.getTinTuyenDung().getNhaTuyenDung().getId().equals(ntd.getId())) {
+                throw new BaseBusinessException(ErrorCode.UNAUTHORIZED_ACCESS);
+            }
+        }
+        // ADMIN: cho phép xem toàn bộ
     }
 
     /** Mapper: LichSuTrangThai → LichSuTrangThaiResponse */

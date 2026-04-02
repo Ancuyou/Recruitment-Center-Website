@@ -48,9 +48,9 @@ public interface HoSoCvService {
     void setDefaultCv(Long ungVienId, Long cvId);
 
     /**
-     * Upload file PDF CV (C7)
-     * @param cvId ID của CV
-     * @param ungVienId ID của ứng viên (kiểm tra quyền hạn)
+     * Upload file PDF CV thực tế (C7)
+     * [H8] Nhận byte[] + contentType từ Controller (MultipartFile.getBytes()),
+     *      gọi FileStorageService để lưu local và trả về URL thực tế.
      */
-    HoSoCvResponse uploadCvFile(Long cvId, Long ungVienId, String fileUrl);
+    HoSoCvResponse uploadCvFile(Long cvId, Long ungVienId, byte[] fileBytes, String contentType, String originalFilename);
 }

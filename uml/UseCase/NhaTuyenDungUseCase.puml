@@ -1,0 +1,67 @@
+@startuml UC02_NhaTuyenDung
+left to right direction
+skinparam actorStyle awesome
+skinparam defaultFontName Arial
+skinparam nodesep 70
+skinparam ranksep 280
+skinparam linetype ortho
+
+skinparam usecase {
+  BackgroundColor #E3F2FD
+  BorderColor #1565C0
+  FontSize 12
+}
+skinparam package {
+  BackgroundColor #F3F8FE
+  BorderColor #64B5F6
+  FontSize 12
+  FontStyle bold
+  Padding 18
+}
+skinparam rectangle {
+  BackgroundColor #E3F2FD
+  BorderColor #1565C0
+  FontSize 14
+  FontStyle bold
+}
+
+actor "Nha tuyen dung" as NTD
+
+rectangle "He thong Tuyen dung - Goc nhin Nha tuyen dung" {
+
+  package "Cong khai" {
+    usecase "UC01\nXac thuc tai khoan"            as UC01
+    usecase "UC02\nXem & Tim kiem tin tuyen dung" as UC02
+    usecase "UC03\nTra cuu danh muc"              as UC03
+  }
+
+  package "Doanh nghiep & Tin tuyen dung" {
+    usecase "UC11\nQuan ly cong ty"               as UC11
+    usecase "UC12\nQuan ly tin tuyen dung"        as UC12
+  }
+
+  package "Xu ly ung tuyen & Phong van" {
+    usecase "UC13\nXet duyet don ung tuyen"       as UC13
+    usecase "UC14\nQuan ly lich phong van"        as UC14
+  }
+
+  package "Ho so & Tien ich" {
+    usecase "UC04\nQuan ly ho so ca nhan"         as UC04
+    usecase "UC05\nQuan ly thong bao"             as UC05
+    usecase "UC15\nXem dashboard nha tuyen dung"  as UC15
+    usecase "UC16\nNhan goi y ung vien phu hop"   as UC16
+  }
+}
+
+NTD -[#1565C0]-> UC01
+NTD -[#1565C0]-> UC02
+NTD -[#1565C0]-> UC03
+NTD -[#1565C0]-> UC04
+NTD -[#1565C0]-> UC05
+NTD -[#1565C0]-> UC11
+NTD -[#1565C0]-> UC12
+NTD -[#1565C0]-> UC13
+NTD -[#1565C0]-> UC14
+NTD -[#1565C0]-> UC15
+NTD -[#1565C0]-> UC16
+@enduml

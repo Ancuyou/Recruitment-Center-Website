@@ -1,6 +1,7 @@
 package com.example.tuyendung.repository;
 
 import com.example.tuyendung.entity.DonUngTuyen;
+import com.example.tuyendung.entity.enums.TrangThaiDon;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -57,12 +58,12 @@ public interface DonUngTuyenRepository extends JpaRepository<DonUngTuyen, Long> 
     long countByUngVienId(@Param("ungVienId") Long ungVienId);
 
     @Query("SELECT COUNT(d) FROM DonUngTuyen d WHERE d.hoSoCv.ungVien.id = :ungVienId AND d.trangThaiHienTai = :trangThai")
-    long countByUngVienIdAndTrangThai(@Param("ungVienId") Long ungVienId, @Param("trangThai") Integer trangThai);
+    long countByUngVienIdAndTrangThai(@Param("ungVienId") Long ungVienId, @Param("trangThai") TrangThaiDon trangThai);
 
     // D20 Dashboard HR
     @Query("SELECT COUNT(d) FROM DonUngTuyen d WHERE d.tinTuyenDung.nhaTuyenDung.id = :ntdId")
     long countByNhaTuyenDungId(@Param("ntdId") Long ntdId);
 
     @Query("SELECT COUNT(d) FROM DonUngTuyen d WHERE d.tinTuyenDung.nhaTuyenDung.id = :ntdId AND d.trangThaiHienTai = :trangThai")
-    long countByNhaTuyenDungIdAndTrangThai(@Param("ntdId") Long ntdId, @Param("trangThai") Integer trangThai);
+    long countByNhaTuyenDungIdAndTrangThai(@Param("ntdId") Long ntdId, @Param("trangThai") TrangThaiDon trangThai);
 }

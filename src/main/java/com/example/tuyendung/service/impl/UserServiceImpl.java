@@ -9,8 +9,8 @@ import com.example.tuyendung.entity.NhaTuyenDung;
 import com.example.tuyendung.entity.TaiKhoan;
 import com.example.tuyendung.entity.UngVien;
 import com.example.tuyendung.entity.enums.VaiTroTaiKhoan;
-import com.example.tuyendung.exception.ResourceNotFoundException;
-import com.example.tuyendung.exception.ValidationException;
+import com.example.tuyendung.exception.BaseBusinessException;
+import com.example.tuyendung.exception.ErrorCode;
 import com.example.tuyendung.repository.NhaTuyenDungRepository;
 import com.example.tuyendung.repository.TaiKhoanRepository;
 import com.example.tuyendung.repository.UngVienRepository;
@@ -35,7 +35,7 @@ public class UserServiceImpl implements UserService {
     @Transactional(readOnly = true)
     public UserInfoResponse getUserProfile(Long taiKhoanId) {
         TaiKhoan tk = taiKhoanRepository.findById(taiKhoanId)
-                .orElseThrow(() -> new ResourceNotFoundException("TaiKhoan", taiKhoanId));
+                .orElseThrow(() -> new BaseBusinessException(ErrorCode.USER_NOT_FOUND));
         return mapToUserInfoResponse(tk);
     }
 
@@ -43,7 +43,7 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public UserInfoResponse updateCandidateProfile(Long taiKhoanId, UpdateCandidateProfileRequest request) {
         UngVien uv = ungVienRepository.findByTaiKhoanId(taiKhoanId)
-                .orElseThrow(() -> new ValidationException("Tài khoản", "không phải Ứng Viên"));
+                .orElseThrow(() -> new BaseBusinessException(ErrorCode.VALIDATION_ERROR, "Tài khoản không phải Ứng Viên"));
 
         uv.setHoTen(request.getHoTen());
         uv.setSoDienThoai(request.getSoDienThoai());
@@ -58,7 +58,7 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public UserInfoResponse updateRecruiterProfile(Long taiKhoanId, UpdateRecruiterProfileRequest request) {
         NhaTuyenDung ntd = nhaTuyenDungRepository.findByTaiKhoanId(taiKhoanId)
-                .orElseThrow(() -> new ValidationException("Tài khoản", "không phải Nhà Tuyển Dụng"));
+                .orElseThrow(() -> new BaseBusinessException(ErrorCode.VALIDATION_ERROR, "Tài khoản không phải Nhà Tuyển Dụng"));
 
         ntd.setHoTen(request.getHoTen());
         ntd.setSoDienThoai(request.getSoDienThoai());
@@ -72,10 +72,10 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public void changePassword(Long taiKhoanId, ChangePasswordRequest request) {
         TaiKhoan tk = taiKhoanRepository.findById(taiKhoanId)
-                .orElseThrow(() -> new ResourceNotFoundException("TaiKhoan", taiKhoanId));
+                .orElseThrow(() -> new BaseBusinessException(ErrorCode.USER_NOT_FOUND));
 
         if (!passwordEncoder.matches(request.getOldPassword(), tk.getMatKhauHash())) {
-            throw new ValidationException("Mật khẩu cũ không chính xác");
+            throw new BaseBusinessException(ErrorCode.VALIDATION_ERROR, "Mật khẩu cũ không chính xác");
         }
 
         tk.setMatKhauHash(passwordEncoder.encode(request.getNewPassword()));
@@ -86,7 +86,7 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public UserInfoResponse updateAvatar(Long taiKhoanId, UploadAvatarRequest request) {
         TaiKhoan tk = taiKhoanRepository.findById(taiKhoanId)
-                .orElseThrow(() -> new ResourceNotFoundException("TaiKhoan", taiKhoanId));
+                .orElseThrow(() -> new BaseBusinessException(ErrorCode.USER_NOT_FOUND));
 
         if (tk.getVaiTro() == VaiTroTaiKhoan.UNG_VIEN) {
             UngVien uv = tk.getUngVien();
@@ -114,9 +114,12 @@ public class UserServiceImpl implements UserService {
             res.setHoTen(tk.getUngVien().getHoTen());
             res.setSoDienThoai(tk.getUngVien().getSoDienThoai());
             res.setAnhDaiDien(tk.getUngVien().getAnhDaiDien());
+            res.setNgaySinh(tk.getUngVien().getNgaySinh()); // [H4] Bổ sung từ AuthServiceImpl sáp nhập
+            res.setGioiTinh(tk.getUngVien().getGioiTinh()); // [H4] Bổ sung từ AuthServiceImpl sáp nhập
         } else if (tk.getNhaTuyenDung() != null) {
             res.setHoTen(tk.getNhaTuyenDung().getHoTen());
             res.setSoDienThoai(tk.getNhaTuyenDung().getSoDienThoai());
+            res.setChucVu(tk.getNhaTuyenDung().getChucVu()); // [H4] Bổ sung từ AuthServiceImpl sáp nhập
             if (tk.getNhaTuyenDung().getCongTy() != null) {
                 res.setAnhDaiDien(tk.getNhaTuyenDung().getCongTy().getLogoUrl());
                 res.setTenCongTy(tk.getNhaTuyenDung().getCongTy().getTenCongTy());

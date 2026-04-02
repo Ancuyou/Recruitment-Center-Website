@@ -1,6 +1,7 @@
 package com.example.tuyendung.controller;
 
 import com.example.tuyendung.common.ApiResponse;
+import com.example.tuyendung.common.Constants;
 import com.example.tuyendung.dto.request.DonUngTuyenRequest;
 import com.example.tuyendung.dto.request.TrangThaiDonRequest;
 import com.example.tuyendung.dto.response.DonUngTuyenResponse;
@@ -43,7 +44,7 @@ public class DonUngTuyenController {
      * D1: Nộp đơn ứng tuyển (chỉ CANDIDATE).
      * POST /api/applications
      */
-    @PreAuthorize("hasRole('CANDIDATE') or hasRole('UNG_VIEN')")
+    @PreAuthorize(Constants.ROLE_UV_EXPR)
     @PostMapping
     public ResponseEntity<ApiResponse<DonUngTuyenResponse>> submitApplication(
             @Valid @RequestBody DonUngTuyenRequest request,
@@ -58,7 +59,7 @@ public class DonUngTuyenController {
      * D2: Danh sách đơn đã nộp của ứng viên, phân trang.
      * GET /api/applications
      */
-    @PreAuthorize("hasRole('CANDIDATE') or hasRole('UNG_VIEN')")
+    @PreAuthorize(Constants.ROLE_UV_EXPR)
     @GetMapping
     public ResponseEntity<ApiResponse<Page<DonUngTuyenResponse>>> getCandidateApplications(
             @RequestParam(defaultValue = "0") int page,
@@ -73,7 +74,7 @@ public class DonUngTuyenController {
      * D3: Danh sách đơn nhận được của một tin tuyển dụng (chỉ RECRUITER).
      * GET /api/applications/recruiter?tinTuyenDungId=X
      */
-    @PreAuthorize("hasRole('RECRUITER') or hasRole('NHA_TUYEN_DUNG')")
+    @PreAuthorize(Constants.ROLE_NTD_EXPR)
     @GetMapping("/recruiter")
     public ResponseEntity<ApiResponse<Page<DonUngTuyenResponse>>> getRecruiterApplications(
             @RequestParam Long tinTuyenDungId,
@@ -106,7 +107,7 @@ public class DonUngTuyenController {
      * D5: Cập nhật trạng thái đơn (chỉ RECRUITER).
      * PATCH /api/applications/{id}/status
      */
-    @PreAuthorize("hasRole('RECRUITER') or hasRole('NHA_TUYEN_DUNG')")
+    @PreAuthorize(Constants.ROLE_NTD_EXPR)
     @PatchMapping("/{id}/status")
     public ResponseEntity<ApiResponse<DonUngTuyenResponse>> updateStatus(
             @PathVariable Long id,
@@ -124,7 +125,7 @@ public class DonUngTuyenController {
      * Không nhận body (ghi chú tuỳ chọn), service tự set TrangThaiDon.TU_CHOI.
      * Tách riêng khỏi D5 để endpoint semantics rõ ràng – không thể nhầm lẫn.
      */
-    @PreAuthorize("hasRole('RECRUITER') or hasRole('NHA_TUYEN_DUNG')")
+    @PreAuthorize(Constants.ROLE_NTD_EXPR)
     @PatchMapping("/{id}/reject")
     public ResponseEntity<ApiResponse<DonUngTuyenResponse>> rejectApplication(
             @PathVariable Long id,
@@ -139,7 +140,7 @@ public class DonUngTuyenController {
      * D7: Lấy URL ảnh snapshot CV của đơn (chỉ RECRUITER).
      * GET /api/applications/{id}/cv-snapshot
      */
-    @PreAuthorize("hasRole('RECRUITER') or hasRole('NHA_TUYEN_DUNG')")
+    @PreAuthorize(Constants.ROLE_NTD_EXPR)
     @GetMapping("/{id}/cv-snapshot")
     public ResponseEntity<ApiResponse<String>> getCvSnapshotUrl(
             @PathVariable Long id,

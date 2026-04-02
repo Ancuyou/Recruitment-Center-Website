@@ -1,6 +1,7 @@
 package com.example.tuyendung.controller;
 
 import com.example.tuyendung.common.ApiResponse;
+import com.example.tuyendung.common.Constants;
 import com.example.tuyendung.dto.response.DashboardCandidateResponse;
 import com.example.tuyendung.dto.response.DashboardRecruiterResponse;
 import com.example.tuyendung.security.CustomUserDetails;
@@ -23,7 +24,7 @@ public class DashboardController {
     private final DashboardService dashboardService;
 
     // D19
-    @PreAuthorize("hasRole('CANDIDATE') or hasRole('UNG_VIEN')")
+    @PreAuthorize(Constants.ROLE_UV_EXPR)
     @GetMapping("/candidate")
     public ResponseEntity<ApiResponse<DashboardCandidateResponse>> getCandidateDashboard(
             @AuthenticationPrincipal CustomUserDetails userDetails) {
@@ -33,7 +34,7 @@ public class DashboardController {
     }
 
     // D20
-    @PreAuthorize("hasRole('RECRUITER') or hasRole('NHA_TUYEN_DUNG')")
+    @PreAuthorize(Constants.ROLE_NTD_EXPR)
     @GetMapping("/recruiter")
     public ResponseEntity<ApiResponse<DashboardRecruiterResponse>> getRecruiterDashboard(
             @AuthenticationPrincipal CustomUserDetails userDetails) {

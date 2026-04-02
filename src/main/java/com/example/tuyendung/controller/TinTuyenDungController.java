@@ -1,7 +1,7 @@
 package com.example.tuyendung.controller;
 
 import com.example.tuyendung.common.ApiResponse;
-import com.example.tuyendung.common.JwtTokenExtractor;
+import com.example.tuyendung.common.Constants;
 import com.example.tuyendung.dto.request.TinTuyenDungRequest;
 import com.example.tuyendung.dto.response.JobStatisticsResponse;
 import com.example.tuyendung.dto.response.TinTuyenDungResponse;
@@ -15,6 +15,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import com.example.tuyendung.security.CustomUserDetails;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -41,28 +43,25 @@ import java.util.Set;
 public class TinTuyenDungController {
 
     private final TinTuyenDungService tinTuyenDungService;
-    private final JwtTokenExtractor jwtTokenExtractor;
 
     /** B13: Đăng tin */
     @PostMapping
-    @PreAuthorize("hasRole('NHA_TUYEN_DUNG')")
+    @PreAuthorize(Constants.ROLE_NTD_EXPR)
     public ResponseEntity<ApiResponse<TinTuyenDungResponse>> createTin(
             @Valid @RequestBody TinTuyenDungRequest request,
-            @RequestHeader("Authorization") String authorization) {
-        Long taiKhoanId = jwtTokenExtractor.extractUserIdFromToken(authorization);
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success("Đăng tin thành công",
-                        tinTuyenDungService.createTin(request, taiKhoanId)));
+                        tinTuyenDungService.createTin(request, userDetails.getId())));
     }
 
     /** B18: Tin của recruiter (TRƯỚC /{id}) */
     @GetMapping("/my-jobs")
-    @PreAuthorize("hasRole('NHA_TUYEN_DUNG')")
+    @PreAuthorize(Constants.ROLE_NTD_EXPR)
     public ResponseEntity<ApiResponse<List<TinTuyenDungResponse>>> getMyTins(
-            @RequestHeader("Authorization") String authorization) {
-        Long taiKhoanId = jwtTokenExtractor.extractUserIdFromToken(authorization);
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
         return ResponseEntity.ok(ApiResponse.success("OK",
-                tinTuyenDungService.getMyTins(taiKhoanId)));
+                tinTuyenDungService.getMyTins(userDetails.getId())));
     }
 
     /** B19: Tìm kiếm (TRƯỚC /{id}) */
@@ -95,24 +94,22 @@ public class TinTuyenDungController {
 
     /** B16: Cập nhật tin */
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('NHA_TUYEN_DUNG')")
+    @PreAuthorize(Constants.ROLE_NTD_EXPR)
     public ResponseEntity<ApiResponse<TinTuyenDungResponse>> updateTin(
             @PathVariable Long id,
             @Valid @RequestBody TinTuyenDungRequest request,
-            @RequestHeader("Authorization") String authorization) {
-        Long taiKhoanId = jwtTokenExtractor.extractUserIdFromToken(authorization);
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
         return ResponseEntity.ok(ApiResponse.success("Cập nhật thành công",
-                tinTuyenDungService.updateTin(id, request, taiKhoanId)));
+                tinTuyenDungService.updateTin(id, request, userDetails.getId())));
     }
 
     /** B17: Đóng tin */
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyRole('NHA_TUYEN_DUNG', 'ADMIN')")
+    @PreAuthorize(Constants.ROLE_NTD_OR_ADMIN_EXPR)
     public ResponseEntity<ApiResponse<Void>> closeTin(
             @PathVariable Long id,
-            @RequestHeader("Authorization") String authorization) {
-        Long taiKhoanId = jwtTokenExtractor.extractUserIdFromToken(authorization);
-        tinTuyenDungService.closeTin(id, taiKhoanId);
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        tinTuyenDungService.closeTin(id, userDetails.getId());
         return ResponseEntity.ok(ApiResponse.success("Đóng tin thành công", null));
     }
 
@@ -121,14 +118,13 @@ public class TinTuyenDungController {
      * Body: ["HA_NOI","HO_CHI_MINH"] — set toàn bộ khu vực áp dụng
      */
     @PutMapping("/{id}/locations")
-    @PreAuthorize("hasRole('NHA_TUYEN_DUNG')")
+    @PreAuthorize(Constants.ROLE_NTD_EXPR)
     public ResponseEntity<ApiResponse<TinTuyenDungResponse>> updateKhuVucs(
             @PathVariable Long id,
             @RequestBody Set<KhuVucEnum> khuVucs,
-            @RequestHeader("Authorization") String authorization) {
-        Long taiKhoanId = jwtTokenExtractor.extractUserIdFromToken(authorization);
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
         return ResponseEntity.ok(ApiResponse.success("Cập nhật khu vực thành công",
-                tinTuyenDungService.updateKhuVucs(id, khuVucs, taiKhoanId)));
+                tinTuyenDungService.updateKhuVucs(id, khuVucs, userDetails.getId())));
     }
 
     /** B21: Lấy khu vực của tin */
@@ -140,12 +136,11 @@ public class TinTuyenDungController {
 
     /** B22: Thống kê đơn */
     @GetMapping("/{id}/statistics")
-    @PreAuthorize("hasAnyRole('NHA_TUYEN_DUNG', 'ADMIN')")
+    @PreAuthorize(Constants.ROLE_NTD_OR_ADMIN_EXPR)
     public ResponseEntity<ApiResponse<JobStatisticsResponse>> getStatistics(
             @PathVariable Long id,
-            @RequestHeader("Authorization") String authorization) {
-        Long taiKhoanId = jwtTokenExtractor.extractUserIdFromToken(authorization);
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
         return ResponseEntity.ok(ApiResponse.success("OK",
-                tinTuyenDungService.getJobStatistics(id, taiKhoanId)));
+                tinTuyenDungService.getJobStatistics(id, userDetails.getId())));
     }
 }

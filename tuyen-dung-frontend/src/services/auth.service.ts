@@ -9,6 +9,7 @@ import type {
 } from '@/types/auth.types';
 
 const AUTH_URL = '/api/auth';
+const USERS_URL = '/api/users';
 
 export const authService = {
   /** POST /api/auth/dang-nhap */
@@ -39,9 +40,21 @@ export const authService = {
     return res.data.data;
   },
 
-  /** GET /api/auth/me */
+  /**
+   * GET /api/users/profile — canonical endpoint lấy thông tin người dùng hiện tại.
+   * Thay thế /api/auth/me đã bỏ.
+   */
+  getProfile: async (): Promise<UserInfoResponse> => {
+    const res = await api.get<ApiResponse<UserInfoResponse>>(`${USERS_URL}/profile`);
+    return res.data.data;
+  },
+
+  /**
+   * @deprecated Dùng getProfile() thay thế. Giữ lại để tương thích ngược.
+   * GET /api/users/profile
+   */
   getMe: async (): Promise<UserInfoResponse> => {
-    const res = await api.get<ApiResponse<UserInfoResponse>>(`${AUTH_URL}/me`);
+    const res = await api.get<ApiResponse<UserInfoResponse>>(`${USERS_URL}/profile`);
     return res.data.data;
   },
 

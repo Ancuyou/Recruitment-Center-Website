@@ -12,11 +12,8 @@ import com.example.tuyendung.entity.TinTuyenDung;
 import com.example.tuyendung.entity.UngVien;
 import com.example.tuyendung.entity.enums.LoaiThongBao;
 import com.example.tuyendung.entity.enums.TrangThaiDon;
-import com.example.tuyendung.exception.ApplicationNotFoundException;
-import com.example.tuyendung.exception.DuplicateApplicationException;
-import com.example.tuyendung.exception.ResourceNotFoundException;
-import com.example.tuyendung.exception.UnauthorizedApplicationAccessException;
-import com.example.tuyendung.exception.ValidationException;
+
+import com.example.tuyendung.entity.enums.VaiTroTaiKhoan;
 import com.example.tuyendung.repository.DonUngTuyenRepository;
 import com.example.tuyendung.repository.HoSoCvRepository;
 import com.example.tuyendung.repository.LichSuTrangThaiRepository;
@@ -24,7 +21,10 @@ import com.example.tuyendung.repository.TaiKhoanRepository;
 import com.example.tuyendung.repository.TinTuyenDungRepository;
 import com.example.tuyendung.service.DonUngTuyenService;
 import com.example.tuyendung.service.ThongBaoService;
-import com.example.tuyendung.service.util.ApplicationAccessVerifier;
+import com.example.tuyendung.repository.UngVienRepository;
+import com.example.tuyendung.repository.NhaTuyenDungRepository;
+import com.example.tuyendung.exception.BaseBusinessException;
+import com.example.tuyendung.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -58,7 +58,8 @@ public class DonUngTuyenServiceImpl implements DonUngTuyenService {
     private final LichSuTrangThaiRepository lichSuTrangThaiRepository;
     private final TaiKhoanRepository taiKhoanRepository;
     private final ThongBaoService thongBaoService;
-    private final ApplicationAccessVerifier accessVerifier;
+    private final UngVienRepository ungVienRepository;
+    private final NhaTuyenDungRepository nhaTuyenDungRepository;
 
     // =========================================================================
     // D1: Nộp đơn
@@ -74,18 +75,18 @@ public class DonUngTuyenServiceImpl implements DonUngTuyenService {
         // Kiểm tra nộp trùng
         if (donUngTuyenRepository.existsByTinTuyenDungIdAndTaiKhoanId(
                 request.getTinTuyenDungId(), taiKhoanId)) {
-            throw new DuplicateApplicationException(request.getTinTuyenDungId(), taiKhoanId);
+            throw new BaseBusinessException(ErrorCode.DUPLICATE_RESOURCE, "Bạn đã nộp đơn vào tin tuyển dụng này rồi");
         }
 
         TinTuyenDung tin = tinTuyenDungRepository.findByIdAndNotDeleted(request.getTinTuyenDungId())
-                .orElseThrow(() -> new ResourceNotFoundException("TinTuyenDung", request.getTinTuyenDungId()));
+                .orElseThrow(() -> new BaseBusinessException(ErrorCode.RESOURCE_NOT_FOUND, "Không tìm thấy tin tuyển dụng"));
 
         HoSoCv cv = hoSoCvRepository.findByIdAndNotDeleted(request.getHoSoCvId())
-                .orElseThrow(() -> new ResourceNotFoundException("HoSoCV", request.getHoSoCvId()));
+                .orElseThrow(() -> new BaseBusinessException(ErrorCode.RESOURCE_NOT_FOUND, "Không tìm thấy hồ sơ CV"));
 
         // Ứng viên chỉ được dùng CV của chính mình
         if (!cv.getUngVien().getId().equals(uv.getId())) {
-            throw new UnauthorizedApplicationAccessException();
+            throw new BaseBusinessException(ErrorCode.UNAUTHORIZED_ACCESS, "Bạn chỉ có thể nộp CV của chính mình");
         }
 
         DonUngTuyen don = new DonUngTuyen();
@@ -93,7 +94,7 @@ public class DonUngTuyenServiceImpl implements DonUngTuyenService {
         don.setHoSoCv(cv);
         don.setThuNgo(request.getThuNgo());
         don.setBanSaoCvUrl(cv.getFileCvUrl()); // Snapshot tại thời điểm nộp
-        don.setTrangThaiHienTai(TrangThaiDon.MOI.getValue());
+        don.setTrangThaiHienTai(TrangThaiDon.MOI);
 
         DonUngTuyen saved = donUngTuyenRepository.save(don);
 
@@ -125,11 +126,11 @@ public class DonUngTuyenServiceImpl implements DonUngTuyenService {
         NhaTuyenDung ntd = findNhaTuyenDungByTaiKhoan(taiKhoanId);
 
         TinTuyenDung tin = tinTuyenDungRepository.findById(tinTuyenDungId)
-                .orElseThrow(() -> new ResourceNotFoundException("TinTuyenDung", tinTuyenDungId));
+                .orElseThrow(() -> new BaseBusinessException(ErrorCode.RESOURCE_NOT_FOUND, "Không tìm thấy tin tuyển dụng"));
 
         // Kiểm tra tin thuộc NTD đang request
         if (!tin.getNhaTuyenDung().getId().equals(ntd.getId())) {
-            throw new UnauthorizedApplicationAccessException();
+            throw new BaseBusinessException(ErrorCode.UNAUTHORIZED_ACCESS);
         }
 
         return donUngTuyenRepository
@@ -145,7 +146,7 @@ public class DonUngTuyenServiceImpl implements DonUngTuyenService {
     @Transactional(readOnly = true)
     public DonUngTuyenResponse getApplicationDetail(Long id, Long taiKhoanId) {
         DonUngTuyen don = donUngTuyenRepository.findByIdWithDetails(id)
-                .orElseThrow(() -> new ApplicationNotFoundException(id));
+                .orElseThrow(() -> new BaseBusinessException(ErrorCode.APPLICATION_NOT_FOUND));
 
         verifyApplicationAccess(don, taiKhoanId);
         return mapToResponse(don);
@@ -161,21 +162,21 @@ public class DonUngTuyenServiceImpl implements DonUngTuyenService {
         log.info("D5: Cập nhật trạng thái đơn {} → {}", id, request.getTrangThaiMoi());
 
         DonUngTuyen don = donUngTuyenRepository.findById(id)
-                .orElseThrow(() -> new ApplicationNotFoundException(id));
+                .orElseThrow(() -> new BaseBusinessException(ErrorCode.APPLICATION_NOT_FOUND));
 
         verifyRecruiterOwnership(don, taiKhoanId);
 
         TrangThaiDon newStatus = TrangThaiDon.fromValue(request.getTrangThaiMoi());
-        int oldStatus = don.getTrangThaiHienTai();
+        TrangThaiDon oldStatus = don.getTrangThaiHienTai();
 
-        if (oldStatus == newStatus.getValue()) {
-            throw new ValidationException("status", "Trạng thái này đã được thiết lập");
+        if (oldStatus == newStatus) {
+            throw new BaseBusinessException(ErrorCode.VALIDATION_ERROR, "Trạng thái này đã được thiết lập");
         }
 
-        don.setTrangThaiHienTai(newStatus.getValue());
+        don.setTrangThaiHienTai(newStatus);
         DonUngTuyen saved = donUngTuyenRepository.save(don);
 
-        recordStatusHistory(saved, oldStatus, newStatus.getValue(), request.getGhiChu(), taiKhoanId);
+        recordStatusHistory(saved, oldStatus.getValue(), newStatus.getValue(), request.getGhiChu(), taiKhoanId);
         sendStatusChangeNotification(saved, newStatus, taiKhoanId);
 
         return mapToResponse(saved);
@@ -206,7 +207,7 @@ public class DonUngTuyenServiceImpl implements DonUngTuyenService {
     @Transactional(readOnly = true)
     public String getCvSnapshotUrl(Long id, Long taiKhoanId) {
         DonUngTuyen don = donUngTuyenRepository.findById(id)
-                .orElseThrow(() -> new ApplicationNotFoundException(id));
+                .orElseThrow(() -> new BaseBusinessException(ErrorCode.APPLICATION_NOT_FOUND));
 
         verifyApplicationAccess(don, taiKhoanId);
         return don.getBanSaoCvUrl();
@@ -220,14 +221,16 @@ public class DonUngTuyenServiceImpl implements DonUngTuyenService {
     // Private Helper Methods
     // =========================================================================
 
-    /** Tìm UngVien theo taiKhoanId – ném BusinessException nếu không tồn tại. */
+    /** Tìm UngVien theo taiKhoanId – ném Exception nếu không tồn tại. */
     private UngVien findUngVienByTaiKhoan(Long taiKhoanId) {
-        return accessVerifier.findUngVienByTaiKhoan(taiKhoanId);
+        return ungVienRepository.findByTaiKhoanId(taiKhoanId)
+                .orElseThrow(() -> new BaseBusinessException(ErrorCode.USER_NOT_FOUND, "Không tìm thấy ứng viên"));
     }
 
-    /** Tìm NhaTuyenDung theo taiKhoanId – ném BusinessException nếu không tồn tại. */
+    /** Tìm NhaTuyenDung theo taiKhoanId – ném Exception nếu không tồn tại. */
     private NhaTuyenDung findNhaTuyenDungByTaiKhoan(Long taiKhoanId) {
-        return accessVerifier.findNhaTuyenDungByTaiKhoan(taiKhoanId);
+        return nhaTuyenDungRepository.findByTaiKhoanId(taiKhoanId)
+                .orElseThrow(() -> new BaseBusinessException(ErrorCode.USER_NOT_FOUND, "Không tìm thấy nhà tuyển dụng"));
     }
 
     /**
@@ -235,7 +238,10 @@ public class DonUngTuyenServiceImpl implements DonUngTuyenService {
      * (tin tuyển dụng phải thuộc NTD đang thực hiện).
      */
     private void verifyRecruiterOwnership(DonUngTuyen don, Long taiKhoanId) {
-        accessVerifier.verifyRecruiterOwnsApplication(don, taiKhoanId);
+        NhaTuyenDung ntd = findNhaTuyenDungByTaiKhoan(taiKhoanId);
+        if (!don.getTinTuyenDung().getNhaTuyenDung().getId().equals(ntd.getId())) {
+            throw new BaseBusinessException(ErrorCode.UNAUTHORIZED_ACCESS);
+        }
     }
 
     /**
@@ -245,14 +251,25 @@ public class DonUngTuyenServiceImpl implements DonUngTuyenService {
      * - ADMIN: xem được tất cả.
      */
     private void verifyApplicationAccess(DonUngTuyen don, Long taiKhoanId) {
-        accessVerifier.verifyApplicationAccess(don, taiKhoanId);
+        TaiKhoan tk = taiKhoanRepository.findById(taiKhoanId)
+                .orElseThrow(() -> new BaseBusinessException(ErrorCode.USER_NOT_FOUND));
+
+        if (tk.getVaiTro() == VaiTroTaiKhoan.UNG_VIEN) {
+            UngVien uv = ungVienRepository.findByTaiKhoanId(taiKhoanId).orElse(null);
+            if (uv == null || !don.getHoSoCv().getUngVien().getId().equals(uv.getId())) {
+                throw new BaseBusinessException(ErrorCode.UNAUTHORIZED_ACCESS);
+            }
+        } else if (tk.getVaiTro() == VaiTroTaiKhoan.NHA_TUYEN_DUNG) {
+            verifyRecruiterOwnership(don, taiKhoanId);
+        }
+        // ADMIN: cho phép bỏ qua
     }
 
     /** Ghi lại một bước thay đổi trạng thái vào bảng lich_su_trang_thai. */
     private void recordStatusHistory(DonUngTuyen don, Integer oldStatus, Integer newStatus,
                                      String note, Long taiKhoanId) {
         TaiKhoan tk = taiKhoanRepository.findById(taiKhoanId)
-                .orElseThrow(() -> new ResourceNotFoundException("TaiKhoan", taiKhoanId));
+                .orElseThrow(() -> new BaseBusinessException(ErrorCode.USER_NOT_FOUND));
 
         LichSuTrangThai ls = new LichSuTrangThai();
         ls.setDonUngTuyen(don);
@@ -284,7 +301,7 @@ public class DonUngTuyenServiceImpl implements DonUngTuyenService {
 
     /** Map entity → DTO response (Builder Pattern). */
     private DonUngTuyenResponse mapToResponse(DonUngTuyen d) {
-        TrangThaiDon status = TrangThaiDon.fromValue(d.getTrangThaiHienTai());
+        TrangThaiDon status = d.getTrangThaiHienTai();
         return DonUngTuyenResponse.builder()
                 .id(d.getId())
                 .tinTuyenDungId(d.getTinTuyenDung().getId())
@@ -297,7 +314,7 @@ public class DonUngTuyenServiceImpl implements DonUngTuyenService {
                 .hoSoCvId(d.getHoSoCv().getId())
                 .cvUrl(d.getBanSaoCvUrl())
                 .thuNgo(d.getThuNgo())
-                .trangThai(d.getTrangThaiHienTai())
+                .trangThai(d.getTrangThaiHienTai().getValue())
                 .trangThaiLabel(status.getLabel())
                 .ngayNop(d.getNgayNop())
                 .build();

@@ -19,8 +19,4 @@ public interface TaiKhoanRepository extends JpaRepository<TaiKhoan, Long> {
 
     @Query("SELECT t FROM TaiKhoan t JOIN FETCH t.nhaTuyenDung WHERE t.email = :email")
     Optional<TaiKhoan> findByEmailWithNhaTuyenDung(String email);
-
-    Optional<TaiKhoan> findByResetToken(String resetToken);
-
-    Optional<TaiKhoan> findByVerifyToken(String verifyToken);
 }

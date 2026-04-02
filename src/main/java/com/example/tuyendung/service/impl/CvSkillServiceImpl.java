@@ -6,8 +6,8 @@ import com.example.tuyendung.entity.ChiTietKyNangCv;
 import com.example.tuyendung.entity.HoSoCv;
 import com.example.tuyendung.entity.KyNang;
 import com.example.tuyendung.entity.id.ChiTietKyNangCvId;
-import com.example.tuyendung.exception.DuplicateResourceException;
-import com.example.tuyendung.exception.ResourceNotFoundException;
+import com.example.tuyendung.exception.BaseBusinessException;
+import com.example.tuyendung.exception.ErrorCode;
 import com.example.tuyendung.repository.ChiTietKyNangCvRepository;
 import com.example.tuyendung.repository.HoSoCvRepository;
 import com.example.tuyendung.repository.KyNangRepository;
@@ -24,13 +24,13 @@ import java.util.stream.Collectors;
 
 /**
  * Service Implementation cho CV Skills (E4-E7)
- * 
+ *
  * SOLID Principles Applied:
  * - Dependency Inversion: Depends on repository interfaces, not concrete classes
  * - Single Responsibility: Chỉ xử lý CV skills business logic
  * - Open/Closed: Easy to extend without modifying existing code
  * - Liskov Substitution: Can be replaced with any impl of CvSkillService
- * 
+ *
  * Design Patterns:
  * - Service Pattern: Encapsulates business logic
  * - DTO Pattern: Uses custom DTOs for requests/responses
@@ -54,11 +54,13 @@ public class CvSkillServiceImpl implements CvSkillService {
 
         // Verify CV exists and not deleted
         HoSoCv cv = hoSoCvRepository.findByIdAndNotDeleted(cvId)
-                .orElseThrow(() -> new ResourceNotFoundException("HoSoCV", cvId));
+                .orElseThrow(() -> new BaseBusinessException(ErrorCode.CV_NOT_FOUND,
+                        "Không tìm thấy hồ sơ CV ID: " + cvId));
 
         // Verify skill exists
         KyNang kyNang = kyNangRepository.findById(request.getKyNangId())
-                .orElseThrow(() -> new ResourceNotFoundException("KyNang", request.getKyNangId()));
+                .orElseThrow(() -> new BaseBusinessException(ErrorCode.SKILL_NOT_FOUND,
+                        "Không tìm thấy kỹ năng ID: " + request.getKyNangId()));
 
         // Check for duplicates using database constraint
         try {
@@ -79,7 +81,8 @@ public class CvSkillServiceImpl implements CvSkillService {
             return mapToResponse(saved, kyNang.getTenKyNang());
         } catch (DataIntegrityViolationException e) {
             log.warn("Kỹ năng {} đã tồn tại trong CV {}", request.getKyNangId(), cvId);
-            throw new DuplicateResourceException("Kỹ năng này đã tồn tại trong CV");
+            throw new BaseBusinessException(ErrorCode.DUPLICATE_RESOURCE,
+                    "Kỹ năng này đã tồn tại trong CV");
         }
     }
 
@@ -89,7 +92,8 @@ public class CvSkillServiceImpl implements CvSkillService {
 
         // Verify CV exists
         hoSoCvRepository.findByIdAndNotDeleted(cvId)
-                .orElseThrow(() -> new ResourceNotFoundException("HoSoCV", cvId));
+                .orElseThrow(() -> new BaseBusinessException(ErrorCode.CV_NOT_FOUND,
+                        "Không tìm thấy hồ sơ CV ID: " + cvId));
 
         List<ChiTietKyNangCv> skills = chiTietKyNangCvRepository.findByHoSoCvId(cvId);
         return skills.stream()
@@ -101,15 +105,18 @@ public class CvSkillServiceImpl implements CvSkillService {
     @Override
     @Transactional
     public CvSkillResponse updateCvSkillProficiency(Long cvId, Long skillId, CvSkillRequest request) {
-        log.info("E6: Cập nhật kỽ năng {} trong CV {}", skillId, cvId);
+        log.info("E6: Cập nhật kỹ năng {} trong CV {}", skillId, cvId);
 
         // Verify CV exists
         hoSoCvRepository.findByIdAndNotDeleted(cvId)
-                .orElseThrow(() -> new ResourceNotFoundException("HoSoCV", cvId));
+                .orElseThrow(() -> new BaseBusinessException(ErrorCode.CV_NOT_FOUND,
+                        "Không tìm thấy hồ sơ CV ID: " + cvId));
 
         // Find the skill in CV
-        ChiTietKyNangCv chiTietKyNangCv = chiTietKyNangCvRepository.findByHoSoCvIdAndKyNangId(cvId, skillId)
-                .orElseThrow(() -> new ResourceNotFoundException("Kỹ năng không tồn tại trong CV này"));
+        ChiTietKyNangCv chiTietKyNangCv = chiTietKyNangCvRepository
+                .findByHoSoCvIdAndKyNangId(cvId, skillId)
+                .orElseThrow(() -> new BaseBusinessException(ErrorCode.SKILL_NOT_FOUND,
+                        "Kỹ năng không tồn tại trong CV này"));
 
         // Update fields
         chiTietKyNangCv.setMucThanhThao(request.getMucThanhThao());
@@ -117,7 +124,7 @@ public class CvSkillServiceImpl implements CvSkillService {
         chiTietKyNangCv.setNgayCapNhat(timeProvider.getCurrentTimeMillis());
 
         ChiTietKyNangCv updated = chiTietKyNangCvRepository.save(chiTietKyNangCv);
-        log.info("Cập nhật kỽ năng {} trong CV {} thành công", skillId, cvId);
+        log.info("Cập nhật kỹ năng {} trong CV {} thành công", skillId, cvId);
 
         return mapToResponse(updated, chiTietKyNangCv.getKyNang().getTenKyNang());
     }
@@ -125,32 +132,38 @@ public class CvSkillServiceImpl implements CvSkillService {
     @Override
     @Transactional
     public void deleteCvSkill(Long cvId, Long skillId) {
-        log.info("E7: Xóa kỽ năng {} từ CV {}", skillId, cvId);
+        log.info("E7: Xóa kỹ năng {} từ CV {}", skillId, cvId);
 
         // Verify CV exists
         hoSoCvRepository.findByIdAndNotDeleted(cvId)
-                .orElseThrow(() -> new ResourceNotFoundException("HoSoCV", cvId));
+                .orElseThrow(() -> new BaseBusinessException(ErrorCode.CV_NOT_FOUND,
+                        "Không tìm thấy hồ sơ CV ID: " + cvId));
 
         // Find and soft-delete
-        ChiTietKyNangCv chiTietKyNangCv = chiTietKyNangCvRepository.findByHoSoCvIdAndKyNangId(cvId, skillId)
-                .orElseThrow(() -> new ResourceNotFoundException("Kỹ năng không tồn tại trong CV này"));
+        ChiTietKyNangCv chiTietKyNangCv = chiTietKyNangCvRepository
+                .findByHoSoCvIdAndKyNangId(cvId, skillId)
+                .orElseThrow(() -> new BaseBusinessException(ErrorCode.SKILL_NOT_FOUND,
+                        "Kỹ năng không tồn tại trong CV này"));
 
         chiTietKyNangCv.setDaXoa(true);
         chiTietKyNangCv.setNgayCapNhat(timeProvider.getCurrentTimeMillis());
         chiTietKyNangCvRepository.save(chiTietKyNangCv);
 
-        log.info("Xóa kỽ năng {} từ CV {} thành công", skillId, cvId);
+        log.info("Xóa kỹ năng {} từ CV {} thành công", skillId, cvId);
     }
 
     @Override
     public CvSkillResponse getCvSkillById(Long cvId, Long skillId) {
-        log.info("Lấy chi tiết kỽ năng {} từ CV {}", skillId, cvId);
+        log.info("Lấy chi tiết kỹ năng {} từ CV {}", skillId, cvId);
 
         hoSoCvRepository.findByIdAndNotDeleted(cvId)
-                .orElseThrow(() -> new ResourceNotFoundException("HoSoCV", cvId));
+                .orElseThrow(() -> new BaseBusinessException(ErrorCode.CV_NOT_FOUND,
+                        "Không tìm thấy hồ sơ CV ID: " + cvId));
 
-        ChiTietKyNangCv skill = chiTietKyNangCvRepository.findByHoSoCvIdAndKyNangId(cvId, skillId)
-                .orElseThrow(() -> new ResourceNotFoundException("Kỹ năng không tồn tại"));
+        ChiTietKyNangCv skill = chiTietKyNangCvRepository
+                .findByHoSoCvIdAndKyNangId(cvId, skillId)
+                .orElseThrow(() -> new BaseBusinessException(ErrorCode.SKILL_NOT_FOUND,
+                        "Kỹ năng không tồn tại trong CV này"));
 
         return mapToResponse(skill, skill.getKyNang().getTenKyNang());
     }
@@ -165,14 +178,15 @@ public class CvSkillServiceImpl implements CvSkillService {
      */
     private CvSkillResponse mapToResponse(ChiTietKyNangCv entity, String skillName) {
         return CvSkillResponse.builder()
-                .id(entity.getHoSoCv().getId()) // Use composite ID
+                .id(entity.getHoSoCv().getId())
                 .cvId(entity.getHoSoCv().getId())
                 .kyNangId(entity.getKyNang().getId())
                 .tenKyNang(skillName)
                 .mucThanhThao(entity.getMucThanhThao())
                 .moTa(entity.getMoTa())
-                .ngayTao(entity.getNgayTao() != null ? entity.getNgayTao().atZone(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli() : System.currentTimeMillis())
+                .ngayTao(entity.getNgayTao() != null
+                        ? entity.getNgayTao().atZone(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli()
+                        : System.currentTimeMillis())
                 .build();
     }
-
 }
