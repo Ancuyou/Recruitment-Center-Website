@@ -1,5 +1,6 @@
 import { Navigate, Outlet } from 'react-router-dom';
 import { useAuthStore } from '@/store/auth.store';
+import { ROUTES, getHomePathByRole } from '@/constants/routes';
 import type { VaiTroTaiKhoan } from '@/types/auth.types';
 
 interface Props {
@@ -10,9 +11,9 @@ interface Props {
 export function ProtectedRoute({ allowedRoles }: Props) {
   const { isAuthenticated, user } = useAuthStore();
 
-  if (!isAuthenticated) return <Navigate to="/dang-nhap" replace />;
-  if (allowedRoles && user && !allowedRoles.includes(user.vaiTro)) {
-    return <Navigate to="/unauthorized" replace />;
+  if (!isAuthenticated || !user) return <Navigate to={ROUTES.auth.login} replace />;
+  if (allowedRoles && !allowedRoles.includes(user.vaiTro)) {
+    return <Navigate to={ROUTES.auth.unauthorized} replace />;
   }
   return <Outlet />;
 }
@@ -21,9 +22,6 @@ export function ProtectedRoute({ allowedRoles }: Props) {
 export function GuestRoute() {
   const { isAuthenticated, user } = useAuthStore();
 
-  if (!isAuthenticated) return <Outlet />;
-
-  if (user?.vaiTro === 'UNG_VIEN') return <Navigate to="/ung-vien/dashboard" replace />;
-  if (user?.vaiTro === 'NHA_TUYEN_DUNG') return <Navigate to="/nha-tuyen-dung/dashboard" replace />;
-  return <Navigate to="/" replace />;
+  if (!isAuthenticated || !user) return <Outlet />;
+  return <Navigate to={getHomePathByRole(user.vaiTro)} replace />;
 }

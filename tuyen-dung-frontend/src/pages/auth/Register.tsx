@@ -4,6 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Link, useNavigate } from 'react-router-dom';
 import AuthLayout from '@/layouts/AuthLayout';
+import { ROUTES, getHomePathByRole } from '@/constants/routes';
 import { authService } from '@/services/auth.service';
 import { useAuthStore } from '@/store/auth.store';
 import s from '@/assets/styles/auth.module.css';
@@ -60,7 +61,7 @@ export default function Register() {
       {tab === 'ung-vien' ? <UngVienForm /> : <NhaTuyenDungForm />}
 
       <div className={s.footerLink} style={{ marginTop: 16 }}>
-        Đã có tài khoản? <Link to="/dang-nhap">Đăng nhập</Link>
+        Đã có tài khoản? <Link to={ROUTES.auth.login}>Đăng nhập</Link>
       </div>
     </AuthLayout>
   );
@@ -84,7 +85,7 @@ function UngVienForm() {
       void _skip;
       const res = await authService.dangKyUngVien({ ...payload, soDienThoai: payload.soDienThoai || undefined });
       setAuth(res);
-      navigate('/ung-vien/dashboard');
+      navigate(getHomePathByRole(res.vaiTro), { replace: true });
     } catch (err: unknown) {
       setServerError(
         (err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? 'Đăng ký thất bại'
@@ -150,7 +151,7 @@ function NhaTuyenDungForm() {
       void _skip;
       const res = await authService.dangKyNhaTuyenDung(payload);
       setAuth(res);
-      navigate('/nha-tuyen-dung/dashboard');
+      navigate(getHomePathByRole(res.vaiTro), { replace: true });
     } catch (err: unknown) {
       setServerError(
         (err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? 'Đăng ký thất bại'

@@ -4,6 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Link, useNavigate } from 'react-router-dom';
 import AuthLayout from '@/layouts/AuthLayout';
+import { ROUTES, getHomePathByRole } from '@/constants/routes';
 import { authService } from '@/services/auth.service';
 import { useAuthStore } from '@/store/auth.store';
 import s from '@/assets/styles/auth.module.css';
@@ -32,10 +33,7 @@ export default function Login() {
     try {
       const res = await authService.dangNhap(data);
       setAuth(res);
-      // Redirect based on role
-      if (res.vaiTro === 'UNG_VIEN') navigate('/ung-vien/dashboard');
-      else if (res.vaiTro === 'NHA_TUYEN_DUNG') navigate('/nha-tuyen-dung/dashboard');
-      else navigate('/');
+      navigate(getHomePathByRole(res.vaiTro), { replace: true });
     } catch (err: unknown) {
       const msg =
         (err as { response?: { data?: { message?: string } } })
@@ -95,9 +93,13 @@ export default function Login() {
         </button>
       </form>
 
+      <div className={s.footerLink} style={{ marginTop: 10 }}>
+        <Link to={ROUTES.auth.forgotPassword}>Quên mật khẩu?</Link>
+      </div>
+
       <div className={s.footerLink} style={{ marginTop: 20 }}>
         Chưa có tài khoản?{' '}
-        <Link to="/dang-ky">Đăng ký ngay</Link>
+        <Link to={ROUTES.auth.register}>Đăng ký ngay</Link>
       </div>
     </AuthLayout>
   );

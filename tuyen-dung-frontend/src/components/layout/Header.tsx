@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/store/auth.store';
+import { ROUTES } from '@/constants/routes';
 import type { VaiTroTaiKhoan } from '@/types/auth.types';
 import s from './Header.module.css';
 
@@ -11,7 +12,7 @@ interface Props {
 const ROLE_LABEL: Record<VaiTroTaiKhoan, string> = {
   UNG_VIEN: 'Ứng viên',
   NHA_TUYEN_DUNG: 'Nhà tuyển dụng',
-  QUAN_TRI_VIEN: 'Quản trị viên',
+  ADMIN: 'Quản trị viên',
 };
 
 export default function Header({ title, breadcrumb }: Props) {
@@ -25,7 +26,7 @@ export default function Header({ title, breadcrumb }: Props) {
 
   const handleLogout = () => {
     logout();
-    navigate('/dang-nhap', { replace: true });
+    navigate(ROUTES.auth.login, { replace: true });
   };
 
   return (

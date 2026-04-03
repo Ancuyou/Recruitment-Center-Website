@@ -1,5 +1,5 @@
 // ─── Enums matching backend ───────────────────────────────────────
-export type VaiTroTaiKhoan = 'UNG_VIEN' | 'NHA_TUYEN_DUNG' | 'QUAN_TRI_VIEN';
+export type VaiTroTaiKhoan = 'UNG_VIEN' | 'NHA_TUYEN_DUNG' | 'ADMIN';
 export type GioiTinh = 'NAM' | 'NU' | 'KHAC';
 
 // ─── Request DTOs ─────────────────────────────────────────────────

@@ -1,0 +1,9 @@
+export { authService } from '@/services/modules/auth.module';
+export { applicationService } from '@/services/modules/application.module';
+export { companyService } from '@/services/modules/company.module';
+export { cvService } from '@/services/modules/cv.module';
+export { dashboardService } from '@/services/modules/dashboard.module';
+export { jobService } from '@/services/modules/job.module';
+export { userService } from '@/services/modules/user.module';
+export { lookupService } from '@/services/modules/lookup.module';
+export { notificationService } from '@/services/modules/notification.module';

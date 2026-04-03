@@ -3,6 +3,7 @@ import axios, {
   type AxiosResponse,
   type InternalAxiosRequestConfig,
 } from 'axios';
+import { ROUTES } from '@/constants/routes';
 import type { ApiResponse } from '@/types/api.types';
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? '';
@@ -29,7 +30,7 @@ api.interceptors.response.use(
     if (error.response?.status === 401) {
       localStorage.removeItem('accessToken');
       localStorage.removeItem('refreshToken');
-      window.location.href = '/dang-nhap';
+      window.location.href = ROUTES.auth.login;
     }
     return Promise.reject(error);
   }

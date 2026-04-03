@@ -5,12 +5,13 @@
 USE he_thong_tuyen_dung;
 
 -- 1) Tai khoan
+-- Mat khau test cho cac tai khoan seed: 123
 INSERT INTO tai_khoan (email, mat_khau_hash, vai_tro, la_kich_hoat) VALUES
-('admin@system.local', '$2a$10$mock_admin_hash', 'ADMIN', TRUE),
-('hr1@fsoft.local', '$2a$10$mock_hr1_hash', 'NHA_TUYEN_DUNG', TRUE),
-('hr2@vng.local', '$2a$10$mock_hr2_hash', 'NHA_TUYEN_DUNG', TRUE),
-('candidate1@mail.local', '$2a$10$mock_uv1_hash', 'UNG_VIEN', TRUE),
-('candidate2@mail.local', '$2a$10$mock_uv2_hash', 'UNG_VIEN', TRUE);
+('admin@system.local', '$2a$10$QeibVBculcttqVKJH3oArucqQ8gU0Z6hyOIW9OCCHwPTqwod0rBCW', 'ADMIN', TRUE),
+('hr1@fsoft.local', '$2a$10$QeibVBculcttqVKJH3oArucqQ8gU0Z6hyOIW9OCCHwPTqwod0rBCW', 'NHA_TUYEN_DUNG', TRUE),
+('hr2@vng.local', '$2a$10$QeibVBculcttqVKJH3oArucqQ8gU0Z6hyOIW9OCCHwPTqwod0rBCW', 'NHA_TUYEN_DUNG', TRUE),
+('candidate1@mail.local', '$2a$10$QeibVBculcttqVKJH3oArucqQ8gU0Z6hyOIW9OCCHwPTqwod0rBCW', 'UNG_VIEN', TRUE),
+('candidate2@mail.local', '$2a$10$QeibVBculcttqVKJH3oArucqQ8gU0Z6hyOIW9OCCHwPTqwod0rBCW', 'UNG_VIEN', TRUE);
 
 -- 2) Cong ty
 INSERT INTO cong_ty (ten_cong_ty, ma_so_thue, logo_url, website, mo_ta) VALUES

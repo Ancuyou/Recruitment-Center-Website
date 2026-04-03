@@ -38,8 +38,26 @@ public class JwtTokenProvider {
         return Keys.hmacShaKeyFor(keyBytes);
     }
 
+    private TaiKhoan extractTaiKhoan(Authentication authentication) {
+        Object principal = authentication.getPrincipal();
+
+        if (principal == null) {
+            throw new IllegalStateException("Authentication principal is null");
+        }
+
+        if (principal instanceof CustomUserDetails customUserDetails) {
+            return customUserDetails.getTaiKhoan();
+        }
+
+        if (principal instanceof TaiKhoan taiKhoan) {
+            return taiKhoan;
+        }
+
+        throw new IllegalStateException("Unsupported authentication principal type: " + principal.getClass().getName());
+    }
+
     public String generateAccessToken(Authentication authentication) {
-        TaiKhoan taiKhoan = (TaiKhoan) authentication.getPrincipal();
+        TaiKhoan taiKhoan = extractTaiKhoan(authentication);
 
         String authorities = authentication.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)
@@ -57,7 +75,7 @@ public class JwtTokenProvider {
     }
 
     public String generateRefreshToken(Authentication authentication) {
-        TaiKhoan taiKhoan = (TaiKhoan) authentication.getPrincipal();
+        TaiKhoan taiKhoan = extractTaiKhoan(authentication);
 
         return Jwts.builder()
                 .subject(String.valueOf(taiKhoan.getId()))

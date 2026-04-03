@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/store/auth.store';
+import { ROUTES } from '@/constants/routes';
 import type { VaiTroTaiKhoan } from '@/types/auth.types';
 import s from './Sidebar.module.css';
 
@@ -21,72 +22,75 @@ interface NavSection {
 const NAV_CONFIG: Record<VaiTroTaiKhoan, NavSection[]> = {
   UNG_VIEN: [
     {
-      items: [{ label: 'Tổng quan', icon: '🏠', to: '/ung-vien/dashboard' }],
+      items: [{ label: 'Tổng quan', icon: '🏠', to: ROUTES.candidate.dashboard }],
     },
     {
       title: 'Việc làm',
       items: [
-        { label: 'Tìm việc làm', icon: '🔍', to: '/ung-vien/tim-viec' },
-        { label: 'Đã ứng tuyển', icon: '📋', to: '/ung-vien/ung-tuyen' },
-        { label: 'Việc đã lưu', icon: '❤️', to: '/ung-vien/da-luu' },
+        { label: 'Tìm việc làm', icon: '🔍', to: ROUTES.candidate.jobs },
+        { label: 'Đã ứng tuyển', icon: '📋', to: ROUTES.candidate.applications },
+        { label: 'Việc đã lưu', icon: '❤️', to: ROUTES.candidate.savedJobs },
       ],
     },
     {
       title: 'Hồ sơ',
       items: [
-        { label: 'Hồ sơ của tôi', icon: '👤', to: '/ung-vien/ho-so' },
-        { label: 'Quản lý CV', icon: '📄', to: '/ung-vien/cv' },
+        { label: 'Hồ sơ của tôi', icon: '👤', to: ROUTES.candidate.profile },
+        { label: 'Quản lý CV', icon: '📄', to: ROUTES.candidate.cv },
       ],
     },
     {
       title: 'Thông báo',
-      items: [{ label: 'Thông báo', icon: '🔔', to: '/ung-vien/thong-bao', badge: 3 }],
+      items: [{ label: 'Thông báo', icon: '🔔', to: ROUTES.candidate.notifications, badge: 3 }],
     },
   ],
 
   NHA_TUYEN_DUNG: [
     {
-      items: [{ label: 'Tổng quan', icon: '🏠', to: '/nha-tuyen-dung/dashboard' }],
+      items: [{ label: 'Tổng quan', icon: '🏠', to: ROUTES.recruiter.dashboard }],
     },
     {
       title: 'Tuyển dụng',
       items: [
-        { label: 'Tin tuyển dụng', icon: '📢', to: '/nha-tuyen-dung/tin-tuyen-dung' },
-        { label: 'Ứng viên nộp', icon: '📥', to: '/nha-tuyen-dung/ung-vien', badge: 5 },
-        { label: 'Hồ sơ ứng viên', icon: '🗂️', to: '/nha-tuyen-dung/ho-so' },
+        { label: 'Tin tuyển dụng', icon: '📢', to: ROUTES.recruiter.jobs },
+        { label: 'Ứng viên nộp', icon: '📥', to: ROUTES.recruiter.applicants, badge: 5 },
       ],
     },
     {
       title: 'Công ty',
       items: [
-        { label: 'Thông tin công ty', icon: '🏢', to: '/nha-tuyen-dung/cong-ty' },
-        { label: 'Gói dịch vụ', icon: '⭐', to: '/nha-tuyen-dung/goi-dich-vu' },
+        { label: 'Thông tin công ty', icon: '🏢', to: ROUTES.recruiter.company },
+        { label: 'Gói dịch vụ', icon: '⭐', to: ROUTES.recruiter.plans },
       ],
     },
     {
       title: 'Khác',
-      items: [{ label: 'Thông báo', icon: '🔔', to: '/nha-tuyen-dung/thong-bao' }],
+      items: [
+        { label: 'Hồ sơ của tôi', icon: '👤', to: ROUTES.recruiter.profile },
+        { label: 'Hồ sơ ứng viên', icon: '🗂️', to: ROUTES.recruiter.candidateProfiles },
+        { label: 'Thông báo', icon: '🔔', to: ROUTES.recruiter.notifications },
+      ],
     },
   ],
 
-  QUAN_TRI_VIEN: [
+  ADMIN: [
     {
-      items: [{ label: 'Tổng quan', icon: '🏠', to: '/admin/dashboard' }],
+      items: [{ label: 'Tổng quan', icon: '🏠', to: ROUTES.admin.dashboard }],
     },
     {
       title: 'Quản lý',
       items: [
-        { label: 'Người dùng', icon: '👥', to: '/admin/nguoi-dung' },
-        { label: 'Tin tuyển dụng', icon: '📢', to: '/admin/tin-tuyen-dung' },
-        { label: 'Công ty', icon: '🏢', to: '/admin/cong-ty' },
+        { label: 'Người dùng', icon: '👥', to: ROUTES.admin.users },
+        { label: 'Tin tuyển dụng', icon: '📢', to: ROUTES.admin.jobs },
+        { label: 'Công ty', icon: '🏢', to: ROUTES.admin.companies },
       ],
     },
     {
       title: 'Hệ thống',
       items: [
-        { label: 'Báo cáo', icon: '📊', to: '/admin/bao-cao' },
-        { label: 'Cài đặt', icon: '⚙️', to: '/admin/cai-dat' },
-        { label: 'Nhật ký', icon: '📝', to: '/admin/nhat-ky' },
+        { label: 'Báo cáo', icon: '📊', to: ROUTES.admin.reports },
+        { label: 'Cài đặt', icon: '⚙️', to: ROUTES.admin.settings },
+        { label: 'Nhật ký', icon: '📝', to: ROUTES.admin.logs },
       ],
     },
   ],
@@ -95,7 +99,7 @@ const NAV_CONFIG: Record<VaiTroTaiKhoan, NavSection[]> = {
 const ROLE_LABEL: Record<VaiTroTaiKhoan, string> = {
   UNG_VIEN: 'Ứng viên',
   NHA_TUYEN_DUNG: 'Nhà tuyển dụng',
-  QUAN_TRI_VIEN: 'Quản trị viên',
+  ADMIN: 'Quản trị viên',
 };
 
 // ─── Component ─────────────────────────────────────────────────────────────
@@ -113,7 +117,7 @@ export default function Sidebar() {
 
   const handleLogout = () => {
     logout();
-    navigate('/dang-nhap', { replace: true });
+    navigate(ROUTES.auth.login, { replace: true });
   };
 
   return (
