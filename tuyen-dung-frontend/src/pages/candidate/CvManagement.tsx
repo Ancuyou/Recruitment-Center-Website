@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import MainLayout from '@/layouts/MainLayout';
 import AppDataTable, { type AppDataColumn } from '@/components/common/AppDataTable';
+import { useDraftHistory } from '@/hooks/useDraftHistory';
 import { cvService } from '@/services/modules/cv.module';
 import { lookupService } from '@/services/modules/lookup.module';
 import type {
@@ -51,6 +52,8 @@ const EMPTY_DETAIL_FORM: DetailFormState = {
   moTaChiTiet: '',
 };
 
+type DetailTypeFilter = 'ALL' | LoaiBanGhiCv;
+
 function mapError(error: unknown, fallback: string): string {
   return (
     (error as { response?: { data?: { message?: string } } })?.response?.data?.message ?? fallback
@@ -85,12 +88,17 @@ export default function CandidateCvManagementPage() {
   const [skills, setSkills] = useState<CvSkillItem[]>([]);
   const [details, setDetails] = useState<CvDetailItem[]>([]);
   const [skillOptions, setSkillOptions] = useState<LookupItem[]>([]);
-  const [createForm, setCreateForm] = useState<CvRequest>(EMPTY_CV_FORM);
+  const createCvDraft = useDraftHistory<CvRequest>({
+    storageKey: 'draft.candidate.cv.create',
+    initialValue: EMPTY_CV_FORM,
+  });
+  const createForm = createCvDraft.value;
   const [editForm, setEditForm] = useState<CvRequest>(EMPTY_CV_FORM);
   const [skillForm, setSkillForm] = useState<SkillFormState>(EMPTY_SKILL_FORM);
   const [detailForm, setDetailForm] = useState<DetailFormState>(EMPTY_DETAIL_FORM);
   const [selectedSkillKey, setSelectedSkillKey] = useState<number | null>(null);
   const [selectedDetailId, setSelectedDetailId] = useState<number | null>(null);
+  const [detailTypeFilter, setDetailTypeFilter] = useState<DetailTypeFilter>('ALL');
   const [uploadFile, setUploadFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [detailLoading, setDetailLoading] = useState(false);
@@ -141,10 +149,15 @@ export default function CandidateCvManagementPage() {
   const fetchCvBundle = useCallback(async (cvId: number) => {
     setDetailLoading(true);
     try {
+      const cvDetailsPromise =
+        detailTypeFilter === 'ALL'
+          ? cvService.getCvDetails(cvId)
+          : cvService.getCvDetailsByType(cvId, detailTypeFilter);
+
       const [cvDetail, cvSkills, cvDetails] = await Promise.all([
         cvService.getCvById(cvId),
         cvService.getCvSkills(cvId),
-        cvService.getCvDetails(cvId),
+        cvDetailsPromise,
       ]);
       setSelectedCv(cvDetail);
       setSkills(cvSkills);
@@ -163,7 +176,7 @@ export default function CandidateCvManagementPage() {
     } finally {
       setDetailLoading(false);
     }
-  }, []);
+  }, [detailTypeFilter]);
 
   useEffect(() => {
     if (!selectedCvId) {
@@ -186,7 +199,7 @@ export default function CandidateCvManagementPage() {
     setError('');
     try {
       const created = await cvService.createCv(normalizeCvPayload(createForm));
-      setCreateForm(EMPTY_CV_FORM);
+      createCvDraft.clearDraft(EMPTY_CV_FORM);
       setMessage('Tạo CV thành công.');
       await fetchCvList();
       setSelectedCvId(created.id);
@@ -559,7 +572,9 @@ export default function CandidateCvManagementPage() {
               <input
                 className={s.input}
                 value={createForm.tieuDeCv}
-                onChange={(e) => setCreateForm((prev) => ({ ...prev, tieuDeCv: e.target.value }))}
+                onChange={(e) =>
+                  createCvDraft.setValue((prev) => ({ ...prev, tieuDeCv: e.target.value }))
+                }
                 placeholder="Ví dụ: CV Frontend React"
               />
             </div>
@@ -568,7 +583,9 @@ export default function CandidateCvManagementPage() {
               <textarea
                 className={s.textarea}
                 value={createForm.mucTieuNgheNghiep}
-                onChange={(e) => setCreateForm((prev) => ({ ...prev, mucTieuNgheNghiep: e.target.value }))}
+                onChange={(e) =>
+                  createCvDraft.setValue((prev) => ({ ...prev, mucTieuNgheNghiep: e.target.value }))
+                }
                 placeholder="Mô tả ngắn mục tiêu nghề nghiệp"
               />
             </div>
@@ -577,11 +594,37 @@ export default function CandidateCvManagementPage() {
               <input
                 className={s.input}
                 value={createForm.fileCvUrl}
-                onChange={(e) => setCreateForm((prev) => ({ ...prev, fileCvUrl: e.target.value }))}
+                onChange={(e) =>
+                  createCvDraft.setValue((prev) => ({ ...prev, fileCvUrl: e.target.value }))
+                }
                 placeholder="https://..."
               />
             </div>
             <div className={s.actions}>
+              <button
+                type="button"
+                className={`${s.btn} ${s.btnGhost}`}
+                disabled={saving || !createCvDraft.canUndo}
+                onClick={createCvDraft.undo}
+              >
+                Undo
+              </button>
+              <button
+                type="button"
+                className={`${s.btn} ${s.btnGhost}`}
+                disabled={saving || !createCvDraft.canRedo}
+                onClick={createCvDraft.redo}
+              >
+                Redo
+              </button>
+              <button
+                type="button"
+                className={`${s.btn} ${s.btnGhost}`}
+                disabled={saving}
+                onClick={() => createCvDraft.clearDraft(EMPTY_CV_FORM)}
+              >
+                Xóa nháp
+              </button>
               <button
                 type="button"
                 className={`${s.btn} ${s.btnPrimary}`}
@@ -799,6 +842,28 @@ export default function CandidateCvManagementPage() {
 
           <section className={s.card}>
             <h3 className={s.cardTitle}>Học vấn/Kinh nghiệm/Chứng chỉ</h3>
+            <div className={s.topBar}>
+              <div className={s.tags}>
+                <span className={s.tag}>Bản ghi: {details.length}</span>
+              </div>
+              <div className={s.field} style={{ minWidth: 220 }}>
+                <label className={s.label}>Lọc theo loại</label>
+                <select
+                  className={s.select}
+                  value={String(detailTypeFilter)}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setDetailTypeFilter(value === 'ALL' ? 'ALL' : (Number(value) as LoaiBanGhiCv));
+                    setSelectedDetailId(null);
+                  }}
+                >
+                  <option value="ALL">Tất cả</option>
+                  <option value="1">Học vấn</option>
+                  <option value="2">Kinh nghiệm</option>
+                  <option value="3">Chứng chỉ</option>
+                </select>
+              </div>
+            </div>
             <AppDataTable
               columns={[
                 {

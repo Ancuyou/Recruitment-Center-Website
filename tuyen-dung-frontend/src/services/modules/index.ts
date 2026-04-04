@@ -7,3 +7,5 @@ export { jobService } from '@/services/modules/job.module';
 export { userService } from '@/services/modules/user.module';
 export { lookupService } from '@/services/modules/lookup.module';
 export { notificationService } from '@/services/modules/notification.module';
+export { matchingService } from '@/services/modules/matching.module';
+export { skillService } from '@/services/modules/skill.module';

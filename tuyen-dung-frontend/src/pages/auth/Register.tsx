@@ -33,7 +33,7 @@ const nhaTuyenDungSchema = z.object({
   xacNhanMatKhau: z.string(),
   chucVu: z.string().min(1, 'Vui lòng nhập chức vụ'),
   tenCongTy: z.string().min(1, 'Vui lòng nhập tên công ty'),
-  maSoThue: z.string().min(1, 'Vui lòng nhập mã số thuế'),
+  maSoThue: z.string().regex(/^\d{10,14}$/, 'Mã số thuế phải gồm 10-14 chữ số'),
   soDienThoai: z.string().optional(),
   nganhNghe: z.string().optional(),
   website: z.string().optional(),

@@ -59,23 +59,25 @@ public interface MatchingRepository extends JpaRepository<ChiTietKyNangCv, ChiTi
     /**
      * Tìm các ứng viên phù hợp với job (dựa trên kỹ năng)
      */
-    @Query("SELECT DISTINCT cknc.hoSoCv.id FROM ChiTietKyNangCv cknc " +
+    @Query("SELECT cknc.hoSoCv.id FROM ChiTietKyNangCv cknc " +
            "WHERE cknc.hoSoCv.daXoa = false " +
            "AND cknc.kyNang.id IN (" +
            "  SELECT cknt.kyNang.id FROM ChiTietKyNangTin cknt " +
            "  WHERE cknt.tinTuyenDung.id = :jobId AND cknt.daXoa = false) " +
-           "ORDER BY cknc.hoSoCv.ngayTao DESC")
+           "GROUP BY cknc.hoSoCv.id " +
+           "ORDER BY MAX(cknc.hoSoCv.ngayTao) DESC")
     List<Long> findMatchingCandidatesByJobId(@Param("jobId") Long jobId);
 
     /**
      * Tìm các công việc phù hợp với CV
      */
-    @Query("SELECT DISTINCT cknt.tinTuyenDung.id FROM ChiTietKyNangTin cknt " +
+    @Query("SELECT cknt.tinTuyenDung.id FROM ChiTietKyNangTin cknt " +
            "WHERE cknt.daXoa = false " +
            "AND cknt.kyNang.id IN (" +
            "  SELECT cknc.kyNang.id FROM ChiTietKyNangCv cknc " +
            "  WHERE cknc.hoSoCv.id = :cvId AND cknc.hoSoCv.daXoa = false) " +
-           "ORDER BY cknt.tinTuyenDung.ngayTao DESC")
+           "GROUP BY cknt.tinTuyenDung.id " +
+           "ORDER BY MAX(cknt.tinTuyenDung.ngayTao) DESC")
     List<Long> findMatchingJobsByCvId(@Param("cvId") Long cvId);
 
 }

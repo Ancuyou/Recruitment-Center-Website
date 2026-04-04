@@ -24,7 +24,7 @@ function formatSalary(min?: number, max?: number): string {
 }
 
 function toJobDetailPath(id: number): string {
-  return ROUTES.public.jobDetail.replace(':id', String(id));
+  return ROUTES.candidate.jobDetail.replace(':id', String(id));
 }
 
 export default function CandidateSavedJobsPage() {
@@ -105,7 +105,7 @@ export default function CandidateSavedJobsPage() {
         {jobs.length === 0 && !loading ? (
           <div className={s.alert}>
             Chưa có tin nào được lưu. Bạn có thể lưu từ trang{' '}
-            <Link className={s.inlineLink} to={ROUTES.public.jobs}>Việc làm</Link>.
+            <Link className={s.inlineLink} to={ROUTES.candidate.jobs}>Việc làm</Link>.
           </div>
         ) : null}
 

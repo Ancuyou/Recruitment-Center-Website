@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import MainLayout from '@/layouts/MainLayout';
 import AppDataTable, { type AppDataColumn } from '@/components/common/AppDataTable';
+import { useDraftHistory } from '@/hooks/useDraftHistory';
 import { applicationService } from '@/services/modules/application.module';
 import { jobService } from '@/services/modules/job.module';
 import type { PageResponse } from '@/types/api.types';
@@ -71,9 +72,34 @@ function toDateTimeInput(value?: string): string {
   return `${yyyy}-${mm}-${dd}T${hh}:${mi}`;
 }
 
+function validateInterviewDateRange(startRaw: string, endRaw: string): string | null {
+  const start = new Date(startRaw);
+  const end = new Date(endRaw);
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+    return 'Thời gian phỏng vấn không hợp lệ.';
+  }
+
+  const now = Date.now();
+  if (start.getTime() <= now || end.getTime() <= now) {
+    return 'Thời gian phỏng vấn phải ở tương lai.';
+  }
+
+  if (end.getTime() <= start.getTime()) {
+    return 'Thời gian kết thúc phải sau thời gian bắt đầu.';
+  }
+
+  return null;
+}
+
 export function RecruiterApplicantsPage({ viewMode = 'applicants' }: { viewMode?: ViewMode }) {
   const [jobs, setJobs] = useState<JobPosting[]>([]);
-  const [selectedJobId, setSelectedJobId] = useState<number | null>(null);
+  const {
+    value: selectedJobId,
+    setValue: setSelectedJobId,
+  } = useDraftHistory<number | null>({
+    storageKey: 'draft.recruiter.applicants.selectedJobId',
+    initialValue: null,
+  });
   const [page, setPage] = useState(0);
   const [pageData, setPageData] = useState<PageResponse<ApplicationItem>>({
     content: [],
@@ -83,7 +109,13 @@ export function RecruiterApplicantsPage({ viewMode = 'applicants' }: { viewMode?
     size: 10,
   });
 
-  const [selectedApplicationId, setSelectedApplicationId] = useState<number | null>(null);
+  const {
+    value: selectedApplicationId,
+    setValue: setSelectedApplicationId,
+  } = useDraftHistory<number | null>({
+    storageKey: 'draft.recruiter.applicants.selectedApplicationId',
+    initialValue: null,
+  });
   const [selectedApplication, setSelectedApplication] = useState<ApplicationItem | null>(null);
   const [statusHistory, setStatusHistory] = useState<ApplicationStatusHistoryItem[]>([]);
   const [cvSnapshotUrl, setCvSnapshotUrl] = useState('');
@@ -115,7 +147,7 @@ export function RecruiterApplicantsPage({ viewMode = 'applicants' }: { viewMode?
     } catch (err) {
       setError(mapError(err, 'Không thể tải danh sách tin tuyển dụng của bạn.'));
     }
-  }, [selectedJobId]);
+  }, [selectedJobId, setSelectedJobId]);
 
   useEffect(() => {
     void fetchJobs();
@@ -140,7 +172,7 @@ export function RecruiterApplicantsPage({ viewMode = 'applicants' }: { viewMode?
     } finally {
       setLoading(false);
     }
-  }, [selectedApplicationId, selectedJobId, page]);
+  }, [selectedApplicationId, selectedJobId, page, setSelectedApplicationId]);
 
   useEffect(() => {
     void fetchApplications();
@@ -191,21 +223,28 @@ export function RecruiterApplicantsPage({ viewMode = 'applicants' }: { viewMode?
 
   const handleChangeJob = (jobIdRaw: string) => {
     const jobId = Number(jobIdRaw);
-    setSelectedJobId(Number.isInteger(jobId) ? jobId : null);
+    const isValidJobId = jobIdRaw.trim() !== '' && Number.isInteger(jobId) && jobId > 0;
+    setSelectedJobId(isValidJobId ? jobId : null);
     setSelectedApplicationId(null);
     setSelectedInterviewId(null);
     setPage(0);
   };
 
-  const handlePickInterview = (item: InterviewItem) => {
-    setSelectedInterviewId(item.id);
-    setInterviewForm({
-      tieuDeVong: item.tieuDeVong,
-      thoiGianBatDau: toDateTimeInput(item.thoiGianBatDau),
-      thoiGianKetThuc: toDateTimeInput(item.thoiGianKetThuc),
-      hinhThuc: item.hinhThuc,
-      diaDiemHoacLink: item.diaDiemHoacLink || '',
-    });
+  const handlePickInterview = async (item: InterviewItem) => {
+    setDetailError('');
+    try {
+      const detail = await applicationService.getInterviewById(item.id);
+      setSelectedInterviewId(detail.id);
+      setInterviewForm({
+        tieuDeVong: detail.tieuDeVong,
+        thoiGianBatDau: toDateTimeInput(detail.thoiGianBatDau),
+        thoiGianKetThuc: toDateTimeInput(detail.thoiGianKetThuc),
+        hinhThuc: detail.hinhThuc,
+        diaDiemHoacLink: detail.diaDiemHoacLink || '',
+      });
+    } catch (err) {
+      setDetailError(mapError(err, 'Không thể tải chi tiết lịch phỏng vấn.'));
+    }
   };
 
   const resetInterviewForm = () => {
@@ -265,6 +304,15 @@ export function RecruiterApplicantsPage({ viewMode = 'applicants' }: { viewMode?
     if (!selectedApplicationId) return null;
     if (!interviewForm.tieuDeVong.trim()) return null;
     if (!interviewForm.thoiGianBatDau || !interviewForm.thoiGianKetThuc) return null;
+
+    const dateError = validateInterviewDateRange(
+      interviewForm.thoiGianBatDau,
+      interviewForm.thoiGianKetThuc
+    );
+    if (dateError) {
+      setError(dateError);
+      return null;
+    }
 
     return {
       donUngTuyenId: selectedApplicationId,
@@ -337,6 +385,15 @@ export function RecruiterApplicantsPage({ viewMode = 'applicants' }: { viewMode?
     }
     if (!interviewForm.thoiGianBatDau || !interviewForm.thoiGianKetThuc) {
       setError('Vui lòng nhập thời gian bắt đầu và kết thúc mới.');
+      return;
+    }
+
+    const dateError = validateInterviewDateRange(
+      interviewForm.thoiGianBatDau,
+      interviewForm.thoiGianKetThuc
+    );
+    if (dateError) {
+      setError(dateError);
       return;
     }
 
@@ -618,7 +675,7 @@ export function RecruiterApplicantsPage({ viewMode = 'applicants' }: { viewMode?
                     <button
                       type="button"
                       className={`${s.btn} ${s.btnGhost}`}
-                      onClick={() => handlePickInterview(row)}
+                      onClick={() => void handlePickInterview(row)}
                     >
                       Chọn
                     </button>

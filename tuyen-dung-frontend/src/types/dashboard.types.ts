@@ -4,3 +4,10 @@ export interface RecruiterDashboardStats {
   soDonMoi: number;
   soLichPhongVanSapToi: number;
 }
+
+export interface CandidateDashboardStats {
+  tongSoDonDaNop: number;
+  soDonDangCho: number;
+  soLichPhongVan: number;
+  soThongBaoChuaDoc: number;
+}

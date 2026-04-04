@@ -83,6 +83,7 @@ const NAV_CONFIG: Record<VaiTroTaiKhoan, NavSection[]> = {
         { label: 'Người dùng', icon: '👥', to: ROUTES.admin.users },
         { label: 'Tin tuyển dụng', icon: '📢', to: ROUTES.admin.jobs },
         { label: 'Công ty', icon: '🏢', to: ROUTES.admin.companies },
+        { label: 'Kỹ năng', icon: '🧠', to: ROUTES.admin.skills },
       ],
     },
     {

@@ -25,6 +25,10 @@ export const companyService = {
     return res.data.data;
   },
 
+  deleteCompany: async (id: number): Promise<void> => {
+    await api.delete<ApiResponse<void>>(`${COMPANIES_URL}/${id}`);
+  },
+
   verifyTaxCode: async (maSoThue: string): Promise<boolean> => {
     const res = await api.get<ApiResponse<boolean>>(`${COMPANIES_URL}/verify-tax`, {
       params: { maSoThue },

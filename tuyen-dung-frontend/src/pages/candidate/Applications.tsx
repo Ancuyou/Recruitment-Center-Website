@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import MainLayout from '@/layouts/MainLayout';
 import AppDataTable, { type AppDataColumn } from '@/components/common/AppDataTable';
 import { ROUTES } from '@/constants/routes';
+import { useDraftHistory } from '@/hooks/useDraftHistory';
 import { applicationService } from '@/services/modules/application.module';
 import type { PageResponse } from '@/types/api.types';
 import type {
@@ -34,7 +35,13 @@ export default function CandidateApplicationsPage() {
     number: 0,
     size: 10,
   });
-  const [selectedId, setSelectedId] = useState<number | null>(null);
+  const {
+    value: selectedId,
+    setValue: setSelectedId,
+  } = useDraftHistory<number | null>({
+    storageKey: 'draft.candidate.applications.selectedId',
+    initialValue: null,
+  });
   const [detail, setDetail] = useState<ApplicationItem | null>(null);
   const [history, setHistory] = useState<ApplicationStatusHistoryItem[]>([]);
   const [interviews, setInterviews] = useState<InterviewItem[]>([]);
@@ -64,7 +71,7 @@ export default function CandidateApplicationsPage() {
     if (!selectedId && pageData.content.length > 0) {
       setSelectedId(pageData.content[0].id);
     }
-  }, [selectedId, pageData.content]);
+  }, [selectedId, pageData.content, setSelectedId]);
 
   const fetchDetailBundle = useCallback(async (applicationId: number) => {
     setDetailLoading(true);

@@ -54,6 +54,12 @@ export interface JobSkill {
   ngayTao?: string;
 }
 
+export interface JobSkillUpsertRequest {
+  kyNangId: number;
+  yeucau: number;
+  moTa?: string;
+}
+
 export interface JobSearchParams {
   keyword?: string;
   capBac?: CapBacYeuCau;

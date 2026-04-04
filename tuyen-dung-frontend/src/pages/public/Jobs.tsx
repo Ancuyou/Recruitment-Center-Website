@@ -10,6 +10,10 @@ import type { CapBacYeuCau, HinhThucLamViec, JobPosting, JobSearchParams } from 
 import type { LookupItem } from '@/types/lookup.types';
 import s from '@/assets/styles/job-public.module.css';
 
+type JobsPageProps = {
+  embedded?: boolean;
+};
+
 const CAP_BAC_OPTIONS: Array<{ value: CapBacYeuCau; label: string }> = [
   { value: 'FRESHER', label: 'Fresher' },
   { value: 'JUNIOR', label: 'Junior' },
@@ -50,8 +54,9 @@ function formatSalary(min?: number, max?: number): string {
   return `Đến ${Number(max).toLocaleString('vi-VN')} VND`;
 }
 
-function toJobDetailPath(id: number): string {
-  return ROUTES.public.jobDetail.replace(':id', String(id));
+function toJobDetailPath(id: number, useCandidatePath: boolean): string {
+  const pattern = useCandidatePath ? ROUTES.candidate.jobDetail : ROUTES.public.jobDetail;
+  return pattern.replace(':id', String(id));
 }
 
 function mapApiError(error: unknown): string {
@@ -61,7 +66,7 @@ function mapApiError(error: unknown): string {
   );
 }
 
-export default function JobsPage() {
+export default function JobsPage({ embedded = false }: JobsPageProps) {
   const userRole = useAuthStore((state) => state.user?.vaiTro);
   const [filters, setFilters] = useState<SearchFormState>(DEFAULT_FILTERS);
   const [queryFilters, setQueryFilters] = useState<SearchFormState>(DEFAULT_FILTERS);
@@ -173,9 +178,8 @@ export default function JobsPage() {
     setSavedJobIds(ids);
   };
 
-  return (
-    <div className={s.page}>
-      <div className={s.container}>
+  const content = (
+    <div className={s.container}>
         <section className={s.hero}>
           <h1>Tìm việc đúng kỹ năng</h1>
           <p>Danh sách tin đang mở được lấy trực tiếp từ backend hiện tại.</p>
@@ -245,37 +249,43 @@ export default function JobsPage() {
         {error ? <div className={s.alert}>{error}</div> : null}
 
         <section className={s.jobList}>
-          {pageData.content.map((job) => (
-            <article key={job.id} className={s.jobCard}>
-              <div className={s.jobHead}>
-                <div>
-                  <h3 className={s.jobTitle}>
-                    <Link to={toJobDetailPath(job.id)}>{job.tieuDe}</Link>
-                  </h3>
-                  <p className={s.company}>{job.tenCongTy}</p>
+          {pageData.content.map((job) => {
+            const detailPath = toJobDetailPath(job.id, embedded && isCandidate);
+            return (
+              <article key={job.id} className={s.jobCard}>
+                <div className={s.jobHead}>
+                  <div>
+                    <h3 className={s.jobTitle}>
+                      <Link to={detailPath}>{job.tieuDe}</Link>
+                    </h3>
+                    <p className={s.company}>{job.tenCongTy}</p>
+                  </div>
+                  <div style={{ display: 'grid', gap: 8, justifyItems: 'end' }}>
+                    <span className={s.badge}>{job.trangThaiLabel ?? 'Đang mở'}</span>
+                    <Link className={`${s.linkBtn} ${s.linkSecondary}`} to={detailPath}>
+                      Xem chi tiết
+                    </Link>
+                    {isCandidate ? (
+                      <button
+                        type="button"
+                        className={`${s.btn} ${savedJobIds.includes(job.id) ? s.btnGhost : s.btnPrimary}`}
+                        onClick={() => handleToggleSaved(job.id)}
+                      >
+                        {savedJobIds.includes(job.id) ? 'Bỏ lưu' : 'Lưu việc'}
+                      </button>
+                    ) : null}
+                  </div>
                 </div>
-                <div style={{ display: 'grid', gap: 8, justifyItems: 'end' }}>
-                  <span className={s.badge}>{job.trangThaiLabel ?? 'Đang mở'}</span>
-                  {isCandidate ? (
-                    <button
-                      type="button"
-                      className={`${s.btn} ${savedJobIds.includes(job.id) ? s.btnGhost : s.btnPrimary}`}
-                      onClick={() => handleToggleSaved(job.id)}
-                    >
-                      {savedJobIds.includes(job.id) ? 'Bỏ lưu' : 'Lưu việc'}
-                    </button>
-                  ) : null}
+                <div className={s.jobMeta}>
+                  <span>📍 {job.diaDiem || 'Nhiều khu vực'}</span>
+                  <span>💼 {job.capBacYeuCau || 'Không yêu cầu'}</span>
+                  <span>🧭 {job.hinhThucLamViec || 'Linh hoạt'}</span>
+                  <span>💰 {formatSalary(job.mucLuongMin, job.mucLuongMax)}</span>
+                  <span>🗂️ {job.soLuongDon} đơn</span>
                 </div>
-              </div>
-              <div className={s.jobMeta}>
-                <span>📍 {job.diaDiem || 'Nhiều khu vực'}</span>
-                <span>💼 {job.capBacYeuCau || 'Không yêu cầu'}</span>
-                <span>🧭 {job.hinhThucLamViec || 'Linh hoạt'}</span>
-                <span>💰 {formatSalary(job.mucLuongMin, job.mucLuongMax)}</span>
-                <span>🗂️ {job.soLuongDon} đơn</span>
-              </div>
-            </article>
-          ))}
+              </article>
+            );
+          })}
           {!loading && pageData.content.length === 0 ? (
             <div className={s.alert}>Không có tin nào phù hợp với điều kiện hiện tại.</div>
           ) : null}
@@ -294,7 +304,16 @@ export default function JobsPage() {
             Sau →
           </button>
         </section>
-      </div>
+    </div>
+  );
+
+  if (embedded) {
+    return content;
+  }
+
+  return (
+    <div className={s.page}>
+      {content}
     </div>
   );
 }

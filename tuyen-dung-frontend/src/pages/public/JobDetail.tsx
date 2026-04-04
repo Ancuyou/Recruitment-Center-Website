@@ -10,6 +10,10 @@ import type { CvItem } from '@/types/cv.types';
 import type { JobPosting, JobSkill, KhuVuc } from '@/types/job.types';
 import s from '@/assets/styles/job-public.module.css';
 
+type JobDetailPageProps = {
+  embedded?: boolean;
+};
+
 function formatSalary(min?: number, max?: number): string {
   if (min == null && max == null) return 'Thỏa thuận';
   if (min != null && max != null) {
@@ -30,7 +34,7 @@ function mapError(error: unknown): string {
   );
 }
 
-export default function JobDetailPage() {
+export default function JobDetailPage({ embedded = false }: JobDetailPageProps) {
   const { id } = useParams();
   const authUser = useAuthStore((state) => state.user);
   const [job, setJob] = useState<JobPosting | null>(null);
@@ -49,6 +53,10 @@ export default function JobDetailPage() {
 
   const jobId = useMemo(() => Number(id), [id]);
   const isCandidate = useMemo(() => authUser?.vaiTro === 'UNG_VIEN', [authUser?.vaiTro]);
+  const backToJobsPath = useMemo(() => {
+    if (embedded && isCandidate) return ROUTES.candidate.jobs;
+    return ROUTES.public.jobs;
+  }, [embedded, isCandidate]);
 
   useEffect(() => {
     let mounted = true;
@@ -164,9 +172,8 @@ export default function JobDetailPage() {
     }
   };
 
-  return (
-    <div className={s.page}>
-      <div className={s.container}>
+  const content = (
+    <div className={s.container}>
         <section className={s.hero}>
           <h1>Chi tiết tin tuyển dụng</h1>
           <p>Thông tin đang được đồng bộ trực tiếp với backend.</p>
@@ -299,13 +306,22 @@ export default function JobDetailPage() {
               {authUser && !isCandidate ? (
                 <span className={s.tag}>Vai trò hiện tại không thể nộp đơn trực tiếp.</span>
               ) : null}
-              <Link to={ROUTES.public.jobs} className={`${s.linkBtn} ${s.linkSecondary}`}>
+              <Link to={backToJobsPath} className={`${s.linkBtn} ${s.linkSecondary}`}>
                 Quay lại danh sách tin
               </Link>
             </div>
           </section>
         ) : null}
-      </div>
+    </div>
+  );
+
+  if (embedded) {
+    return content;
+  }
+
+  return (
+    <div className={s.page}>
+      {content}
     </div>
   );
 }

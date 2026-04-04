@@ -5,6 +5,7 @@ import type {
   CvDetailRequest,
   CvItem,
   CvRequest,
+  LoaiBanGhiCv,
   CvSkillItem,
   CvSkillRequest,
 } from '@/types/cv.types';
@@ -75,6 +76,13 @@ export const cvService = {
 
   getCvDetails: async (cvId: number): Promise<CvDetailItem[]> => {
     const res = await api.get<ApiResponse<CvDetailItem[]>>(`${CVS_URL}/${cvId}/hoc-van-kn`);
+    return res.data.data;
+  },
+
+  getCvDetailsByType: async (cvId: number, loaiBanGhi: LoaiBanGhiCv): Promise<CvDetailItem[]> => {
+    const res = await api.get<ApiResponse<CvDetailItem[]>>(
+      `${CVS_URL}/${cvId}/hoc-van-kn/type/${loaiBanGhi}`
+    );
     return res.data.data;
   },
 

@@ -57,15 +57,25 @@ export default function NotificationsPage() {
   }, [fetchNotifications]);
 
   const markOne = async (id: number) => {
-    await notificationService.markAsRead(id);
-    setData((prev) => prev.map((item) => (item.id === id ? { ...item, daDoc: true } : item)));
-    setUnreadCount((prev) => Math.max(0, prev - 1));
+    setError('');
+    try {
+      await notificationService.markAsRead(id);
+      setData((prev) => prev.map((item) => (item.id === id ? { ...item, daDoc: true } : item)));
+      setUnreadCount((prev) => Math.max(0, prev - 1));
+    } catch (err) {
+      setError(mapError(err));
+    }
   };
 
   const markAll = async () => {
-    await notificationService.markAllAsRead();
-    setData((prev) => prev.map((item) => ({ ...item, daDoc: true })));
-    setUnreadCount(0);
+    setError('');
+    try {
+      await notificationService.markAllAsRead();
+      setData((prev) => prev.map((item) => ({ ...item, daDoc: true })));
+      setUnreadCount(0);
+    } catch (err) {
+      setError(mapError(err));
+    }
   };
 
   const columns: AppDataColumn<NotificationItem>[] = [

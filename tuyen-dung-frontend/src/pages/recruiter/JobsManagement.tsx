@@ -3,9 +3,17 @@ import { Link } from 'react-router-dom';
 import MainLayout from '@/layouts/MainLayout';
 import AppDataTable, { type AppDataColumn } from '@/components/common/AppDataTable';
 import { ROUTES } from '@/constants/routes';
+import { useDraftHistory } from '@/hooks/useDraftHistory';
 import { jobService } from '@/services/modules/job.module';
 import { lookupService } from '@/services/modules/lookup.module';
-import type { JobPosting, JobStatistics, JobUpsertRequest, KhuVuc } from '@/types/job.types';
+import type {
+  JobPosting,
+  JobSkill,
+  JobSkillUpsertRequest,
+  JobStatistics,
+  JobUpsertRequest,
+  KhuVuc,
+} from '@/types/job.types';
 import type { LookupItem } from '@/types/lookup.types';
 import s from '@/assets/styles/recruiter-workflow.module.css';
 
@@ -33,6 +41,18 @@ const DEFAULT_FORM: JobFormState = {
   hanNop: '',
 };
 
+type SkillFormState = {
+  kyNangId: string;
+  yeucau: string;
+  moTa: string;
+};
+
+const DEFAULT_SKILL_FORM: SkillFormState = {
+  kyNangId: '',
+  yeucau: '3',
+  moTa: '',
+};
+
 function mapError(error: unknown, fallback: string): string {
   return (
     (error as { response?: { data?: { message?: string } } })?.response?.data?.message ?? fallback
@@ -55,7 +75,10 @@ function buildPayload(form: JobFormState): JobUpsertRequest | null {
   const min = form.mucLuongMin ? Number(form.mucLuongMin) : undefined;
   const max = form.mucLuongMax ? Number(form.mucLuongMax) : undefined;
 
-  if ((min != null && Number.isNaN(min)) || (max != null && Number.isNaN(max))) {
+  if (
+    (min != null && (Number.isNaN(min) || min <= 0)) ||
+    (max != null && (Number.isNaN(max) || max <= 0))
+  ) {
     return null;
   }
   if (min != null && max != null && min > max) {
@@ -92,14 +115,23 @@ function toFormState(job: JobPosting): JobFormState {
 export default function RecruiterJobsManagementPage() {
   const [jobs, setJobs] = useState<JobPosting[]>([]);
   const [locationOptions, setLocationOptions] = useState<LookupItem[]>([]);
+  const [skillOptions, setSkillOptions] = useState<LookupItem[]>([]);
   const [selectedLocations, setSelectedLocations] = useState<string[]>([]);
+  const [jobSkills, setJobSkills] = useState<JobSkill[]>([]);
+  const [selectedSkillId, setSelectedSkillId] = useState<number | null>(null);
+  const [skillForm, setSkillForm] = useState<SkillFormState>(DEFAULT_SKILL_FORM);
   const [selectedJobId, setSelectedJobId] = useState<number | null>(null);
   const [editingJobId, setEditingJobId] = useState<number | null>(null);
   const [statistics, setStatistics] = useState<JobStatistics | null>(null);
-  const [form, setForm] = useState<JobFormState>(DEFAULT_FORM);
+  const jobFormHistory = useDraftHistory<JobFormState>({
+    storageKey: 'draft.recruiter.jobs.form',
+    initialValue: DEFAULT_FORM,
+  });
+  const form = jobFormHistory.value;
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [statsLoading, setStatsLoading] = useState(false);
+  const [skillSaving, setSkillSaving] = useState(false);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
 
@@ -123,10 +155,15 @@ export default function RecruiterJobsManagementPage() {
 
   const fetchLocationCatalog = useCallback(async () => {
     try {
-      const locations = await lookupService.getLocations();
+      const [locations, skills] = await Promise.all([
+        lookupService.getLocations(),
+        lookupService.getSkills(),
+      ]);
       setLocationOptions(locations);
+      setSkillOptions(skills);
     } catch {
       setLocationOptions([]);
+      setSkillOptions([]);
     }
   }, []);
 
@@ -138,15 +175,22 @@ export default function RecruiterJobsManagementPage() {
   const fetchSelectedJobExtras = useCallback(async (jobId: number) => {
     setStatsLoading(true);
     try {
-      const [stats, locations] = await Promise.all([
+      const [stats, locations, skills] = await Promise.all([
         jobService.getJobStatistics(jobId),
         jobService.getJobLocations(jobId),
+        jobService.getJobSkills(jobId),
       ]);
       setStatistics(stats);
       setSelectedLocations(locations);
+      setJobSkills(skills);
+      setSelectedSkillId(null);
+      setSkillForm(DEFAULT_SKILL_FORM);
     } catch {
       setStatistics(null);
       setSelectedLocations([]);
+      setJobSkills([]);
+      setSelectedSkillId(null);
+      setSkillForm(DEFAULT_SKILL_FORM);
     } finally {
       setStatsLoading(false);
     }
@@ -156,6 +200,9 @@ export default function RecruiterJobsManagementPage() {
     if (!selectedJobId) {
       setStatistics(null);
       setSelectedLocations([]);
+      setJobSkills([]);
+      setSelectedSkillId(null);
+      setSkillForm(DEFAULT_SKILL_FORM);
       return;
     }
     void fetchSelectedJobExtras(selectedJobId);
@@ -164,15 +211,41 @@ export default function RecruiterJobsManagementPage() {
   const handlePickJob = (job: JobPosting) => {
     setSelectedJobId(job.id);
     setEditingJobId(job.id);
-    setForm(toFormState(job));
+    jobFormHistory.replaceValue(toFormState(job));
     setMessage('');
     setError('');
   };
 
+  const handlePickSkill = async (skill: JobSkill) => {
+    setSkillSaving(true);
+    setMessage('');
+    setError('');
+    try {
+      const detail = await jobService.getJobSkillById(skill.jobId, skill.kyNangId);
+      setSelectedSkillId(detail.kyNangId);
+      setSkillForm({
+        kyNangId: String(detail.kyNangId),
+        yeucau: String(detail.yeucau),
+        moTa: detail.moTa || '',
+      });
+    } catch (err) {
+      setError(mapError(err, 'Không thể tải chi tiết kỹ năng của tin.'));
+    } finally {
+      setSkillSaving(false);
+    }
+  };
+
   const handleResetForm = () => {
     setEditingJobId(null);
-    setForm(DEFAULT_FORM);
+    jobFormHistory.clearDraft(DEFAULT_FORM);
     setSelectedLocations([]);
+    setMessage('');
+    setError('');
+  };
+
+  const handleResetSkillForm = () => {
+    setSelectedSkillId(null);
+    setSkillForm(DEFAULT_SKILL_FORM);
     setMessage('');
     setError('');
   };
@@ -181,6 +254,27 @@ export default function RecruiterJobsManagementPage() {
     setSelectedLocations((prev) =>
       prev.includes(value) ? prev.filter((item) => item !== value) : [...prev, value]
     );
+  };
+
+  const buildSkillPayload = (): JobSkillUpsertRequest | null => {
+    const kyNangId = Number(skillForm.kyNangId);
+    const yeucau = Number(skillForm.yeucau);
+
+    if (!Number.isInteger(kyNangId) || kyNangId <= 0) {
+      setError('Vui lòng chọn kỹ năng hợp lệ.');
+      return null;
+    }
+
+    if (!Number.isInteger(yeucau) || yeucau < 1 || yeucau > 5) {
+      setError('Mức yêu cầu kỹ năng phải từ 1 đến 5.');
+      return null;
+    }
+
+    return {
+      kyNangId,
+      yeucau,
+      moTa: skillForm.moTa.trim() || undefined,
+    };
   };
 
   const handleSubmit = async () => {
@@ -234,11 +328,85 @@ export default function RecruiterJobsManagementPage() {
       setMessage('Đóng tin tuyển dụng thành công.');
       await fetchJobs();
       setEditingJobId(null);
-      setForm(DEFAULT_FORM);
+      jobFormHistory.clearDraft(DEFAULT_FORM);
     } catch (err) {
       setError(mapError(err, 'Không thể đóng tin tuyển dụng.'));
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleAddSkill = async () => {
+    if (!selectedJobId) {
+      setError('Hãy chọn một tin tuyển dụng để thêm kỹ năng yêu cầu.');
+      return;
+    }
+
+    const payload = buildSkillPayload();
+    if (!payload) return;
+
+    setSkillSaving(true);
+    setMessage('');
+    setError('');
+    try {
+      await jobService.addJobSkill(selectedJobId, payload);
+      setMessage('Thêm kỹ năng yêu cầu thành công.');
+      handleResetSkillForm();
+      await fetchSelectedJobExtras(selectedJobId);
+    } catch (err) {
+      setError(mapError(err, 'Không thể thêm kỹ năng yêu cầu.'));
+    } finally {
+      setSkillSaving(false);
+    }
+  };
+
+  const handleUpdateSkill = async () => {
+    if (!selectedJobId || selectedSkillId == null) {
+      setError('Hãy chọn một kỹ năng để cập nhật.');
+      return;
+    }
+
+    const payload = buildSkillPayload();
+    if (!payload) return;
+
+    setSkillSaving(true);
+    setMessage('');
+    setError('');
+    try {
+      await jobService.updateJobSkill(selectedJobId, selectedSkillId, {
+        ...payload,
+        kyNangId: selectedSkillId,
+      });
+      setMessage('Cập nhật kỹ năng yêu cầu thành công.');
+      await fetchSelectedJobExtras(selectedJobId);
+    } catch (err) {
+      setError(mapError(err, 'Không thể cập nhật kỹ năng yêu cầu.'));
+    } finally {
+      setSkillSaving(false);
+    }
+  };
+
+  const handleDeleteSkill = async () => {
+    if (!selectedJobId || selectedSkillId == null) {
+      setError('Hãy chọn một kỹ năng để xóa.');
+      return;
+    }
+
+    const confirmed = window.confirm('Bạn có chắc muốn xóa kỹ năng yêu cầu này khỏi tin?');
+    if (!confirmed) return;
+
+    setSkillSaving(true);
+    setMessage('');
+    setError('');
+    try {
+      await jobService.deleteJobSkill(selectedJobId, selectedSkillId);
+      setMessage('Xóa kỹ năng yêu cầu thành công.');
+      handleResetSkillForm();
+      await fetchSelectedJobExtras(selectedJobId);
+    } catch (err) {
+      setError(mapError(err, 'Không thể xóa kỹ năng yêu cầu.'));
+    } finally {
+      setSkillSaving(false);
     }
   };
 
@@ -330,7 +498,7 @@ export default function RecruiterJobsManagementPage() {
               <input
                 className={s.input}
                 value={form.tieuDe}
-                onChange={(e) => setForm((prev) => ({ ...prev, tieuDe: e.target.value }))}
+                onChange={(e) => jobFormHistory.setValue((prev) => ({ ...prev, tieuDe: e.target.value }))}
                 placeholder="Ví dụ: Senior Frontend Developer"
               />
             </div>
@@ -340,7 +508,9 @@ export default function RecruiterJobsManagementPage() {
               <textarea
                 className={s.textarea}
                 value={form.moTaCongViec}
-                onChange={(e) => setForm((prev) => ({ ...prev, moTaCongViec: e.target.value }))}
+                onChange={(e) =>
+                  jobFormHistory.setValue((prev) => ({ ...prev, moTaCongViec: e.target.value }))
+                }
               />
             </div>
 
@@ -349,7 +519,9 @@ export default function RecruiterJobsManagementPage() {
               <textarea
                 className={s.textarea}
                 value={form.yeuCauUngVien}
-                onChange={(e) => setForm((prev) => ({ ...prev, yeuCauUngVien: e.target.value }))}
+                onChange={(e) =>
+                  jobFormHistory.setValue((prev) => ({ ...prev, yeuCauUngVien: e.target.value }))
+                }
               />
             </div>
 
@@ -359,9 +531,11 @@ export default function RecruiterJobsManagementPage() {
                 <input
                   className={s.input}
                   type="number"
-                  min={0}
+                  min={1}
                   value={form.mucLuongMin}
-                  onChange={(e) => setForm((prev) => ({ ...prev, mucLuongMin: e.target.value }))}
+                  onChange={(e) =>
+                    jobFormHistory.setValue((prev) => ({ ...prev, mucLuongMin: e.target.value }))
+                  }
                 />
               </div>
               <div className={s.field}>
@@ -369,9 +543,11 @@ export default function RecruiterJobsManagementPage() {
                 <input
                   className={s.input}
                   type="number"
-                  min={0}
+                  min={1}
                   value={form.mucLuongMax}
-                  onChange={(e) => setForm((prev) => ({ ...prev, mucLuongMax: e.target.value }))}
+                  onChange={(e) =>
+                    jobFormHistory.setValue((prev) => ({ ...prev, mucLuongMax: e.target.value }))
+                  }
                 />
               </div>
             </div>
@@ -382,7 +558,12 @@ export default function RecruiterJobsManagementPage() {
                 <select
                   className={s.select}
                   value={form.capBacYeuCau}
-                  onChange={(e) => setForm((prev) => ({ ...prev, capBacYeuCau: e.target.value as JobFormState['capBacYeuCau'] }))}
+                  onChange={(e) =>
+                    jobFormHistory.setValue((prev) => ({
+                      ...prev,
+                      capBacYeuCau: e.target.value as JobFormState['capBacYeuCau'],
+                    }))
+                  }
                 >
                   <option value="FRESHER">Fresher</option>
                   <option value="JUNIOR">Junior</option>
@@ -395,7 +576,12 @@ export default function RecruiterJobsManagementPage() {
                 <select
                   className={s.select}
                   value={form.hinhThucLamViec}
-                  onChange={(e) => setForm((prev) => ({ ...prev, hinhThucLamViec: e.target.value as JobFormState['hinhThucLamViec'] }))}
+                  onChange={(e) =>
+                    jobFormHistory.setValue((prev) => ({
+                      ...prev,
+                      hinhThucLamViec: e.target.value as JobFormState['hinhThucLamViec'],
+                    }))
+                  }
                 >
                   <option value="OFFICE">Office</option>
                   <option value="HYBRID">Hybrid</option>
@@ -410,7 +596,9 @@ export default function RecruiterJobsManagementPage() {
                 <input
                   className={s.input}
                   value={form.diaDiem}
-                  onChange={(e) => setForm((prev) => ({ ...prev, diaDiem: e.target.value }))}
+                  onChange={(e) =>
+                    jobFormHistory.setValue((prev) => ({ ...prev, diaDiem: e.target.value }))
+                  }
                   placeholder="Ví dụ: Hà Nội"
                 />
               </div>
@@ -420,7 +608,9 @@ export default function RecruiterJobsManagementPage() {
                   className={s.input}
                   type="date"
                   value={form.hanNop}
-                  onChange={(e) => setForm((prev) => ({ ...prev, hanNop: e.target.value }))}
+                  onChange={(e) =>
+                    jobFormHistory.setValue((prev) => ({ ...prev, hanNop: e.target.value }))
+                  }
                 />
               </div>
             </div>
@@ -442,6 +632,22 @@ export default function RecruiterJobsManagementPage() {
             </div>
 
             <div className={s.actions}>
+              <button
+                type="button"
+                className={`${s.btn} ${s.btnGhost}`}
+                disabled={saving || !jobFormHistory.canUndo}
+                onClick={jobFormHistory.undo}
+              >
+                Undo
+              </button>
+              <button
+                type="button"
+                className={`${s.btn} ${s.btnGhost}`}
+                disabled={saving || !jobFormHistory.canRedo}
+                onClick={jobFormHistory.redo}
+              >
+                Redo
+              </button>
               <button type="button" className={`${s.btn} ${s.btnGhost}`} disabled={saving} onClick={handleResetForm}>
                 Làm mới form
               </button>
@@ -482,6 +688,125 @@ export default function RecruiterJobsManagementPage() {
             </div>
           </section>
         </div>
+
+        <section className={s.card}>
+          <h3 className={s.cardTitle}>Kỹ năng yêu cầu của tin (E8-E10)</h3>
+          <AppDataTable
+            columns={[
+              {
+                key: 'tenKyNang',
+                header: 'Kỹ năng',
+                render: (row: JobSkill) => (
+                  <div style={{ display: 'grid', gap: 4 }}>
+                    <strong>{row.tenKyNang}</strong>
+                    <span className={s.meta}>{row.moTa || 'Không có mô tả'}</span>
+                  </div>
+                ),
+              },
+              {
+                key: 'yeucau',
+                header: 'Mức yêu cầu',
+                width: '140px',
+                render: (row: JobSkill) => `${row.yeucau}/5`,
+              },
+              {
+                key: 'actions',
+                header: 'Tác vụ',
+                width: '120px',
+                align: 'center',
+                render: (row: JobSkill) => (
+                  <button
+                    type="button"
+                    className={`${s.btn} ${s.btnGhost}`}
+                    disabled={skillSaving}
+                    onClick={() => void handlePickSkill(row)}
+                  >
+                    Sửa
+                  </button>
+                ),
+              },
+            ]}
+            data={jobSkills}
+            rowKey={(row) => `${row.jobId}-${row.kyNangId}`}
+            emptyMessage="Tin này chưa cấu hình kỹ năng yêu cầu."
+          />
+
+          <div className={s.grid2}>
+            <div className={s.field}>
+              <label className={s.label}>Chọn kỹ năng</label>
+              <select
+                className={s.select}
+                value={skillForm.kyNangId}
+                disabled={selectedSkillId != null}
+                onChange={(e) => setSkillForm((prev) => ({ ...prev, kyNangId: e.target.value }))}
+              >
+                <option value="">-- Chọn kỹ năng --</option>
+                {skillOptions.map((item) => (
+                  <option key={item.value} value={item.value}>{item.label}</option>
+                ))}
+              </select>
+            </div>
+            <div className={s.field}>
+              <label className={s.label}>Mức yêu cầu</label>
+              <select
+                className={s.select}
+                value={skillForm.yeucau}
+                onChange={(e) => setSkillForm((prev) => ({ ...prev, yeucau: e.target.value }))}
+              >
+                <option value="1">1 - Sơ cấp</option>
+                <option value="2">2 - Cơ bản</option>
+                <option value="3">3 - Trung bình</option>
+                <option value="4">4 - Nâng cao</option>
+                <option value="5">5 - Chuyên gia</option>
+              </select>
+            </div>
+          </div>
+
+          <div className={s.field}>
+            <label className={s.label}>Mô tả yêu cầu kỹ năng</label>
+            <textarea
+              className={s.textarea}
+              value={skillForm.moTa}
+              onChange={(e) => setSkillForm((prev) => ({ ...prev, moTa: e.target.value }))}
+              placeholder="Ví dụ: Có kinh nghiệm triển khai sản phẩm production"
+            />
+          </div>
+
+          <div className={s.actions}>
+            <button
+              type="button"
+              className={`${s.btn} ${s.btnGhost}`}
+              disabled={skillSaving}
+              onClick={handleResetSkillForm}
+            >
+              Làm mới form kỹ năng
+            </button>
+            <button
+              type="button"
+              className={`${s.btn} ${s.btnPrimary}`}
+              disabled={skillSaving || !selectedJobId}
+              onClick={() => void handleAddSkill()}
+            >
+              Thêm kỹ năng
+            </button>
+            <button
+              type="button"
+              className={`${s.btn} ${s.btnGhost}`}
+              disabled={skillSaving || selectedSkillId == null || !selectedJobId}
+              onClick={() => void handleUpdateSkill()}
+            >
+              Cập nhật kỹ năng
+            </button>
+            <button
+              type="button"
+              className={`${s.btn} ${s.btnDanger}`}
+              disabled={skillSaving || selectedSkillId == null || !selectedJobId}
+              onClick={() => void handleDeleteSkill()}
+            >
+              Xóa kỹ năng
+            </button>
+          </div>
+        </section>
       </div>
     </MainLayout>
   );

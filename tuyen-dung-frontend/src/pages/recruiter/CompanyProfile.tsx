@@ -16,6 +16,8 @@ const EMPTY_FORM: CompanyRequest = {
   moTa: '',
 };
 
+const TAX_CODE_REGEX = /^\d{10,14}$/;
+
 function mapError(error: unknown, fallback: string): string {
   return (
     (error as { response?: { data?: { message?: string } } })?.response?.data?.message ?? fallback
@@ -117,6 +119,12 @@ export default function RecruiterCompanyProfilePage() {
       return;
     }
 
+    const normalizedTaxCode = form.maSoThue?.trim() || '';
+    if (normalizedTaxCode && !TAX_CODE_REGEX.test(normalizedTaxCode)) {
+      setError('Mã số thuế phải gồm 10-14 chữ số.');
+      return;
+    }
+
     setSaving(true);
     setMessage('');
     setError('');
@@ -124,7 +132,7 @@ export default function RecruiterCompanyProfilePage() {
     try {
       await companyService.updateCompany(companyId, {
         tenCongTy: form.tenCongTy.trim(),
-        maSoThue: form.maSoThue?.trim() || undefined,
+        maSoThue: normalizedTaxCode || undefined,
         logoUrl: form.logoUrl?.trim() || undefined,
         website: form.website?.trim() || undefined,
         moTa: form.moTa?.trim() || undefined,
@@ -134,6 +142,45 @@ export default function RecruiterCompanyProfilePage() {
       await fetchData();
     } catch (err) {
       setError(mapError(err, 'Không thể cập nhật thông tin công ty.'));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleCreateCompany = async () => {
+    if (!form.tenCongTy?.trim()) {
+      setError('Tên công ty không được để trống.');
+      return;
+    }
+
+    const normalizedTaxCode = form.maSoThue?.trim() || '';
+    if (normalizedTaxCode && !TAX_CODE_REGEX.test(normalizedTaxCode)) {
+      setError('Mã số thuế phải gồm 10-14 chữ số.');
+      return;
+    }
+
+    setSaving(true);
+    setMessage('');
+    setError('');
+
+    try {
+      const created = await companyService.createCompany({
+        tenCongTy: form.tenCongTy.trim(),
+        maSoThue: normalizedTaxCode || undefined,
+        logoUrl: form.logoUrl?.trim() || undefined,
+        website: form.website?.trim() || undefined,
+        moTa: form.moTa?.trim() || undefined,
+      });
+
+      if (selectedIndustries.length > 0) {
+        await companyService.updateCompanyIndustries(created.id, selectedIndustries);
+      }
+
+      setCompanyId(created.id);
+      setMessage('Tạo công ty thành công.');
+      await fetchData();
+    } catch (err) {
+      setError(mapError(err, 'Không thể tạo công ty mới.'));
     } finally {
       setSaving(false);
     }
@@ -262,6 +309,16 @@ export default function RecruiterCompanyProfilePage() {
               />
             </div>
             <div className={s.actions}>
+              {!companyId ? (
+                <button
+                  type="button"
+                  className={`${s.btn} ${s.btnPrimary}`}
+                  disabled={saving}
+                  onClick={() => void handleCreateCompany()}
+                >
+                  Tạo công ty mới
+                </button>
+              ) : null}
               <button
                 type="button"
                 className={`${s.btn} ${s.btnPrimary}`}

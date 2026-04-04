@@ -6,6 +6,7 @@ import type {
   JobSearchParams,
   JobUpsertRequest,
   JobSkill,
+  JobSkillUpsertRequest,
   KhuVuc,
 } from '@/types/job.types';
 
@@ -75,6 +76,29 @@ export const jobService = {
   getJobSkills: async (id: number): Promise<JobSkill[]> => {
     const res = await api.get<ApiResponse<JobSkill[]>>(`${JOBS_URL}/${id}/skills`);
     return res.data.data;
+  },
+
+  getJobSkillById: async (id: number, skillId: number): Promise<JobSkill> => {
+    const res = await api.get<ApiResponse<JobSkill>>(`${JOBS_URL}/${id}/skills/${skillId}`);
+    return res.data.data;
+  },
+
+  addJobSkill: async (id: number, payload: JobSkillUpsertRequest): Promise<JobSkill> => {
+    const res = await api.post<ApiResponse<JobSkill>>(`${JOBS_URL}/${id}/skills`, payload);
+    return res.data.data;
+  },
+
+  updateJobSkill: async (
+    id: number,
+    skillId: number,
+    payload: JobSkillUpsertRequest
+  ): Promise<JobSkill> => {
+    const res = await api.put<ApiResponse<JobSkill>>(`${JOBS_URL}/${id}/skills/${skillId}`, payload);
+    return res.data.data;
+  },
+
+  deleteJobSkill: async (id: number, skillId: number): Promise<void> => {
+    await api.delete<ApiResponse<void>>(`${JOBS_URL}/${id}/skills/${skillId}`);
   },
 
   getJobStatistics: async (id: number): Promise<JobStatistics> => {

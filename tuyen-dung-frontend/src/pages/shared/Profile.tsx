@@ -84,10 +84,16 @@ export default function ProfilePage() {
     setMessage('');
     setError('');
 
+    const normalizedName = profile.hoTen.trim();
+    if (!normalizedName) {
+      setError('Họ tên không được để trống.');
+      return;
+    }
+
     try {
       if (isCandidate) {
         const payload: UpdateCandidateProfileRequest = {
-          hoTen: profile.hoTen,
+          hoTen: normalizedName,
           soDienThoai: profile.soDienThoai || undefined,
           gioiTinh: profile.gioiTinh || undefined,
           ngaySinh: profile.ngaySinh || undefined,
@@ -96,7 +102,7 @@ export default function ProfilePage() {
         updateUser({ hoTen: updated.hoTen, anhDaiDien: updated.anhDaiDien });
       } else if (isRecruiter) {
         const payload: UpdateRecruiterProfileRequest = {
-          hoTen: profile.hoTen,
+          hoTen: normalizedName,
           soDienThoai: profile.soDienThoai || undefined,
           chucVu: profile.chucVu || '',
         };
@@ -114,7 +120,13 @@ export default function ProfilePage() {
     setMessage('');
     setError('');
 
-    const payload: UploadAvatarRequest = { avatarUrl };
+    const normalizedAvatarUrl = avatarUrl.trim();
+    if (!normalizedAvatarUrl) {
+      setError('Avatar URL không được để trống.');
+      return;
+    }
+
+    const payload: UploadAvatarRequest = { avatarUrl: normalizedAvatarUrl };
     try {
       const updated = await userService.uploadAvatar(payload);
       updateUser({ hoTen: updated.hoTen, anhDaiDien: updated.anhDaiDien });

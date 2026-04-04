@@ -9,7 +9,7 @@ import { jobService } from '@/services/modules/job.module';
 import { applicationService } from '@/services/modules/application.module';
 import type { RecruiterDashboardStats } from '@/types/dashboard.types';
 import type { JobPosting } from '@/types/job.types';
-import type { ApplicationItem } from '@/types/application.types';
+import type { ApplicationItem, InterviewItem } from '@/types/application.types';
 import s from '@/assets/styles/dashboard.module.css';
 
 function mapError(error: unknown, fallback: string): string {
@@ -25,6 +25,29 @@ function formatDate(value?: string): string {
   return date.toLocaleDateString('vi-VN');
 }
 
+function formatDateTime(value?: string): string {
+  if (!value) return '-';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleString('vi-VN');
+}
+
+function interviewStatusClass(status: InterviewItem['trangThai']): string {
+  if (status === 'HOAN_THANH') return s.statusAccepted;
+  if (status === 'HUY') return s.statusRejected;
+  return s.statusReview;
+}
+
+function interviewStatusLabel(status: InterviewItem['trangThai']): string {
+  if (status === 'HOAN_THANH') return 'Hoàn thành';
+  if (status === 'HUY') return 'Đã hủy';
+  return 'Chờ phỏng vấn';
+}
+
+function interviewMethodLabel(method: InterviewItem['hinhThuc']): string {
+  return method === 'ONLINE' ? 'Online' : 'Offline';
+}
+
 const EMPTY_STATS: RecruiterDashboardStats = {
   tongSoTinDangMo: 0,
   tongSoDonUngTuyen: 0,
@@ -38,6 +61,7 @@ export default function RecruiterDashboard() {
   const [stats, setStats] = useState<RecruiterDashboardStats>(EMPTY_STATS);
   const [jobs, setJobs] = useState<JobPosting[]>([]);
   const [recentApplications, setRecentApplications] = useState<ApplicationItem[]>([]);
+  const [upcomingInterviews, setUpcomingInterviews] = useState<InterviewItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -46,13 +70,15 @@ export default function RecruiterDashboard() {
       setLoading(true);
       setError('');
       try {
-        const [statsData, myJobs] = await Promise.all([
+        const [statsData, myJobs, myInterviewPage] = await Promise.all([
           dashboardService.getRecruiterDashboard(),
           jobService.getMyJobs(),
+          applicationService.getMyInterviews(0, 5),
         ]);
 
         setStats(statsData);
         setJobs(myJobs);
+        setUpcomingInterviews(myInterviewPage.content);
 
         if (myJobs.length > 0) {
           const appPage = await applicationService.getRecruiterApplications(myJobs[0].id, 0, 5);
@@ -191,6 +217,38 @@ export default function RecruiterDashboard() {
                   </Link>
                 ))}
               </div>
+            </div>
+
+            <div className={s.card}>
+              <div className={s.sectionHead}>
+                <span className={s.cardTitle}>Lịch phỏng vấn sắp tới</span>
+                <Link className={s.seeAll} to={ROUTES.recruiter.applicants}>Quản lý →</Link>
+              </div>
+              {upcomingInterviews.length === 0 ? (
+                <div className={s.empty}>
+                  <span>🗓️</span>
+                  <span>Chưa có lịch phỏng vấn nào.</span>
+                </div>
+              ) : (
+                <div className={s.activityList}>
+                  {upcomingInterviews.map((interview) => (
+                    <div key={interview.id} className={s.activityItem}>
+                      <div className={s.activityIcon}>🎯</div>
+                      <div className={s.activityContent}>
+                        <div className={s.activityTitle}>{interview.tieuDeVong} — {interview.tenUngVien}</div>
+                        <div className={s.activitySub}>{interview.tieuDeTin} · {formatDateTime(interview.thoiGianBatDau)}</div>
+                        <div className={s.activitySub}>
+                          {interviewMethodLabel(interview.hinhThuc)}
+                          {interview.diaDiemHoacLink ? ` · ${interview.diaDiemHoacLink}` : ''}
+                        </div>
+                      </div>
+                      <span className={`${s.jobStatus} ${interviewStatusClass(interview.trangThai)}`}>
+                        {interviewStatusLabel(interview.trangThai)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Active job posts */}

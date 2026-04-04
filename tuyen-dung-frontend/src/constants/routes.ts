@@ -17,6 +17,7 @@ export const ROUTES = {
   candidate: {
     dashboard: '/ung-vien/dashboard',
     jobs: '/ung-vien/tim-viec',
+    jobDetail: '/ung-vien/tim-viec/:id',
     applications: '/ung-vien/ung-tuyen',
     savedJobs: '/ung-vien/da-luu',
     profile: '/ung-vien/ho-so',
@@ -38,6 +39,7 @@ export const ROUTES = {
     users: '/admin/nguoi-dung',
     jobs: '/admin/tin-tuyen-dung',
     companies: '/admin/cong-ty',
+    skills: '/admin/ky-nang',
     reports: '/admin/bao-cao',
     settings: '/admin/cai-dat',
     logs: '/admin/nhat-ky',
