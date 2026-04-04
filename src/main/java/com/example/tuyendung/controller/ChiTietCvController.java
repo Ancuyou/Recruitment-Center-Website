@@ -4,6 +4,10 @@ import com.example.tuyendung.common.ApiResponse;
 import com.example.tuyendung.common.Constants;
 import com.example.tuyendung.dto.request.ChiTietCvRequest;
 import com.example.tuyendung.dto.response.ChiTietCvResponse;
+import com.example.tuyendung.entity.UngVien;
+import com.example.tuyendung.exception.BaseBusinessException;
+import com.example.tuyendung.exception.ErrorCode;
+import com.example.tuyendung.repository.UngVienRepository;
 import com.example.tuyendung.security.CustomUserDetails;
 import com.example.tuyendung.service.ChiTietCvService;
 import com.example.tuyendung.service.HoSoCvService;
@@ -34,6 +38,15 @@ public class ChiTietCvController {
 
     private final ChiTietCvService chiTietCvService;
     private final HoSoCvService hoSoCvService;
+    private final UngVienRepository ungVienRepository;
+
+    private Long resolveUngVienId(Long taiKhoanId) {
+        UngVien ungVien = ungVienRepository.findByTaiKhoanId(taiKhoanId)
+                .orElseThrow(() -> new BaseBusinessException(
+                        ErrorCode.CANDIDATE_NOT_FOUND,
+                        "Không tìm thấy ứng viên cho tài khoản ID: " + taiKhoanId));
+        return ungVien.getId();
+    }
 
     /** C8: Thêm học vấn/KN (POST) */
     @PostMapping("/{cvId}/hoc-van-kn")
@@ -43,7 +56,8 @@ public class ChiTietCvController {
             @Valid @RequestBody ChiTietCvRequest request,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
         log.info("POST /api/cvs/{}/hoc-van-kn - Thêm chi tiết CV", cvId);
-        hoSoCvService.getCvById(cvId, userDetails.getId()); // Verify CV ownership
+        Long ungVienId = resolveUngVienId(userDetails.getId());
+        hoSoCvService.getCvById(cvId, ungVienId); // Verify CV ownership
         ChiTietCvResponse response = chiTietCvService.addChiTietCv(cvId, request);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success("Thêm chi tiết CV thành công", response));
@@ -56,7 +70,8 @@ public class ChiTietCvController {
             @PathVariable Long cvId,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
         log.info("GET /api/cvs/{}/hoc-van-kn - Danh sách chi tiết CV", cvId);
-        hoSoCvService.getCvById(cvId, userDetails.getId()); // Verify CV ownership
+        Long ungVienId = resolveUngVienId(userDetails.getId());
+        hoSoCvService.getCvById(cvId, ungVienId); // Verify CV ownership
         List<ChiTietCvResponse> chiTietList = chiTietCvService.getChiTietCvList(cvId);
         return ResponseEntity.ok(ApiResponse.success("Lấy danh sách chi tiết CV thành công", chiTietList));
     }
@@ -70,7 +85,8 @@ public class ChiTietCvController {
             @Valid @RequestBody ChiTietCvRequest request,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
         log.info("PUT /api/cvs/{}/hoc-van-kn/{} - Cập nhật chi tiết CV", cvId, id);
-        hoSoCvService.getCvById(cvId, userDetails.getId()); // Verify CV ownership
+        Long ungVienId = resolveUngVienId(userDetails.getId());
+        hoSoCvService.getCvById(cvId, ungVienId); // Verify CV ownership
         ChiTietCvResponse response = chiTietCvService.updateChiTietCv(cvId, id, request);
         return ResponseEntity.ok(ApiResponse.success("Cập nhật chi tiết CV thành công", response));
     }
@@ -83,7 +99,8 @@ public class ChiTietCvController {
             @PathVariable Long id,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
         log.info("DELETE /api/cvs/{}/hoc-van-kn/{} - Xóa chi tiết CV", cvId, id);
-        hoSoCvService.getCvById(cvId, userDetails.getId()); // Verify CV ownership
+        Long ungVienId = resolveUngVienId(userDetails.getId());
+        hoSoCvService.getCvById(cvId, ungVienId); // Verify CV ownership
         chiTietCvService.deleteChiTietCv(cvId, id);
         return ResponseEntity.ok(ApiResponse.success("Xóa chi tiết CV thành công", null));
     }
@@ -96,7 +113,8 @@ public class ChiTietCvController {
             @PathVariable Integer loaiBanGhi,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
         log.info("GET /api/cvs/{}/hoc-van-kn/type/{} - Danh sách chi tiết theo loại", cvId, loaiBanGhi);
-        hoSoCvService.getCvById(cvId, userDetails.getId()); // Verify CV ownership
+        Long ungVienId = resolveUngVienId(userDetails.getId());
+        hoSoCvService.getCvById(cvId, ungVienId); // Verify CV ownership
         List<ChiTietCvResponse> chiTietList = chiTietCvService.getChiTietCvByType(cvId, loaiBanGhi);
         return ResponseEntity.ok(ApiResponse.success("Lấy danh sách chi tiết theo loại thành công", chiTietList));
     }

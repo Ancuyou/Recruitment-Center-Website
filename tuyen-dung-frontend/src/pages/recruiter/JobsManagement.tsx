@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
 import MainLayout from '@/layouts/MainLayout';
 import AppDataTable, { type AppDataColumn } from '@/components/common/AppDataTable';
 import { ROUTES } from '@/constants/routes';
@@ -16,6 +16,9 @@ import type {
 } from '@/types/job.types';
 import type { LookupItem } from '@/types/lookup.types';
 import s from '@/assets/styles/recruiter-workflow.module.css';
+import t from '@/assets/styles/tabs.module.css';
+
+type JobsTab = 'list' | 'form' | 'skillRegion' | 'stats';
 
 type JobFormState = {
   tieuDe: string;
@@ -113,6 +116,7 @@ function toFormState(job: JobPosting): JobFormState {
 }
 
 export default function RecruiterJobsManagementPage() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [jobs, setJobs] = useState<JobPosting[]>([]);
   const [locationOptions, setLocationOptions] = useState<LookupItem[]>([]);
   const [skillOptions, setSkillOptions] = useState<LookupItem[]>([]);
@@ -122,18 +126,27 @@ export default function RecruiterJobsManagementPage() {
   const [skillForm, setSkillForm] = useState<SkillFormState>(DEFAULT_SKILL_FORM);
   const [selectedJobId, setSelectedJobId] = useState<number | null>(null);
   const [editingJobId, setEditingJobId] = useState<number | null>(null);
+  const [activeTab, setActiveTab] = useState<JobsTab>('list');
   const [statistics, setStatistics] = useState<JobStatistics | null>(null);
   const jobFormHistory = useDraftHistory<JobFormState>({
     storageKey: 'draft.recruiter.jobs.form',
     initialValue: DEFAULT_FORM,
   });
   const form = jobFormHistory.value;
+  const replaceFormValue = jobFormHistory.replaceValue;
+  const queryJumpHandledRef = useRef(false);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [statsLoading, setStatsLoading] = useState(false);
   const [skillSaving, setSkillSaving] = useState(false);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
+
+  const querySelectedJobId = useMemo(() => {
+    const raw = searchParams.get('selectedJobId') ?? searchParams.get('jobId');
+    const parsed = Number(raw);
+    return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
+  }, [searchParams]);
 
   const fetchJobs = useCallback(async () => {
     setLoading(true);
@@ -143,15 +156,21 @@ export default function RecruiterJobsManagementPage() {
       setJobs(data);
       if (data.length === 0) {
         setSelectedJobId(null);
-      } else if (!selectedJobId || !data.some((job) => job.id === selectedJobId)) {
-        setSelectedJobId(data[0].id);
+      } else {
+        const hasCurrent = selectedJobId != null && data.some((job) => job.id === selectedJobId);
+        const hasQuery = querySelectedJobId != null && data.some((job) => job.id === querySelectedJobId);
+        if (hasQuery) {
+          setSelectedJobId(querySelectedJobId);
+        } else if (!hasCurrent) {
+          setSelectedJobId(data[0].id);
+        }
       }
     } catch (err) {
       setError(mapError(err, 'Không thể tải danh sách tin tuyển dụng.'));
     } finally {
       setLoading(false);
     }
-  }, [selectedJobId]);
+  }, [selectedJobId, querySelectedJobId]);
 
   const fetchLocationCatalog = useCallback(async () => {
     try {
@@ -208,9 +227,31 @@ export default function RecruiterJobsManagementPage() {
     void fetchSelectedJobExtras(selectedJobId);
   }, [selectedJobId, fetchSelectedJobExtras]);
 
+  useEffect(() => {
+    queryJumpHandledRef.current = false;
+  }, [querySelectedJobId]);
+
+  useEffect(() => {
+    if (!querySelectedJobId || queryJumpHandledRef.current) return;
+    const matched = jobs.find((job) => job.id === querySelectedJobId);
+    if (!matched) return;
+
+    setSelectedJobId(matched.id);
+    setEditingJobId(matched.id);
+    setActiveTab('form');
+    replaceFormValue(toFormState(matched));
+    queryJumpHandledRef.current = true;
+
+    const next = new URLSearchParams(searchParams);
+    next.delete('selectedJobId');
+    next.delete('jobId');
+    setSearchParams(next, { replace: true });
+  }, [querySelectedJobId, jobs, replaceFormValue, searchParams, setSearchParams]);
+
   const handlePickJob = (job: JobPosting) => {
     setSelectedJobId(job.id);
     setEditingJobId(job.id);
+    setActiveTab('form');
     jobFormHistory.replaceValue(toFormState(job));
     setMessage('');
     setError('');
@@ -294,6 +335,7 @@ export default function RecruiterJobsManagementPage() {
         await jobService.updateJobLocations(editingJobId, selectedLocations as KhuVuc[]);
         setMessage('Cập nhật tin tuyển dụng thành công.');
         setSelectedJobId(editingJobId);
+        setActiveTab('stats');
       } else {
         const created = await jobService.createJob(payload);
         if (selectedLocations.length > 0) {
@@ -302,6 +344,7 @@ export default function RecruiterJobsManagementPage() {
         setMessage('Đăng tin tuyển dụng thành công.');
         setSelectedJobId(created.id);
         setEditingJobId(created.id);
+        setActiveTab('skillRegion');
       }
       await fetchJobs();
     } catch (err) {
@@ -328,6 +371,7 @@ export default function RecruiterJobsManagementPage() {
       setMessage('Đóng tin tuyển dụng thành công.');
       await fetchJobs();
       setEditingJobId(null);
+      setActiveTab('list');
       jobFormHistory.clearDraft(DEFAULT_FORM);
     } catch (err) {
       setError(mapError(err, 'Không thể đóng tin tuyển dụng.'));
@@ -415,6 +459,28 @@ export default function RecruiterJobsManagementPage() {
     return selected ? `${selected.tieuDe} (${selected.tenCongTy})` : '';
   }, [jobs, selectedJobId]);
 
+  const applicantsPath = useMemo(
+    () => (selectedJobId ? `${ROUTES.recruiter.applicants}?selectedJobId=${selectedJobId}` : ROUTES.recruiter.applicants),
+    [selectedJobId]
+  );
+
+  const tabItems: Array<{ key: JobsTab; label: string; hint: string }> = [
+    { key: 'list', label: 'Danh sách tin', hint: 'Chọn tin để thao tác nhanh' },
+    { key: 'form', label: 'Thông tin tin', hint: 'Tạo mới hoặc cập nhật tin' },
+    { key: 'skillRegion', label: 'Kỹ năng & Khu vực', hint: 'Ràng buộc kỹ năng và vùng áp dụng' },
+    { key: 'stats', label: 'Thống kê', hint: 'Theo dõi hiệu quả tin đang chọn' },
+  ];
+
+  const hasPendingFormChanges = jobFormHistory.canUndo;
+
+  const getJobStatusMeta = (label?: string) => {
+    const normalized = (label || '').toLowerCase();
+    if (normalized.includes('đóng') || normalized.includes('ngừng')) {
+      return { icon: '⛔', className: s.jobStatusClosed, text: label || 'Đã đóng' };
+    }
+    return { icon: '🟢', className: s.jobStatusOpen, text: label || 'Đang mở' };
+  };
+
   const columns: AppDataColumn<JobPosting>[] = [
     {
       key: 'tieuDe',
@@ -430,7 +496,14 @@ export default function RecruiterJobsManagementPage() {
       key: 'trangThaiLabel',
       header: 'Trạng thái',
       width: '150px',
-      render: (row) => row.trangThaiLabel || 'Không rõ',
+      render: (row) => {
+        const status = getJobStatusMeta(row.trangThaiLabel);
+        return (
+          <span className={`${s.statusPill} ${status.className}`}>
+            {status.icon} {status.text}
+          </span>
+        );
+      },
     },
     {
       key: 'soLuongDon',
@@ -469,27 +542,46 @@ export default function RecruiterJobsManagementPage() {
             <button type="button" className={`${s.btn} ${s.btnGhost}`} onClick={() => void fetchJobs()}>
               Làm mới
             </button>
-            <Link className={s.inlineLink} to={ROUTES.recruiter.applicants}>
+            <Link className={s.inlineLink} to={applicantsPath}>
               Xem ứng viên nộp
             </Link>
           </div>
+        </div>
+
+        <div className={t.tabsWrap}>
+          <div className={t.tabs}>
+            {tabItems.map((tab) => (
+              <button
+                key={tab.key}
+                type="button"
+                className={`${t.tabBtn} ${activeTab === tab.key ? t.tabBtnActive : ''}`}
+                onClick={() => setActiveTab(tab.key)}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+          <p className={t.tabHint}>{tabItems.find((tab) => tab.key === activeTab)?.hint}</p>
         </div>
 
         {loading ? <div className={s.alert}>Đang tải danh sách tin...</div> : null}
         {error ? <div className={`${s.alert} ${s.alertError}`}>{error}</div> : null}
         {message ? <div className={`${s.alert} ${s.alertSuccess}`}>{message}</div> : null}
 
-        <section className={s.card}>
-          <h3 className={s.cardTitle}>Danh sách tin của bạn</h3>
-          <AppDataTable
-            columns={columns}
-            data={jobs}
-            rowKey={(row) => String(row.id)}
-            emptyMessage="Bạn chưa có tin tuyển dụng nào."
-          />
-        </section>
+        {activeTab === 'list' ? (
+          <section className={s.card}>
+            <h3 className={s.cardTitle}>Danh sách tin của bạn</h3>
+            <AppDataTable
+              columns={columns}
+              data={jobs}
+              rowKey={(row) => String(row.id)}
+              emptyMessage="Bạn chưa có tin tuyển dụng nào."
+            />
+            <div className={s.alert}>Chọn một tin để chuyển nhanh sang tab thông tin hoặc thống kê.</div>
+          </section>
+        ) : null}
 
-        <div className={s.grid2}>
+        {activeTab === 'form' ? (
           <section className={s.card}>
             <h3 className={s.cardTitle}>{editingJobId ? 'Chỉnh sửa tin tuyển dụng' : 'Đăng tin tuyển dụng mới'}</h3>
 
@@ -615,22 +707,6 @@ export default function RecruiterJobsManagementPage() {
               </div>
             </div>
 
-            <div className={s.field}>
-              <label className={s.label}>Khu vực áp dụng (B20)</label>
-              <div className={s.checkGrid}>
-                {locationOptions.map((item) => (
-                  <label key={item.value} className={s.checkItem}>
-                    <input
-                      type="checkbox"
-                      checked={selectedLocations.includes(item.value)}
-                      onChange={() => handleToggleLocation(item.value)}
-                    />
-                    <span>{item.label}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-
             <div className={s.actions}>
               <button
                 type="button"
@@ -663,150 +739,205 @@ export default function RecruiterJobsManagementPage() {
                 Đóng tin đã chọn
               </button>
             </div>
-          </section>
-
-          <section className={s.card}>
-            <h3 className={s.cardTitle}>Thống kê tin đang chọn (B22)</h3>
-            {statsLoading ? <div className={s.alert}>Đang tải thống kê...</div> : null}
-            {!statsLoading && !statistics ? (
-              <div className={s.alert}>Chọn một tin để xem thống kê ứng tuyển.</div>
-            ) : null}
-            {statistics ? (
-              <div className={s.tags}>
-                <span className={s.tag}>Tổng đơn: {statistics.tongSoDon}</span>
-                <span className={s.tag}>Mới: {statistics.soMoi}</span>
-                <span className={s.tag}>Review: {statistics.soReview}</span>
-                <span className={s.tag}>Phỏng vấn: {statistics.soPhongVan}</span>
-                <span className={s.tag}>Offer: {statistics.soOffer}</span>
-                <span className={s.tag}>Từ chối: {statistics.soTuChoi}</span>
-              </div>
-            ) : null}
 
             <div className={s.alert}>
-              Luồng quản lý ứng viên chi tiết ở trang{' '}
-              <Link className={s.inlineLink} to={ROUTES.recruiter.applicants}>Ứng viên nộp</Link>.
+              <Link className={s.inlineLink} to={applicantsPath}>
+                → Xem ứng viên của tin này
+              </Link>
             </div>
           </section>
-        </div>
+        ) : null}
 
-        <section className={s.card}>
-          <h3 className={s.cardTitle}>Kỹ năng yêu cầu của tin (E8-E10)</h3>
-          <AppDataTable
-            columns={[
-              {
-                key: 'tenKyNang',
-                header: 'Kỹ năng',
-                render: (row: JobSkill) => (
-                  <div style={{ display: 'grid', gap: 4 }}>
-                    <strong>{row.tenKyNang}</strong>
-                    <span className={s.meta}>{row.moTa || 'Không có mô tả'}</span>
+        {activeTab === 'skillRegion' ? (
+          <section className={s.card}>
+            <h3 className={s.cardTitle}>Kỹ năng & khu vực áp dụng</h3>
+
+            {!selectedJobId ? (
+              <div className={s.alert}>Hãy chọn một tin ở tab Danh sách trước khi cấu hình kỹ năng/khu vực.</div>
+            ) : (
+              <>
+                <div className={s.field}>
+                  <label className={s.label}>Khu vực áp dụng (B20)</label>
+                  <div className={s.checkGrid}>
+                    {locationOptions.map((item) => (
+                      <label key={item.value} className={s.checkItem}>
+                        <input
+                          type="checkbox"
+                          checked={selectedLocations.includes(item.value)}
+                          onChange={() => handleToggleLocation(item.value)}
+                        />
+                        <span>{item.label}</span>
+                      </label>
+                    ))}
                   </div>
-                ),
-              },
-              {
-                key: 'yeucau',
-                header: 'Mức yêu cầu',
-                width: '140px',
-                render: (row: JobSkill) => `${row.yeucau}/5`,
-              },
-              {
-                key: 'actions',
-                header: 'Tác vụ',
-                width: '120px',
-                align: 'center',
-                render: (row: JobSkill) => (
+                  <div className={s.actions}>
+                    <button
+                      type="button"
+                      className={`${s.btn} ${s.btnPrimary}`}
+                      disabled={saving}
+                      onClick={() => void handleSubmit()}
+                    >
+                      Lưu khu vực & thông tin tin
+                    </button>
+                  </div>
+                </div>
+
+                <AppDataTable
+                  columns={[
+                    {
+                      key: 'tenKyNang',
+                      header: 'Kỹ năng',
+                      render: (row: JobSkill) => (
+                        <div style={{ display: 'grid', gap: 4 }}>
+                          <strong>{row.tenKyNang}</strong>
+                          <span className={s.meta}>{row.moTa || 'Không có mô tả'}</span>
+                        </div>
+                      ),
+                    },
+                    {
+                      key: 'yeucau',
+                      header: 'Mức yêu cầu',
+                      width: '140px',
+                      render: (row: JobSkill) => `${row.yeucau}/5`,
+                    },
+                    {
+                      key: 'actions',
+                      header: 'Tác vụ',
+                      width: '120px',
+                      align: 'center',
+                      render: (row: JobSkill) => (
+                        <button
+                          type="button"
+                          className={`${s.btn} ${s.btnGhost}`}
+                          disabled={skillSaving}
+                          onClick={() => void handlePickSkill(row)}
+                        >
+                          Sửa
+                        </button>
+                      ),
+                    },
+                  ]}
+                  data={jobSkills}
+                  rowKey={(row) => `${row.jobId}-${row.kyNangId}`}
+                  emptyMessage="Tin này chưa cấu hình kỹ năng yêu cầu."
+                />
+
+                <div className={s.grid2}>
+                  <div className={s.field}>
+                    <label className={s.label}>Chọn kỹ năng</label>
+                    <select
+                      className={s.select}
+                      value={skillForm.kyNangId}
+                      disabled={selectedSkillId != null}
+                      onChange={(e) => setSkillForm((prev) => ({ ...prev, kyNangId: e.target.value }))}
+                    >
+                      <option value="">-- Chọn kỹ năng --</option>
+                      {skillOptions.map((item) => (
+                        <option key={item.value} value={item.value}>{item.label}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className={s.field}>
+                    <label className={s.label}>Mức yêu cầu</label>
+                    <select
+                      className={s.select}
+                      value={skillForm.yeucau}
+                      onChange={(e) => setSkillForm((prev) => ({ ...prev, yeucau: e.target.value }))}
+                    >
+                      <option value="1">1 - Sơ cấp</option>
+                      <option value="2">2 - Cơ bản</option>
+                      <option value="3">3 - Trung bình</option>
+                      <option value="4">4 - Nâng cao</option>
+                      <option value="5">5 - Chuyên gia</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className={s.field}>
+                  <label className={s.label}>Mô tả yêu cầu kỹ năng</label>
+                  <textarea
+                    className={s.textarea}
+                    value={skillForm.moTa}
+                    onChange={(e) => setSkillForm((prev) => ({ ...prev, moTa: e.target.value }))}
+                    placeholder="Ví dụ: Có kinh nghiệm triển khai sản phẩm production"
+                  />
+                </div>
+
+                <div className={s.actions}>
                   <button
                     type="button"
                     className={`${s.btn} ${s.btnGhost}`}
                     disabled={skillSaving}
-                    onClick={() => void handlePickSkill(row)}
+                    onClick={handleResetSkillForm}
                   >
-                    Sửa
+                    Làm mới form kỹ năng
                   </button>
-                ),
-              },
-            ]}
-            data={jobSkills}
-            rowKey={(row) => `${row.jobId}-${row.kyNangId}`}
-            emptyMessage="Tin này chưa cấu hình kỹ năng yêu cầu."
-          />
+                  <button
+                    type="button"
+                    className={`${s.btn} ${s.btnPrimary}`}
+                    disabled={skillSaving || !selectedJobId}
+                    onClick={() => void handleAddSkill()}
+                  >
+                    Thêm kỹ năng
+                  </button>
+                  <button
+                    type="button"
+                    className={`${s.btn} ${s.btnGhost}`}
+                    disabled={skillSaving || selectedSkillId == null || !selectedJobId}
+                    onClick={() => void handleUpdateSkill()}
+                  >
+                    Cập nhật kỹ năng
+                  </button>
+                  <button
+                    type="button"
+                    className={`${s.btn} ${s.btnDanger}`}
+                    disabled={skillSaving || selectedSkillId == null || !selectedJobId}
+                    onClick={() => void handleDeleteSkill()}
+                  >
+                    Xóa kỹ năng
+                  </button>
+                </div>
+              </>
+            )}
+          </section>
+        ) : null}
 
-          <div className={s.grid2}>
-            <div className={s.field}>
-              <label className={s.label}>Chọn kỹ năng</label>
-              <select
-                className={s.select}
-                value={skillForm.kyNangId}
-                disabled={selectedSkillId != null}
-                onChange={(e) => setSkillForm((prev) => ({ ...prev, kyNangId: e.target.value }))}
-              >
-                <option value="">-- Chọn kỹ năng --</option>
-                {skillOptions.map((item) => (
-                  <option key={item.value} value={item.value}>{item.label}</option>
-                ))}
-              </select>
+        {activeTab === 'stats' ? (
+          <section className={s.card}>
+            <h3 className={s.cardTitle}>Thống kê tin đang chọn (B22)</h3>
+            {statsLoading ? <div className={`${s.skeletonShimmerLocal} ${s.metricSkeleton}`} /> : null}
+            {!statsLoading && !statistics ? (
+              <div className={s.alert}>Chọn một tin để xem thống kê ứng tuyển.</div>
+            ) : null}
+            {statistics ? (
+              <div className={s.metricsGrid}>
+                <div className={s.metricCard}><span className={s.meta}>Tổng đơn</span><strong>{statistics.tongSoDon}</strong></div>
+                <div className={s.metricCard}><span className={s.meta}>Mới</span><strong>{statistics.soMoi}</strong></div>
+                <div className={s.metricCard}><span className={s.meta}>Review</span><strong>{statistics.soReview}</strong></div>
+                <div className={s.metricCard}><span className={s.meta}>Phỏng vấn</span><strong>{statistics.soPhongVan}</strong></div>
+                <div className={s.metricCard}><span className={s.meta}>Offer</span><strong>{statistics.soOffer}</strong></div>
+                <div className={s.metricCard}><span className={s.meta}>Từ chối</span><strong>{statistics.soTuChoi}</strong></div>
+              </div>
+            ) : null}
+
+            <div className={s.actions}>
+              <Link className={s.inlineLink} to={applicantsPath}>Xem tất cả đơn của tin này</Link>
             </div>
-            <div className={s.field}>
-              <label className={s.label}>Mức yêu cầu</label>
-              <select
-                className={s.select}
-                value={skillForm.yeucau}
-                onChange={(e) => setSkillForm((prev) => ({ ...prev, yeucau: e.target.value }))}
-              >
-                <option value="1">1 - Sơ cấp</option>
-                <option value="2">2 - Cơ bản</option>
-                <option value="3">3 - Trung bình</option>
-                <option value="4">4 - Nâng cao</option>
-                <option value="5">5 - Chuyên gia</option>
-              </select>
-            </div>
-          </div>
+          </section>
+        ) : null}
 
-          <div className={s.field}>
-            <label className={s.label}>Mô tả yêu cầu kỹ năng</label>
-            <textarea
-              className={s.textarea}
-              value={skillForm.moTa}
-              onChange={(e) => setSkillForm((prev) => ({ ...prev, moTa: e.target.value }))}
-              placeholder="Ví dụ: Có kinh nghiệm triển khai sản phẩm production"
-            />
-          </div>
-
-          <div className={s.actions}>
-            <button
-              type="button"
-              className={`${s.btn} ${s.btnGhost}`}
-              disabled={skillSaving}
-              onClick={handleResetSkillForm}
-            >
-              Làm mới form kỹ năng
-            </button>
+        {activeTab === 'form' && hasPendingFormChanges ? (
+          <div className={s.floatingActions}>
             <button
               type="button"
               className={`${s.btn} ${s.btnPrimary}`}
-              disabled={skillSaving || !selectedJobId}
-              onClick={() => void handleAddSkill()}
+              disabled={saving}
+              onClick={() => void handleSubmit()}
             >
-              Thêm kỹ năng
-            </button>
-            <button
-              type="button"
-              className={`${s.btn} ${s.btnGhost}`}
-              disabled={skillSaving || selectedSkillId == null || !selectedJobId}
-              onClick={() => void handleUpdateSkill()}
-            >
-              Cập nhật kỹ năng
-            </button>
-            <button
-              type="button"
-              className={`${s.btn} ${s.btnDanger}`}
-              disabled={skillSaving || selectedSkillId == null || !selectedJobId}
-              onClick={() => void handleDeleteSkill()}
-            >
-              Xóa kỹ năng
+              Lưu nhanh
             </button>
           </div>
-        </section>
+        ) : null}
       </div>
     </MainLayout>
   );

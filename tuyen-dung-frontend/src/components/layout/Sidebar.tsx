@@ -29,7 +29,6 @@ const NAV_CONFIG: Record<VaiTroTaiKhoan, NavSection[]> = {
       items: [
         { label: 'Tìm việc làm', icon: '🔍', to: ROUTES.candidate.jobs },
         { label: 'Đã ứng tuyển', icon: '📋', to: ROUTES.candidate.applications },
-        { label: 'Việc đã lưu', icon: '❤️', to: ROUTES.candidate.savedJobs },
       ],
     },
     {
@@ -60,7 +59,6 @@ const NAV_CONFIG: Record<VaiTroTaiKhoan, NavSection[]> = {
       title: 'Công ty',
       items: [
         { label: 'Thông tin công ty', icon: '🏢', to: ROUTES.recruiter.company },
-        { label: 'Gói dịch vụ', icon: '⭐', to: ROUTES.recruiter.plans },
       ],
     },
     {
@@ -84,14 +82,6 @@ const NAV_CONFIG: Record<VaiTroTaiKhoan, NavSection[]> = {
         { label: 'Tin tuyển dụng', icon: '📢', to: ROUTES.admin.jobs },
         { label: 'Công ty', icon: '🏢', to: ROUTES.admin.companies },
         { label: 'Kỹ năng', icon: '🧠', to: ROUTES.admin.skills },
-      ],
-    },
-    {
-      title: 'Hệ thống',
-      items: [
-        { label: 'Báo cáo', icon: '📊', to: ROUTES.admin.reports },
-        { label: 'Cài đặt', icon: '⚙️', to: ROUTES.admin.settings },
-        { label: 'Nhật ký', icon: '📝', to: ROUTES.admin.logs },
       ],
     },
   ],

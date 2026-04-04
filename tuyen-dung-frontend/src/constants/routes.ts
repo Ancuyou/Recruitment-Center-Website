@@ -19,7 +19,6 @@ export const ROUTES = {
     jobs: '/ung-vien/tim-viec',
     jobDetail: '/ung-vien/tim-viec/:id',
     applications: '/ung-vien/ung-tuyen',
-    savedJobs: '/ung-vien/da-luu',
     profile: '/ung-vien/ho-so',
     cv: '/ung-vien/cv',
     notifications: '/ung-vien/thong-bao',
@@ -31,7 +30,6 @@ export const ROUTES = {
     candidateProfiles: '/nha-tuyen-dung/ho-so-ung-vien',
     profile: '/nha-tuyen-dung/ho-so',
     company: '/nha-tuyen-dung/cong-ty',
-    plans: '/nha-tuyen-dung/goi-dich-vu',
     notifications: '/nha-tuyen-dung/thong-bao',
   },
   admin: {
@@ -40,9 +38,6 @@ export const ROUTES = {
     jobs: '/admin/tin-tuyen-dung',
     companies: '/admin/cong-ty',
     skills: '/admin/ky-nang',
-    reports: '/admin/bao-cao',
-    settings: '/admin/cai-dat',
-    logs: '/admin/nhat-ky',
   },
 } as const;
 

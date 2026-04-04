@@ -1,10 +1,9 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import MainLayout from '@/layouts/MainLayout';
 import StatCard from '@/components/common/StatCard';
 import { ROUTES } from '@/constants/routes';
 import { useAuthStore } from '@/store/auth.store';
-import { savedJobsLocal } from '@/services/local/saved-jobs.local';
 import { dashboardService } from '@/services/modules/dashboard.module';
 import { applicationService } from '@/services/modules/application.module';
 import { jobService } from '@/services/modules/job.module';
@@ -73,8 +72,6 @@ export default function CandidateDashboard() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const savedCount = useMemo(() => savedJobsLocal.listIds().length, []);
-
   useEffect(() => {
     let mounted = true;
 
@@ -116,7 +113,6 @@ export default function CandidateDashboard() {
     { icon: '📋', label: 'Đã ứng tuyển', value: stats.tongSoDonDaNop, accent: 'indigo', trend: 'neutral' },
     { icon: '⏳', label: 'Đơn đang chờ', value: stats.soDonDangCho, accent: 'sky', trend: 'neutral' },
     { icon: '📞', label: 'Lịch phỏng vấn', value: stats.soLichPhongVan, accent: 'emerald', trend: 'neutral' },
-    { icon: '❤️', label: 'Việc đã lưu', value: savedCount, accent: 'amber', trend: 'neutral' },
   ] as const;
 
   const quickActions = [

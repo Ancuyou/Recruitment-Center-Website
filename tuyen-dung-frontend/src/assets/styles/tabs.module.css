@@ -1,0 +1,101 @@
+.tabsWrap {
+  display: grid;
+  gap: 12px;
+}
+
+.tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 8px;
+  border-radius: 12px;
+  border: 1px solid #dbe4f2;
+  background: #ffffff;
+}
+
+.tabBtn {
+  border: 1px solid transparent;
+  background: #eef2ff;
+  color: #334155;
+  border-radius: 999px;
+  padding: 8px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  transition: all 150ms ease;
+}
+
+.tabBtn:hover {
+  border-color: #94a3b8;
+  color: #0f172a;
+  transform: translateY(-1px);
+}
+
+.tabBtnActive {
+  color: #ffffff;
+  background: linear-gradient(135deg, #2563eb, #1e293b);
+  border-color: transparent;
+}
+
+.tabHint {
+  color: #64748b;
+  font-size: 13px;
+}
+
+.stepper {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.step {
+  border: 1px solid #dbe4f2;
+  border-radius: 12px;
+  padding: 10px;
+  background: #ffffff;
+  display: grid;
+  gap: 4px;
+}
+
+.stepIndex {
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  border: 1px solid #cbd5e1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  color: #334155;
+}
+
+.stepActive {
+  border-color: #93c5fd;
+  background: #eff6ff;
+}
+
+.stepActive .stepIndex {
+  background: #2563eb;
+  color: #ffffff;
+  border-color: #2563eb;
+}
+
+.stepTitle {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.stepSub {
+  margin: 0;
+  font-size: 11px;
+  color: #64748b;
+}
+
+@media (max-width: 900px) {
+  .stepper {
+    grid-template-columns: 1fr 1fr;
+  }
+}
