@@ -1,0 +1,151 @@
+@startuml
+skinparam classAttributeIconSize 0
+
+package "model.enums" {
+    enum ReaderGender {
+        MALE
+        FEMALE
+        OTHER
+    }
+    enum ReaderStatus {
+        ACTIVE
+        INACTIVE
+        BLOCKED
+    }
+    enum StaffRole {
+        ADMIN
+        STAFF
+    }
+    enum LoanStatus {
+        BORROWING
+        PARTIAL_RETURNED
+        RETURNED
+        OVERDUE
+        CANCELLED
+    }
+}
+
+package "model.entity" {
+    class Category {
+        - Long id
+        - String name
+        - String description
+    }
+    class Publisher {
+        - Long id
+        - String name
+        - String address
+        - String phone
+    }
+    class Author {
+        - Long id
+        - String fullName
+        - String email
+        - String bio
+    }
+    class Book {
+        - Long id
+        - String isbn
+        - String title
+        - Integer publishYear
+        - BigDecimal price
+        - Integer quantity
+        - Integer availableQuantity
+    }
+    class Reader {
+        - Long id
+        - String readerCode
+        - String fullName
+        - ReaderGender gender
+        - String phone
+        - String email
+        - String address
+        - ReaderStatus status
+    }
+    class Staff {
+        - Long id
+        - String staffCode
+        - String fullName
+        - String username
+        - String password
+        - StaffRole role
+    }
+    class Loan {
+        - Long id
+        - String loanCode
+        - LocalDate loanDate
+        - LocalDate dueDate
+        - LoanStatus status
+    }
+    class LoanDetail {
+        - Long id
+        - Integer quantity
+        - Integer returnedQuantity
+        - LocalDate returnDate
+        - String note
+    }
+}
+
+package "repository" {
+    interface BookRepository
+    interface ReaderRepository
+    interface LoanRepository
+    interface StaffRepository
+    interface StatisticsRepository
+}
+
+package "service" {
+    interface AuthService
+    interface BookService
+    interface ReaderService
+    interface LoanService
+    interface StatisticsService
+}
+
+package "controller" {
+    class AuthController
+    class BookController
+    class ReaderController
+    class LoanController
+    class StatisticsController
+}
+
+package "view" {
+    class LoginFrame
+    class MainFrame
+    class DashboardPanel
+    class BookManagementPanel
+    class ReaderManagementPanel
+    class LoanManagementPanel
+    class ReturnBookPanel
+    class StatisticsPanel
+}
+
+Category "1" <-- "0..*" Book : category
+Publisher "1" <-- "0..*" Book : publisher
+Book "0..*" -- "0..*" Author : authors
+Reader "1" <-- "0..*" Loan : reader
+Staff "1" <-- "0..*" Loan : staff
+Loan "1" <-- "1..*" LoanDetail : loan
+Book "1" <-- "0..*" LoanDetail : book
+
+AuthController --> AuthService
+BookController --> BookService
+ReaderController --> ReaderService
+LoanController --> LoanService
+StatisticsController --> StatisticsService
+
+BookService --> BookRepository
+ReaderService --> ReaderRepository
+LoanService --> LoanRepository
+AuthService --> StaffRepository
+StatisticsService --> StatisticsRepository
+
+LoginFrame --> AuthController
+MainFrame --> DashboardPanel
+MainFrame --> BookManagementPanel
+MainFrame --> ReaderManagementPanel
+MainFrame --> LoanManagementPanel
+MainFrame --> ReturnBookPanel
+MainFrame --> StatisticsPanel
+@enduml
