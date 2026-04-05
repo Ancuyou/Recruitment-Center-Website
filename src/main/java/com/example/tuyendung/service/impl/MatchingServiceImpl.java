@@ -48,6 +48,7 @@ public class MatchingServiceImpl implements MatchingService {
     private final TinTuyenDungRepository tinTuyenDungRepository;
     private final ChiTietKyNangCvRepository chiTietKyNangCvRepository;
     private final CtKyNangTinRepository ctKyNangTinRepository;
+    private final UngVienRepository ungVienRepository;
 
     @Qualifier("cosineSimilarityStrategy")
     private final SkillMatchingStrategy defaultStrategy;
@@ -64,6 +65,7 @@ public class MatchingServiceImpl implements MatchingService {
             TinTuyenDungRepository tinTuyenDungRepository,
             ChiTietKyNangCvRepository chiTietKyNangCvRepository,
             CtKyNangTinRepository ctKyNangTinRepository,
+            UngVienRepository ungVienRepository,
             @Qualifier("cosineSimilarityStrategy") SkillMatchingStrategy defaultStrategy,
             @Qualifier("keywordMatchingStrategy") SkillMatchingStrategy keywordStrategy) {
         this.timeProvider = timeProvider;
@@ -72,6 +74,7 @@ public class MatchingServiceImpl implements MatchingService {
         this.tinTuyenDungRepository = tinTuyenDungRepository;
         this.chiTietKyNangCvRepository = chiTietKyNangCvRepository;
         this.ctKyNangTinRepository = ctKyNangTinRepository;
+        this.ungVienRepository = ungVienRepository;
         this.defaultStrategy = defaultStrategy;
         this.keywordStrategy = keywordStrategy;
     }
@@ -113,15 +116,15 @@ public class MatchingServiceImpl implements MatchingService {
     public List<JobSuggestionResponse> suggestJobsForCandidate(Long candidateId, Integer limit) {
         log.info("E2: Gợi ý công việc cho ứng viên {}", candidateId);
 
-        // Verify candidate exists
-        hoSoCvRepository.findByIdAndNotDeleted(candidateId)
-                .orElseThrow(() -> new BaseBusinessException(ErrorCode.CV_NOT_FOUND,
-                        "Không tìm thấy hồ sơ CV ID: " + candidateId));
+        // Verify candidate exists (candidateId must be UngVien ID)
+        UngVien candidate = ungVienRepository.findById(candidateId)
+                .orElseThrow(() -> new BaseBusinessException(ErrorCode.CANDIDATE_NOT_FOUND,
+                        "Không tìm thấy ứng viên ID: " + candidateId));
 
         Integer finalLimit = limit != null ? limit : DEFAULT_LIMIT;
 
         // Get candidate's default CV
-        HoSoCv cv = hoSoCvRepository.findDefaultCvByUngVienId(candidateId)
+        HoSoCv cv = hoSoCvRepository.findDefaultCvByUngVienId(candidate.getId())
                 .orElseThrow(() -> new BaseBusinessException(ErrorCode.CV_NOT_FOUND,
                         "Ứng viên chưa có CV chính, vui lòng thiết lập CV chính trước"));
 
@@ -274,9 +277,30 @@ public class MatchingServiceImpl implements MatchingService {
      * Factory method: Select strategy by name
      */
     private SkillMatchingStrategy selectStrategy(String strategyName) {
-        if (strategyName != null && strategyName.contains("Keyword")) {
+        if (strategyName == null || strategyName.trim().isEmpty()) {
+            return defaultStrategy;
+        }
+
+        String normalized = strategyName.trim().toLowerCase(Locale.ROOT)
+                .replace('-', '_')
+                .replace(' ', '_');
+
+        if (normalized.equals("keyword")
+                || normalized.equals("keyword_matching")
+                || normalized.equals("simple_keyword_matching")) {
             return keywordStrategy;
         }
-        return defaultStrategy; // Default: Cosine Similarity
+
+        if (normalized.equals("cosine")
+                || normalized.equals("cosine_similarity")
+                || normalized.equals("cosine_similarity_with_proficiency_weighting")) {
+            return defaultStrategy;
+        }
+
+        throw new BaseBusinessException(
+                ErrorCode.VALIDATION_ERROR,
+                "Strategy khong hop le: " + strategyName
+                        + ". Ho tro: cosine_similarity, keyword_matching"
+        );
     }
 }

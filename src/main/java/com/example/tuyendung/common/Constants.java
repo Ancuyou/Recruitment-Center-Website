@@ -18,6 +18,7 @@ public class Constants {
     public static final String ROLE_UV_EXPR            = "hasRole('UNG_VIEN')";
     public static final String ROLE_NTD_EXPR           = "hasRole('NHA_TUYEN_DUNG')";
     public static final String ROLE_ADMIN_EXPR         = "hasRole('ADMIN')";
+    public static final String ROLE_UV_OR_NTD_EXPR     = "hasAnyRole('UNG_VIEN', 'NHA_TUYEN_DUNG')";
     public static final String ROLE_NTD_OR_ADMIN_EXPR  = "hasAnyRole('NHA_TUYEN_DUNG', 'ADMIN')";
 
     private Constants() {
