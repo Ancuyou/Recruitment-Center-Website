@@ -11,5 +11,7 @@ public interface UngVienRepository extends JpaRepository<UngVien, Long> {
 
     Optional<UngVien> findByTaiKhoanId(Long taiKhoanId);
 
+    Optional<UngVien> findBySoDienThoai(String soDienThoai);
+
     boolean existsBySoDienThoai(String soDienThoai);
 }

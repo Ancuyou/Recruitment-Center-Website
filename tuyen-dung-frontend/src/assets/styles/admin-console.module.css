@@ -129,21 +129,70 @@
   font-size: 13px;
   font-weight: 700;
   cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: transform 0.16s ease, box-shadow 0.16s ease, filter 0.16s ease;
 }
 
 .btnPrimary {
   color: #ffffff;
-  background: linear-gradient(135deg, #0ea5e9, #1d4ed8);
+  background: linear-gradient(135deg, #0284c7, #1d4ed8);
 }
 
 .btnGhost {
   color: #334155;
-  background: #e2e8f0;
+  background: #eef2ff;
+  border: 1px solid #dbe4f2;
 }
 
 .btnDanger {
   color: #ffffff;
   background: linear-gradient(135deg, #ef4444, #b91c1c);
+}
+
+.btnWarn {
+  color: #ffffff;
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+}
+
+.btnSuccess {
+  color: #ffffff;
+  background: linear-gradient(135deg, #22c55e, #15803d);
+}
+
+.btnCompact {
+  min-width: 78px;
+  padding: 7px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  line-height: 1.1;
+}
+
+.tableActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.sectionActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.formActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding-top: 8px;
+  border-top: 1px dashed #e2e8f0;
+}
+
+.btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 16px rgba(30, 64, 175, 0.2);
 }
 
 .btn:disabled {
