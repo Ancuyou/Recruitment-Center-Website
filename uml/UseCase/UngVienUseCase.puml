@@ -3,7 +3,7 @@ left to right direction
 skinparam actorStyle awesome
 skinparam defaultFontName Arial
 skinparam nodesep 70
-skinparam ranksep 280
+skinparam ranksep 260
 skinparam linetype ortho
 
 skinparam usecase {
@@ -29,26 +29,22 @@ actor "Ung vien" as UV
 
 rectangle "He thong Tuyen dung - Goc nhin Ung vien" {
 
-  package "Cong khai" {
-    usecase "UC01\nXac thuc tai khoan"            as UC01
-    usecase "UC02\nXem & Tim kiem tin tuyen dung" as UC02
-    usecase "UC03\nTra cuu danh muc"              as UC03
+  package "Use case dung chung" {
+    usecase "UC01\nXem / Tim kiem viec lam"           as UC01
+    usecase "UC02\nTra cuu danh muc he thong"         as UC02
+    usecase "UC03\nDang ky"                           as UC03
+    usecase "UC04\nDang nhap"                         as UC04
+    usecase "UC05\nKhoi phuc tai khoan"               as UC05
   }
 
-  package "Ho so ca nhan & CV" {
-    usecase "UC04\nQuan ly ho so ca nhan"         as UC04
-    usecase "UC06\nQuan ly ho so CV"              as UC06
-  }
-
-  package "Ung tuyen & Phong van" {
-    usecase "UC07\nQuan ly don ung tuyen cua toi" as UC07
-    usecase "UC08\nXem lich phong van"            as UC08
-  }
-
-  package "Ho tro & Tien ich" {
-    usecase "UC05\nQuan ly thong bao"             as UC05
-    usecase "UC09\nXem dashboard ung vien"        as UC09
-    usecase "UC10\nNhan goi y viec lam phu hop"   as UC10
+  package "Use case rieng - Ung vien" {
+    usecase "UC06\nQuan ly ho so ca nhan"             as UC06
+    usecase "UC07\nQuan ly CV"                        as UC07
+    usecase "UC08\nUng tuyen & Theo doi trang thai"   as UC08
+    usecase "UC09\nXem lich phong van"                as UC09
+    usecase "UC10\nNhan thong bao"                    as UC10
+    usecase "UC11\nXem Dashboard"                     as UC11
+    usecase "UC12\nXem goi y viec lam / Match score"  as UC12
   }
 }
 
@@ -62,4 +58,7 @@ UV -[#2E7D32]-> UC07
 UV -[#2E7D32]-> UC08
 UV -[#2E7D32]-> UC09
 UV -[#2E7D32]-> UC10
+UV -[#2E7D32]-> UC11
+UV -[#2E7D32]-> UC12
+
 @enduml

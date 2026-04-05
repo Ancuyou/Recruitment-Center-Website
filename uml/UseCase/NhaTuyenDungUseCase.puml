@@ -3,7 +3,7 @@ left to right direction
 skinparam actorStyle awesome
 skinparam defaultFontName Arial
 skinparam nodesep 70
-skinparam ranksep 280
+skinparam ranksep 260
 skinparam linetype ortho
 
 skinparam usecase {
@@ -29,27 +29,22 @@ actor "Nha tuyen dung" as NTD
 
 rectangle "He thong Tuyen dung - Goc nhin Nha tuyen dung" {
 
-  package "Cong khai" {
-    usecase "UC01\nXac thuc tai khoan"            as UC01
-    usecase "UC02\nXem & Tim kiem tin tuyen dung" as UC02
-    usecase "UC03\nTra cuu danh muc"              as UC03
+  package "Use case dung chung" {
+    usecase "UC01\nXem va tim kiem viec lam"          as UC01
+    usecase "UC02\nTra cuu danh muc he thong"         as UC02
+    usecase "UC03\nDang ky"                           as UC03
+    usecase "UC04\nDang nhap"                         as UC04
+    usecase "UC05\nKhoi phuc tai khoan"               as UC05
   }
 
-  package "Doanh nghiep & Tin tuyen dung" {
-    usecase "UC11\nQuan ly cong ty"               as UC11
-    usecase "UC12\nQuan ly tin tuyen dung"        as UC12
-  }
-
-  package "Xu ly ung tuyen & Phong van" {
-    usecase "UC13\nXet duyet don ung tuyen"       as UC13
-    usecase "UC14\nQuan ly lich phong van"        as UC14
-  }
-
-  package "Ho so & Tien ich" {
-    usecase "UC04\nQuan ly ho so ca nhan"         as UC04
-    usecase "UC05\nQuan ly thong bao"             as UC05
-    usecase "UC15\nXem dashboard nha tuyen dung"  as UC15
-    usecase "UC16\nNhan goi y ung vien phu hop"   as UC16
+  package "Use case rieng - Nha tuyen dung" {
+    usecase "UC13\nQuan ly cong ty"                   as UC13
+    usecase "UC14\nQuan ly tin tuyen dung"            as UC14
+    usecase "UC15\nXu ly don ung tuyen"               as UC15
+    usecase "UC16\nQuan ly lich phong van"            as UC16
+    usecase "UC17\nNhan thong bao nha tuyen dung"    as UC17
+    usecase "UC18\nXem dashboard nha tuyen dung"     as UC18
+    usecase "UC19\nXem goi y ung vien / tinh match score" as UC19
   }
 }
 
@@ -58,10 +53,12 @@ NTD -[#1565C0]-> UC02
 NTD -[#1565C0]-> UC03
 NTD -[#1565C0]-> UC04
 NTD -[#1565C0]-> UC05
-NTD -[#1565C0]-> UC11
-NTD -[#1565C0]-> UC12
 NTD -[#1565C0]-> UC13
 NTD -[#1565C0]-> UC14
 NTD -[#1565C0]-> UC15
 NTD -[#1565C0]-> UC16
+NTD -[#1565C0]-> UC17
+NTD -[#1565C0]-> UC18
+NTD -[#1565C0]-> UC19
+
 @enduml
