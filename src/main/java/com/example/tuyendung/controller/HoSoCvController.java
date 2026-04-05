@@ -4,6 +4,10 @@ import com.example.tuyendung.common.ApiResponse;
 import com.example.tuyendung.common.Constants;
 import com.example.tuyendung.dto.request.HoSoCvRequest;
 import com.example.tuyendung.dto.response.HoSoCvResponse;
+import com.example.tuyendung.entity.UngVien;
+import com.example.tuyendung.exception.BaseBusinessException;
+import com.example.tuyendung.exception.ErrorCode;
+import com.example.tuyendung.repository.UngVienRepository;
 import com.example.tuyendung.security.CustomUserDetails;
 import com.example.tuyendung.service.HoSoCvService;
 import jakarta.validation.Valid;
@@ -33,6 +37,15 @@ import java.util.List;
 public class HoSoCvController {
 
     private final HoSoCvService hoSoCvService;
+    private final UngVienRepository ungVienRepository;
+
+    private Long resolveUngVienId(Long taiKhoanId) {
+        UngVien ungVien = ungVienRepository.findByTaiKhoanId(taiKhoanId)
+                .orElseThrow(() -> new BaseBusinessException(
+                        ErrorCode.CANDIDATE_NOT_FOUND,
+                        "Không tìm thấy ứng viên cho tài khoản ID: " + taiKhoanId));
+        return ungVien.getId();
+    }
 
     /** C1: Tạo CV mới (POST) */
     @PostMapping
@@ -41,7 +54,8 @@ public class HoSoCvController {
             @Valid @RequestBody HoSoCvRequest request,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
         log.info("POST /api/cvs - Tạo CV mới");
-        HoSoCvResponse response = hoSoCvService.createCv(userDetails.getId(), request);
+        Long ungVienId = resolveUngVienId(userDetails.getId());
+        HoSoCvResponse response = hoSoCvService.createCv(ungVienId, request);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success("Tạo CV thành công", response));
     }
@@ -52,7 +66,8 @@ public class HoSoCvController {
     public ResponseEntity<ApiResponse<List<HoSoCvResponse>>> getCvList(
             @AuthenticationPrincipal CustomUserDetails userDetails) {
         log.info("GET /api/cvs - Danh sách CV");
-        List<HoSoCvResponse> cvList = hoSoCvService.getCvsByUngVienId(userDetails.getId());
+        Long ungVienId = resolveUngVienId(userDetails.getId());
+        List<HoSoCvResponse> cvList = hoSoCvService.getCvsByUngVienId(ungVienId);
         return ResponseEntity.ok(ApiResponse.success("Lấy danh sách CV thành công", cvList));
     }
 
@@ -63,7 +78,8 @@ public class HoSoCvController {
             @PathVariable Long id,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
         log.info("GET /api/cvs/{} - Chi tiết CV", id);
-        HoSoCvResponse response = hoSoCvService.getCvById(id, userDetails.getId());
+        Long ungVienId = resolveUngVienId(userDetails.getId());
+        HoSoCvResponse response = hoSoCvService.getCvById(id, ungVienId);
         return ResponseEntity.ok(ApiResponse.success("Lấy chi tiết CV thành công", response));
     }
 
@@ -75,7 +91,8 @@ public class HoSoCvController {
             @Valid @RequestBody HoSoCvRequest request,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
         log.info("PUT /api/cvs/{} - Cập nhật CV", id);
-        HoSoCvResponse response = hoSoCvService.updateCv(id, userDetails.getId(), request);
+        Long ungVienId = resolveUngVienId(userDetails.getId());
+        HoSoCvResponse response = hoSoCvService.updateCv(id, ungVienId, request);
         return ResponseEntity.ok(ApiResponse.success("Cập nhật CV thành công", response));
     }
 
@@ -86,7 +103,8 @@ public class HoSoCvController {
             @PathVariable Long id,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
         log.info("DELETE /api/cvs/{} - Xóa mềm CV", id);
-        hoSoCvService.softDeleteCv(id, userDetails.getId());
+        Long ungVienId = resolveUngVienId(userDetails.getId());
+        hoSoCvService.softDeleteCv(id, ungVienId);
         return ResponseEntity.ok(ApiResponse.success("Xóa CV thành công", null));
     }
 
@@ -97,7 +115,8 @@ public class HoSoCvController {
             @PathVariable Long id,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
         log.info("POST /api/cvs/{}/set-default - Đặt CV chính", id);
-        hoSoCvService.setDefaultCv(userDetails.getId(), id);
+        Long ungVienId = resolveUngVienId(userDetails.getId());
+        hoSoCvService.setDefaultCv(ungVienId, id);
         return ResponseEntity.ok(ApiResponse.success("Đặt CV chính thành công", null));
     }
 
@@ -112,9 +131,10 @@ public class HoSoCvController {
             @RequestParam("file") MultipartFile file,
             @AuthenticationPrincipal CustomUserDetails userDetails) throws Exception {
         log.info("POST /api/cvs/{}/upload-file - Upload file PDF thực tế, size={}", id, file.getSize());
+        Long ungVienId = resolveUngVienId(userDetails.getId());
         HoSoCvResponse response = hoSoCvService.uploadCvFile(
                 id,
-                userDetails.getId(),
+                ungVienId,
                 file.getBytes(),
                 file.getContentType(),
                 file.getOriginalFilename());

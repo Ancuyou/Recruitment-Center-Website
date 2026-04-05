@@ -6,6 +6,7 @@ import com.example.tuyendung.service.FileStorageService;
 import com.example.tuyendung.util.TimeProvider;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.nio.file.Files;
@@ -25,6 +26,9 @@ import java.util.UUID;
 public class LocalFileStorageServiceImpl implements FileStorageService {
 
     private final TimeProvider timeProvider;
+
+    @Value("${app.public-base-url:http://localhost:8080}")
+    private String publicBaseUrl;
 
     private static final String UPLOAD_DIR = "uploads/cv-files/";
     private static final long MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
@@ -68,7 +72,7 @@ public class LocalFileStorageServiceImpl implements FileStorageService {
             Files.write(filePath, fileContent);
             log.info("Upload file thành công: {}", newFileName);
 
-            return "/uploads/cv-files/" + newFileName;
+            return buildPublicFileUrl(newFileName);
         } catch (SecurityException e) {
             log.error("Lỗi bảo mật khi ghi file", e);
             throw new BaseBusinessException(ErrorCode.FILE_SECURITY_ERROR);
@@ -116,5 +120,13 @@ public class LocalFileStorageServiceImpl implements FileStorageService {
                 && fileContent[1] == PDF_MAGIC[1]
                 && fileContent[2] == PDF_MAGIC[2]
                 && fileContent[3] == PDF_MAGIC[3];
+    }
+
+    private String buildPublicFileUrl(String fileName) {
+        String base = publicBaseUrl == null ? "" : publicBaseUrl.trim();
+        if (base.endsWith("/")) {
+            base = base.substring(0, base.length() - 1);
+        }
+        return base + "/uploads/cv-files/" + fileName;
     }
 }

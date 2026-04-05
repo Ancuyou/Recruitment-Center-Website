@@ -55,6 +55,76 @@ const EMPTY_STATS: RecruiterDashboardStats = {
   soLichPhongVanSapToi: 0,
 };
 
+const NEW_APPLICATION_STATUS: ApplicationItem['trangThai'] = 1;
+const APPLICATIONS_PAGE_SIZE = 20;
+const NEW_APPLICATIONS_PREVIEW_LIMIT = 6;
+
+function toApplicantsDetailPath(applicationId: number, jobId?: number): string {
+  const params = new URLSearchParams({ selectedApplicationId: String(applicationId) });
+  if (jobId) {
+    params.set('selectedJobId', String(jobId));
+  }
+  return `${ROUTES.recruiter.applicants}?${params.toString()}`;
+}
+
+function compareApplicationsByDateDesc(a: ApplicationItem, b: ApplicationItem): number {
+  const timeA = new Date(a.ngayNop).getTime();
+  const timeB = new Date(b.ngayNop).getTime();
+
+  if (Number.isNaN(timeA) || Number.isNaN(timeB)) {
+    return b.id - a.id;
+  }
+
+  return timeB - timeA;
+}
+
+async function fetchNewApplicationsByJob(jobId: number): Promise<ApplicationItem[]> {
+  const firstPage = await applicationService.getRecruiterApplications(jobId, 0, APPLICATIONS_PAGE_SIZE);
+  const collected = firstPage.content.filter((item) => item.trangThai === NEW_APPLICATION_STATUS);
+
+  if (firstPage.totalPages > 1) {
+    const remainingPageRequests: Promise<Awaited<ReturnType<typeof applicationService.getRecruiterApplications>>>[] = [];
+
+    for (let page = 1; page < firstPage.totalPages; page += 1) {
+      remainingPageRequests.push(applicationService.getRecruiterApplications(jobId, page, APPLICATIONS_PAGE_SIZE));
+    }
+
+    const remainingPages = await Promise.all(remainingPageRequests);
+    remainingPages.forEach((pageData) => {
+      collected.push(...pageData.content.filter((item) => item.trangThai === NEW_APPLICATION_STATUS));
+    });
+  }
+
+  return collected;
+}
+
+async function resolveInterviewJobMap(interviews: InterviewItem[]): Promise<Record<number, number>> {
+  const uniqueApplicationIds = Array.from(new Set(interviews.map((item) => item.donUngTuyenId)));
+  if (uniqueApplicationIds.length === 0) {
+    return {};
+  }
+
+  const detailPairs = await Promise.all(
+    uniqueApplicationIds.map(async (applicationId) => {
+      try {
+        const detail = await applicationService.getApplicationDetail(applicationId);
+        return [applicationId, detail.tinTuyenDungId] as const;
+      } catch {
+        return null;
+      }
+    })
+  );
+
+  const interviewJobMap: Record<number, number> = {};
+  detailPairs.forEach((pair) => {
+    if (!pair) return;
+    const [applicationId, jobId] = pair;
+    interviewJobMap[applicationId] = jobId;
+  });
+
+  return interviewJobMap;
+}
+
 // ─── Component ────────────────────────────────────────────────────
 export default function RecruiterDashboard() {
   const user = useAuthStore((st) => st.user);
@@ -62,6 +132,7 @@ export default function RecruiterDashboard() {
   const [jobs, setJobs] = useState<JobPosting[]>([]);
   const [recentApplications, setRecentApplications] = useState<ApplicationItem[]>([]);
   const [upcomingInterviews, setUpcomingInterviews] = useState<InterviewItem[]>([]);
+  const [interviewApplicationJobIds, setInterviewApplicationJobIds] = useState<Record<number, number>>({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -80,12 +151,27 @@ export default function RecruiterDashboard() {
         setJobs(myJobs);
         setUpcomingInterviews(myInterviewPage.content);
 
+        const interviewJobMapPromise = resolveInterviewJobMap(myInterviewPage.content);
+
         if (myJobs.length > 0) {
-          const appPage = await applicationService.getRecruiterApplications(myJobs[0].id, 0, 5);
-          setRecentApplications(appPage.content);
+          const newApplicationsByJob = await Promise.all(
+            myJobs.map((job) => fetchNewApplicationsByJob(job.id))
+          );
+
+          const dedupedApplications = Array.from(
+            new Map(
+              newApplicationsByJob.flat().map((application) => [application.id, application])
+            ).values()
+          );
+
+          dedupedApplications.sort(compareApplicationsByDateDesc);
+          setRecentApplications(dedupedApplications);
         } else {
           setRecentApplications([]);
         }
+
+        const interviewJobMap = await interviewJobMapPromise;
+        setInterviewApplicationJobIds(interviewJobMap);
       } catch (err) {
         setError(mapError(err, 'Không thể tải dữ liệu dashboard nhà tuyển dụng.'));
       } finally {
@@ -128,6 +214,15 @@ export default function RecruiterDashboard() {
       },
     ],
     [stats]
+  );
+
+  const previewApplications = useMemo(
+    () => recentApplications.slice(0, NEW_APPLICATIONS_PREVIEW_LIMIT),
+    [recentApplications]
+  );
+  const hiddenNewApplicationsCount = Math.max(
+    recentApplications.length - previewApplications.length,
+    0
   );
 
   const quickActions = [
@@ -180,8 +275,8 @@ export default function RecruiterDashboard() {
           {/* New candidates */}
           <div className={s.card}>
             <div className={s.sectionHead}>
-              <span className={s.cardTitle}>Ứng viên mới nộp hồ sơ</span>
-              <Link className={s.seeAll} to={ROUTES.recruiter.applicants}>Xem tất cả →</Link>
+              <span className={s.cardTitle}>Ứng viên mới nộp hồ sơ ({stats.soDonMoi})</span>
+              <Link className={s.seeAll} to={ROUTES.recruiter.applicants}>Xem chi tiết →</Link>
             </div>
             {recentApplications.length === 0 ? (
               <div className={s.empty}>
@@ -190,16 +285,24 @@ export default function RecruiterDashboard() {
               </div>
             ) : (
               <div className={s.activityList}>
-                {recentApplications.map((item) => (
-                  <div key={item.id} className={s.activityItem}>
+                {previewApplications.map((item) => (
+                  <Link
+                    key={item.id}
+                    className={s.activityItem}
+                    style={{ textDecoration: 'none', color: 'inherit' }}
+                    to={toApplicantsDetailPath(item.id, item.tinTuyenDungId)}
+                  >
                     <div className={s.activityIcon}>👤</div>
                     <div className={s.activityContent}>
                       <div className={s.activityTitle}>{item.tenUngVien} — {item.tieuDeTin}</div>
                       <div className={s.activitySub}>{item.emailUngVien} · {formatDate(item.ngayNop)}</div>
                     </div>
                     <span className={`${s.jobStatus} ${s.statusReview}`}>{item.trangThaiLabel}</span>
-                  </div>
+                  </Link>
                 ))}
+                {hiddenNewApplicationsCount > 0 ? (
+                  <div className={s.activitySub}>Và {hiddenNewApplicationsCount} ứng viên mới khác.</div>
+                ) : null}
               </div>
             )}
           </div>
@@ -232,7 +335,15 @@ export default function RecruiterDashboard() {
               ) : (
                 <div className={s.activityList}>
                   {upcomingInterviews.map((interview) => (
-                    <div key={interview.id} className={s.activityItem}>
+                    <Link
+                      key={interview.id}
+                      className={s.activityItem}
+                      style={{ textDecoration: 'none', color: 'inherit' }}
+                      to={toApplicantsDetailPath(
+                        interview.donUngTuyenId,
+                        interviewApplicationJobIds[interview.donUngTuyenId]
+                      )}
+                    >
                       <div className={s.activityIcon}>🎯</div>
                       <div className={s.activityContent}>
                         <div className={s.activityTitle}>{interview.tieuDeVong} — {interview.tenUngVien}</div>
@@ -245,7 +356,7 @@ export default function RecruiterDashboard() {
                       <span className={`${s.jobStatus} ${interviewStatusClass(interview.trangThai)}`}>
                         {interviewStatusLabel(interview.trangThai)}
                       </span>
-                    </div>
+                    </Link>
                   ))}
                 </div>
               )}

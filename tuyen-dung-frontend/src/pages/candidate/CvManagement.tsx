@@ -15,6 +15,10 @@ import type {
 } from '@/types/cv.types';
 import type { LookupItem } from '@/types/lookup.types';
 import s from '@/assets/styles/candidate-workflow.module.css';
+import t from '@/assets/styles/tabs.module.css';
+import m from '@/assets/styles/modal.module.css';
+
+type CvTab = 'overview' | 'profile' | 'skills' | 'details';
 
 const EMPTY_CV_FORM: CvRequest = {
   tieuDeCv: '',
@@ -54,6 +58,10 @@ const EMPTY_DETAIL_FORM: DetailFormState = {
 
 type DetailTypeFilter = 'ALL' | LoaiBanGhiCv;
 
+const CV_FILE_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL ??
+  (typeof window !== 'undefined' ? window.location.origin : '');
+
 function mapError(error: unknown, fallback: string): string {
   return (
     (error as { response?: { data?: { message?: string } } })?.response?.data?.message ?? fallback
@@ -81,6 +89,36 @@ function normalizeCvPayload(form: CvRequest): CvRequest {
   };
 }
 
+function resolveCvFileUrl(fileUrl?: string): string {
+  const raw = fileUrl?.trim();
+  if (!raw) return '';
+  if (/^https?:\/\//i.test(raw)) return raw;
+
+  try {
+    const base = CV_FILE_BASE_URL?.trim();
+    if (!base) return raw;
+    const normalizedBase = base.endsWith('/') ? base : `${base}/`;
+    return new URL(raw, normalizedBase).toString();
+  } catch {
+    return raw;
+  }
+}
+
+function toSameOriginPreviewUrl(fileUrl: string): string {
+  if (typeof window === 'undefined') return fileUrl;
+
+  try {
+    const parsed = new URL(fileUrl, window.location.origin);
+    if (parsed.pathname.startsWith('/uploads/')) {
+      return `${window.location.origin}${parsed.pathname}${parsed.search}${parsed.hash}`;
+    }
+  } catch {
+    return fileUrl;
+  }
+
+  return fileUrl;
+}
+
 export default function CandidateCvManagementPage() {
   const [cvs, setCvs] = useState<CvItem[]>([]);
   const [selectedCvId, setSelectedCvId] = useState<number | null>(null);
@@ -100,12 +138,41 @@ export default function CandidateCvManagementPage() {
   const [selectedDetailId, setSelectedDetailId] = useState<number | null>(null);
   const [detailTypeFilter, setDetailTypeFilter] = useState<DetailTypeFilter>('ALL');
   const [uploadFile, setUploadFile] = useState<File | null>(null);
+  const [activeTab, setActiveTab] = useState<CvTab>('overview');
+  const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
+  const [previewBlobUrl, setPreviewBlobUrl] = useState('');
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const [previewError, setPreviewError] = useState('');
   const [loading, setLoading] = useState(false);
   const [detailLoading, setDetailLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [catalogLoading, setCatalogLoading] = useState(false);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
+
+  const currentCvFileUrl = useMemo(() => {
+    const selectedFileUrl = resolveCvFileUrl(selectedCv?.fileCvUrl);
+    if (selectedFileUrl) return selectedFileUrl;
+    return resolveCvFileUrl(editForm.fileCvUrl);
+  }, [selectedCv?.fileCvUrl, editForm.fileCvUrl]);
+
+  useEffect(() => {
+    return () => {
+      if (previewBlobUrl) {
+        URL.revokeObjectURL(previewBlobUrl);
+      }
+    };
+  }, [previewBlobUrl]);
+
+  const closePreviewModal = useCallback(() => {
+    setIsPreviewModalOpen(false);
+    setPreviewLoading(false);
+    setPreviewError('');
+    if (previewBlobUrl) {
+      URL.revokeObjectURL(previewBlobUrl);
+      setPreviewBlobUrl('');
+    }
+  }, [previewBlobUrl]);
 
   const fetchSkillCatalog = useCallback(async () => {
     setCatalogLoading(true);
@@ -198,11 +265,12 @@ export default function CandidateCvManagementPage() {
     setMessage('');
     setError('');
     try {
-      const created = await cvService.createCv(normalizeCvPayload(createForm));
+      const created = await cvService.createCv(normalizeCvPayload({ ...createForm, fileCvUrl: '' }));
       createCvDraft.clearDraft(EMPTY_CV_FORM);
       setMessage('Tạo CV thành công.');
       await fetchCvList();
       setSelectedCvId(created.id);
+      setActiveTab('profile');
     } catch (err) {
       setError(mapError(err, 'Không thể tạo CV mới.'));
     } finally {
@@ -500,6 +568,39 @@ export default function CandidateCvManagementPage() {
     }
   };
 
+  const handleOpenCvPreview = async () => {
+    if (!currentCvFileUrl) {
+      setError('CV này chưa có file upload để xem review.');
+      return;
+    }
+
+    const previewUrl = toSameOriginPreviewUrl(currentCvFileUrl);
+
+    if (previewBlobUrl) {
+      URL.revokeObjectURL(previewBlobUrl);
+      setPreviewBlobUrl('');
+    }
+
+    setIsPreviewModalOpen(true);
+    setPreviewLoading(true);
+    setPreviewError('');
+
+    try {
+      const response = await fetch(previewUrl);
+      if (!response.ok) {
+        throw new Error(`Preview request failed with status ${response.status}`);
+      }
+
+      const pdfBlob = await response.blob();
+      const blobUrl = URL.createObjectURL(pdfBlob);
+      setPreviewBlobUrl(blobUrl);
+    } catch {
+      setPreviewError('Không thể preview trực tiếp trong modal. Vui lòng bấm mở file ở tab mới.');
+    } finally {
+      setPreviewLoading(false);
+    }
+  };
+
   const cvColumns: AppDataColumn<CvItem>[] = useMemo(
     () => [
       {
@@ -527,7 +628,10 @@ export default function CandidateCvManagementPage() {
           <button
             type="button"
             className={`${s.btn} ${s.btnGhost}`}
-            onClick={() => setSelectedCvId(row.id)}
+            onClick={() => {
+              setSelectedCvId(row.id);
+              setActiveTab('profile');
+            }}
           >
             Chọn
           </button>
@@ -536,6 +640,39 @@ export default function CandidateCvManagementPage() {
     ],
     []
   );
+
+  const tabItems: Array<{ key: CvTab; label: string; hint: string }> = [
+    { key: 'overview', label: 'Tổng quan', hint: 'Quản lý danh sách CV và tạo CV mới' },
+    { key: 'profile', label: 'Thông tin CV', hint: 'Chỉnh tiêu đề, mục tiêu, upload file và CV chính' },
+    { key: 'skills', label: 'Kỹ năng', hint: 'Quản lý kỹ năng với mức thành thạo trực quan' },
+    { key: 'details', label: 'Học vấn/Kinh nghiệm', hint: 'Nhóm timeline theo từng loại bản ghi' },
+  ];
+
+  const activeStepIndex = tabItems.findIndex((tab) => tab.key === activeTab);
+
+  const groupedDetails = useMemo(() => {
+    const groups: Record<LoaiBanGhiCv, CvDetailItem[]> = {
+      1: [],
+      2: [],
+      3: [],
+    };
+
+    details.forEach((item) => {
+      groups[item.loaiBanGhi].push(item);
+    });
+
+    ([1, 2, 3] as LoaiBanGhiCv[]).forEach((key) => {
+      groups[key].sort((a, b) => new Date(b.ngayBatDau).getTime() - new Date(a.ngayBatDau).getTime());
+    });
+
+    return groups;
+  }, [details]);
+
+  const skillAverage = useMemo(() => {
+    if (skills.length === 0) return 0;
+    const total = skills.reduce((sum, item) => sum + item.mucThanhThao, 0);
+    return Math.round((total / skills.length) * 10) / 10;
+  }, [skills]);
 
   return (
     <MainLayout title="Quản lý CV" breadcrumb="Trang chủ / Ứng viên / Quản lý CV">
@@ -554,97 +691,115 @@ export default function CandidateCvManagementPage() {
         {message ? <div className={`${s.alert} ${s.alertSuccess}`}>{message}</div> : null}
         {error ? <div className={`${s.alert} ${s.alertError}`}>{error}</div> : null}
 
-        <div className={s.grid2}>
-          <section className={s.card}>
-            <h3 className={s.cardTitle}>Danh sách CV của bạn</h3>
-            <AppDataTable
-              columns={cvColumns}
-              data={cvs}
-              rowKey={(row) => String(row.id)}
-              emptyMessage="Bạn chưa có CV nào."
-            />
-          </section>
+        <div className={t.tabsWrap}>
+          <div className={t.tabs}>
+            {tabItems.map((tab) => (
+              <button
+                key={tab.key}
+                type="button"
+                className={`${t.tabBtn} ${activeTab === tab.key ? t.tabBtnActive : ''}`}
+                onClick={() => setActiveTab(tab.key)}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+          <p className={t.tabHint}>{tabItems.find((tab) => tab.key === activeTab)?.hint}</p>
 
-          <section className={s.card}>
-            <h3 className={s.cardTitle}>Tạo CV mới</h3>
-            <div className={s.field}>
-              <label className={s.label}>Tiêu đề CV</label>
-              <input
-                className={s.input}
-                value={createForm.tieuDeCv}
-                onChange={(e) =>
-                  createCvDraft.setValue((prev) => ({ ...prev, tieuDeCv: e.target.value }))
-                }
-                placeholder="Ví dụ: CV Frontend React"
-              />
-            </div>
-            <div className={s.field}>
-              <label className={s.label}>Mục tiêu nghề nghiệp</label>
-              <textarea
-                className={s.textarea}
-                value={createForm.mucTieuNgheNghiep}
-                onChange={(e) =>
-                  createCvDraft.setValue((prev) => ({ ...prev, mucTieuNgheNghiep: e.target.value }))
-                }
-                placeholder="Mô tả ngắn mục tiêu nghề nghiệp"
-              />
-            </div>
-            <div className={s.field}>
-              <label className={s.label}>URL file CV (tùy chọn)</label>
-              <input
-                className={s.input}
-                value={createForm.fileCvUrl}
-                onChange={(e) =>
-                  createCvDraft.setValue((prev) => ({ ...prev, fileCvUrl: e.target.value }))
-                }
-                placeholder="https://..."
-              />
-            </div>
-            <div className={s.actions}>
-              <button
-                type="button"
-                className={`${s.btn} ${s.btnGhost}`}
-                disabled={saving || !createCvDraft.canUndo}
-                onClick={createCvDraft.undo}
-              >
-                Undo
-              </button>
-              <button
-                type="button"
-                className={`${s.btn} ${s.btnGhost}`}
-                disabled={saving || !createCvDraft.canRedo}
-                onClick={createCvDraft.redo}
-              >
-                Redo
-              </button>
-              <button
-                type="button"
-                className={`${s.btn} ${s.btnGhost}`}
-                disabled={saving}
-                onClick={() => createCvDraft.clearDraft(EMPTY_CV_FORM)}
-              >
-                Xóa nháp
-              </button>
-              <button
-                type="button"
-                className={`${s.btn} ${s.btnPrimary}`}
-                disabled={saving}
-                onClick={() => void handleCreateCv()}
-              >
-                Tạo CV
-              </button>
-            </div>
-          </section>
+          <div className={t.stepper}>
+            {tabItems.map((tab, index) => (
+              <article key={tab.key} className={`${t.step} ${index <= activeStepIndex ? t.stepActive : ''}`}>
+                <span className={t.stepIndex}>{index + 1}</span>
+                <p className={t.stepTitle}>{tab.label}</p>
+                <p className={t.stepSub}>{tab.hint}</p>
+              </article>
+            ))}
+          </div>
         </div>
 
-        <section className={s.card}>
-          <h3 className={s.cardTitle}>Chỉnh sửa CV đang chọn</h3>
-          {!selectedCvId ? <div className={s.alert}>Hãy tạo hoặc chọn một CV để chỉnh sửa.</div> : null}
-          {detailLoading ? <div className={s.alert}>Đang tải chi tiết CV...</div> : null}
+        {activeTab === 'overview' ? (
+          <div className={s.grid2}>
+            <section className={s.card}>
+              <h3 className={s.cardTitle}>Danh sách CV của bạn</h3>
+              <AppDataTable
+                columns={cvColumns}
+                data={cvs}
+                rowKey={(row) => String(row.id)}
+                emptyMessage="Bạn chưa có CV nào."
+              />
+            </section>
 
-          {selectedCvId && !detailLoading ? (
-            <>
-              <div className={s.grid2}>
+            <section className={s.card}>
+              <h3 className={s.cardTitle}>Tạo CV mới</h3>
+              <div className={s.field}>
+                <label className={s.label}>Tiêu đề CV</label>
+                <input
+                  className={s.input}
+                  value={createForm.tieuDeCv}
+                  onChange={(e) =>
+                    createCvDraft.setValue((prev) => ({ ...prev, tieuDeCv: e.target.value }))
+                  }
+                  placeholder="Ví dụ: CV Frontend React"
+                />
+              </div>
+              <div className={s.field}>
+                <label className={s.label}>Mục tiêu nghề nghiệp</label>
+                <textarea
+                  className={s.textarea}
+                  value={createForm.mucTieuNgheNghiep}
+                  onChange={(e) =>
+                    createCvDraft.setValue((prev) => ({ ...prev, mucTieuNgheNghiep: e.target.value }))
+                  }
+                  placeholder="Mô tả ngắn mục tiêu nghề nghiệp"
+                />
+              </div>
+              <div className={s.alert}>File CV sẽ được upload ở tab Thông tin CV sau khi tạo CV.</div>
+              <div className={s.actions}>
+                <button
+                  type="button"
+                  className={`${s.btn} ${s.btnGhost}`}
+                  disabled={saving || !createCvDraft.canUndo}
+                  onClick={createCvDraft.undo}
+                >
+                  Undo
+                </button>
+                <button
+                  type="button"
+                  className={`${s.btn} ${s.btnGhost}`}
+                  disabled={saving || !createCvDraft.canRedo}
+                  onClick={createCvDraft.redo}
+                >
+                  Redo
+                </button>
+                <button
+                  type="button"
+                  className={`${s.btn} ${s.btnGhost}`}
+                  disabled={saving}
+                  onClick={() => createCvDraft.clearDraft(EMPTY_CV_FORM)}
+                >
+                  Xóa nháp
+                </button>
+                <button
+                  type="button"
+                  className={`${s.btn} ${s.btnPrimary}`}
+                  disabled={saving}
+                  onClick={() => void handleCreateCv()}
+                >
+                  Tạo CV
+                </button>
+              </div>
+            </section>
+          </div>
+        ) : null}
+
+        {activeTab === 'profile' ? (
+          <section className={s.card}>
+            <h3 className={s.cardTitle}>Chỉnh sửa CV đang chọn</h3>
+            {!selectedCvId ? <div className={s.alert}>Hãy tạo hoặc chọn một CV để chỉnh sửa.</div> : null}
+            {detailLoading ? <div className={s.alert}>Đang tải chi tiết CV...</div> : null}
+
+            {selectedCvId && !detailLoading ? (
+              <>
                 <div className={s.field}>
                   <label className={s.label}>Tiêu đề CV</label>
                   <input
@@ -653,23 +808,387 @@ export default function CandidateCvManagementPage() {
                     onChange={(e) => setEditForm((prev) => ({ ...prev, tieuDeCv: e.target.value }))}
                   />
                 </div>
+
                 <div className={s.field}>
-                  <label className={s.label}>URL file CV</label>
+                  <label className={s.label}>Mục tiêu nghề nghiệp</label>
+                  <textarea
+                    className={s.textarea}
+                    value={editForm.mucTieuNgheNghiep}
+                    onChange={(e) => setEditForm((prev) => ({ ...prev, mucTieuNgheNghiep: e.target.value }))}
+                  />
+                </div>
+
+                <div className={s.actions}>
+                  <button
+                    type="button"
+                    className={`${s.btn} ${s.btnGhost}`}
+                    disabled={saving}
+                    onClick={() => void handleSetDefaultCv()}
+                  >
+                    Đặt làm CV chính
+                  </button>
+                  <button
+                    type="button"
+                    className={`${s.btn} ${s.btnDanger}`}
+                    disabled={saving}
+                    onClick={() => void handleDeleteCv()}
+                  >
+                    Xóa CV
+                  </button>
+                  <button
+                    type="button"
+                    className={`${s.btn} ${s.btnPrimary}`}
+                    disabled={saving}
+                    onClick={() => void handleUpdateCv()}
+                  >
+                    Lưu thay đổi
+                  </button>
+                </div>
+
+                <div className={s.field}>
+                  <label className={s.label}>Upload file PDF CV</label>
                   <input
                     className={s.input}
-                    value={editForm.fileCvUrl}
-                    onChange={(e) => setEditForm((prev) => ({ ...prev, fileCvUrl: e.target.value }))}
+                    type="file"
+                    accept="application/pdf"
+                    onChange={(e) => setUploadFile(e.target.files?.[0] ?? null)}
+                  />
+                  <div className={s.actions}>
+                    <button
+                      type="button"
+                      className={`${s.btn} ${s.btnGhost}`}
+                      disabled={saving || !uploadFile}
+                      onClick={() => void handleUploadFile()}
+                    >
+                      Upload file
+                    </button>
+                    <button
+                      type="button"
+                      className={`${s.btn} ${s.btnPrimary}`}
+                      disabled={!currentCvFileUrl}
+                      onClick={() => void handleOpenCvPreview()}
+                    >
+                      Xem review file CV
+                    </button>
+                    {currentCvFileUrl ? (
+                      <a className={s.inlineLink} href={currentCvFileUrl} target="_blank" rel="noreferrer">
+                        Mở tab mới
+                      </a>
+                    ) : (
+                      <span className={s.meta}>Chưa có file CV đã upload.</span>
+                    )}
+                  </div>
+                </div>
+              </>
+            ) : null}
+          </section>
+        ) : null}
+
+        {activeTab === 'skills' ? (
+          <section className={s.card}>
+            <h3 className={s.cardTitle}>Kỹ năng trong CV</h3>
+            {!selectedCvId ? <div className={s.alert}>Hãy chọn một CV ở tab Tổng quan trước.</div> : null}
+            {selectedCvId && detailLoading ? <div className={s.alert}>Đang tải dữ liệu kỹ năng...</div> : null}
+
+            {selectedCvId && !detailLoading ? (
+              <>
+                <div className={s.tags}>
+                  <span className={s.tag}>Tổng kỹ năng: {skills.length}</span>
+                  <span className={s.tag}>Mức trung bình: {skillAverage}/5</span>
+                </div>
+
+                <AppDataTable
+                  columns={[
+                    {
+                      key: 'tenKyNang',
+                      header: 'Kỹ năng',
+                      render: (row: CvSkillItem) => (
+                        <div className={s.skillCell}>
+                          <strong>{row.tenKyNang}</strong>
+                          <span className={s.meta}>Mức thành thạo: {row.mucThanhThao}/5</span>
+                          <div className={s.skillMeterTrack}>
+                            <span className={s.skillMeterFill} style={{ width: `${row.mucThanhThao * 20}%` }} />
+                          </div>
+                        </div>
+                      ),
+                    },
+                    {
+                      key: 'moTa',
+                      header: 'Mô tả',
+                      render: (row: CvSkillItem) => row.moTa || '-',
+                    },
+                    {
+                      key: 'actions',
+                      header: 'Tác vụ',
+                      width: '120px',
+                      align: 'center',
+                      render: (row: CvSkillItem) => (
+                        <button
+                          type="button"
+                          className={`${s.btn} ${s.btnGhost}`}
+                          onClick={() => handlePickSkill(row)}
+                        >
+                          Sửa
+                        </button>
+                      ),
+                    },
+                  ]}
+                  data={skills}
+                  rowKey={(row) => `${row.cvId}-${row.kyNangId}`}
+                  emptyMessage="CV này chưa có kỹ năng nào."
+                />
+
+                <div className={s.grid2}>
+                  <div className={s.field}>
+                    <label className={s.label}>Kỹ năng</label>
+                    <select
+                      className={s.select}
+                      disabled={selectedSkillKey !== null}
+                      value={skillForm.kyNangId}
+                      onChange={(e) => setSkillForm((prev) => ({ ...prev, kyNangId: e.target.value }))}
+                    >
+                      <option value="">Chọn kỹ năng</option>
+                      {skillOptions.map((skill) => (
+                        <option key={skill.value} value={skill.value}>{skill.label}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className={s.field}>
+                    <label className={s.label}>Mức thành thạo</label>
+                    <select
+                      className={s.select}
+                      value={skillForm.mucThanhThao}
+                      onChange={(e) => setSkillForm((prev) => ({ ...prev, mucThanhThao: e.target.value }))}
+                    >
+                      <option value="1">1 - Sơ cấp</option>
+                      <option value="2">2 - Cơ bản</option>
+                      <option value="3">3 - Trung bình</option>
+                      <option value="4">4 - Nâng cao</option>
+                      <option value="5">5 - Chuyên gia</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className={s.field}>
+                  <label className={s.label}>Mô tả kỹ năng</label>
+                  <textarea
+                    className={s.textarea}
+                    value={skillForm.moTa}
+                    onChange={(e) => setSkillForm((prev) => ({ ...prev, moTa: e.target.value }))}
+                    placeholder="Mô tả ngắn cách bạn sử dụng kỹ năng này"
+                  />
+                </div>
+
+                <div className={s.actions}>
+                  <button
+                    type="button"
+                    className={`${s.btn} ${s.btnGhost}`}
+                    disabled={saving}
+                    onClick={handleResetSkillForm}
+                  >
+                    Làm mới form
+                  </button>
+                  <button
+                    type="button"
+                    className={`${s.btn} ${s.btnPrimary}`}
+                    disabled={saving || catalogLoading}
+                    onClick={() => void handleAddSkill()}
+                  >
+                    Thêm kỹ năng
+                  </button>
+                  <button
+                    type="button"
+                    className={`${s.btn} ${s.btnGhost}`}
+                    disabled={saving || selectedSkillKey === null}
+                    onClick={() => void handleUpdateSkill()}
+                  >
+                    Cập nhật kỹ năng
+                  </button>
+                  <button
+                    type="button"
+                    className={`${s.btn} ${s.btnDanger}`}
+                    disabled={saving || selectedSkillKey === null}
+                    onClick={() => void handleDeleteSkill()}
+                  >
+                    Xóa kỹ năng
+                  </button>
+                </div>
+              </>
+            ) : null}
+          </section>
+        ) : null}
+
+        {activeTab === 'details' ? (
+          <div className={s.stack}>
+            <section className={s.card}>
+              <h3 className={s.cardTitle}>Nhóm học vấn/kinh nghiệm/chứng chỉ</h3>
+              {!selectedCvId ? <div className={s.alert}>Hãy chọn một CV ở tab Tổng quan trước.</div> : null}
+              {selectedCvId && detailLoading ? <div className={s.alert}>Đang tải timeline chi tiết...</div> : null}
+
+              {selectedCvId && !detailLoading ? (
+                <div className={s.groupGrid}>
+                  {([1, 2, 3] as LoaiBanGhiCv[]).map((type) => (
+                    <article key={type} className={s.groupCard}>
+                      <div className={s.topBar}>
+                        <strong>{loaiBanGhiLabel(type)}</strong>
+                        <span className={s.tag}>{groupedDetails[type].length}</span>
+                      </div>
+
+                      {groupedDetails[type].length === 0 ? (
+                        <span className={s.meta}>Chưa có bản ghi.</span>
+                      ) : (
+                        <div className={s.timelineList}>
+                          {groupedDetails[type].slice(0, 3).map((item) => (
+                            <div key={item.id} className={s.timelineItem}>
+                              <strong>{item.tenToChuc}</strong>
+                              <span className={s.meta}>{item.chuyenNganhHoacViTri || '-'}</span>
+                              <span className={s.timelineTime}>{item.ngayBatDau} - {item.ngayKetThuc || 'Hiện tại'}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </article>
+                  ))}
+                </div>
+              ) : null}
+            </section>
+
+            <section className={s.card}>
+              <h3 className={s.cardTitle}>Bản ghi chi tiết</h3>
+              <div className={s.topBar}>
+                <div className={s.tags}>
+                  <span className={s.tag}>Bản ghi: {details.length}</span>
+                </div>
+                <div className={s.field} style={{ minWidth: 220 }}>
+                  <label className={s.label}>Lọc theo loại</label>
+                  <select
+                    className={s.select}
+                    value={String(detailTypeFilter)}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setDetailTypeFilter(value === 'ALL' ? 'ALL' : (Number(value) as LoaiBanGhiCv));
+                      setSelectedDetailId(null);
+                    }}
+                  >
+                    <option value="ALL">Tất cả</option>
+                    <option value="1">Học vấn</option>
+                    <option value="2">Kinh nghiệm</option>
+                    <option value="3">Chứng chỉ</option>
+                  </select>
+                </div>
+              </div>
+
+              <AppDataTable
+                columns={[
+                  {
+                    key: 'loaiBanGhi',
+                    header: 'Loại',
+                    width: '130px',
+                    render: (row: CvDetailItem) => loaiBanGhiLabel(row.loaiBanGhi),
+                  },
+                  {
+                    key: 'tenToChuc',
+                    header: 'Tổ chức',
+                    render: (row: CvDetailItem) => (
+                      <div style={{ display: 'grid', gap: 4 }}>
+                        <strong>{row.tenToChuc}</strong>
+                        <span className={s.meta}>{row.chuyenNganhHoacViTri || '-'}</span>
+                      </div>
+                    ),
+                  },
+                  {
+                    key: 'ngayBatDau',
+                    header: 'Thời gian',
+                    width: '170px',
+                    render: (row: CvDetailItem) => `${row.ngayBatDau} - ${row.ngayKetThuc || 'Hiện tại'}`,
+                  },
+                  {
+                    key: 'actions',
+                    header: 'Tác vụ',
+                    width: '120px',
+                    align: 'center',
+                    render: (row: CvDetailItem) => (
+                      <button
+                        type="button"
+                        className={`${s.btn} ${s.btnGhost}`}
+                        onClick={() => handlePickDetail(row)}
+                      >
+                        Sửa
+                      </button>
+                    ),
+                  },
+                ]}
+                data={details}
+                rowKey={(row) => String(row.id)}
+                emptyMessage="CV này chưa có chi tiết học vấn/kinh nghiệm."
+              />
+
+              <div className={s.grid2}>
+                <div className={s.field}>
+                  <label className={s.label}>Loại bản ghi</label>
+                  <select
+                    className={s.select}
+                    value={String(detailForm.loaiBanGhi)}
+                    onChange={(e) => setDetailForm((prev) => ({
+                      ...prev,
+                      loaiBanGhi: Number(e.target.value) as LoaiBanGhiCv,
+                    }))}
+                  >
+                    <option value="1">Học vấn</option>
+                    <option value="2">Kinh nghiệm</option>
+                    <option value="3">Chứng chỉ</option>
+                  </select>
+                </div>
+                <div className={s.field}>
+                  <label className={s.label}>Tên tổ chức</label>
+                  <input
+                    className={s.input}
+                    value={detailForm.tenToChuc}
+                    onChange={(e) => setDetailForm((prev) => ({ ...prev, tenToChuc: e.target.value }))}
+                    placeholder="Ví dụ: Đại học Bách Khoa, ABC Corp"
                   />
                 </div>
               </div>
 
-              <div className={s.field}>
-                <label className={s.label}>Mục tiêu nghề nghiệp</label>
-                <textarea
-                  className={s.textarea}
-                  value={editForm.mucTieuNgheNghiep}
-                  onChange={(e) => setEditForm((prev) => ({ ...prev, mucTieuNgheNghiep: e.target.value }))}
-                />
+              <div className={s.grid2}>
+                <div className={s.field}>
+                  <label className={s.label}>Chuyên ngành/Vị trí</label>
+                  <input
+                    className={s.input}
+                    value={detailForm.chuyenNganhHoacViTri}
+                    onChange={(e) => setDetailForm((prev) => ({ ...prev, chuyenNganhHoacViTri: e.target.value }))}
+                    placeholder="Ví dụ: Frontend Developer"
+                  />
+                </div>
+                <div className={s.field}>
+                  <label className={s.label}>Ngày bắt đầu</label>
+                  <input
+                    className={s.input}
+                    type="date"
+                    value={detailForm.ngayBatDau}
+                    onChange={(e) => setDetailForm((prev) => ({ ...prev, ngayBatDau: e.target.value }))}
+                  />
+                </div>
+              </div>
+
+              <div className={s.grid2}>
+                <div className={s.field}>
+                  <label className={s.label}>Ngày kết thúc</label>
+                  <input
+                    className={s.input}
+                    type="date"
+                    value={detailForm.ngayKetThuc}
+                    onChange={(e) => setDetailForm((prev) => ({ ...prev, ngayKetThuc: e.target.value }))}
+                  />
+                </div>
+                <div className={s.field}>
+                  <label className={s.label}>Mô tả chi tiết</label>
+                  <textarea
+                    className={s.textarea}
+                    value={detailForm.moTaChiTiet}
+                    onChange={(e) => setDetailForm((prev) => ({ ...prev, moTaChiTiet: e.target.value }))}
+                  />
+                </div>
               </div>
 
               <div className={s.actions}>
@@ -677,342 +1196,67 @@ export default function CandidateCvManagementPage() {
                   type="button"
                   className={`${s.btn} ${s.btnGhost}`}
                   disabled={saving}
-                  onClick={() => void handleSetDefaultCv()}
+                  onClick={handleResetDetailForm}
                 >
-                  Đặt làm CV chính
-                </button>
-                <button
-                  type="button"
-                  className={`${s.btn} ${s.btnDanger}`}
-                  disabled={saving}
-                  onClick={() => void handleDeleteCv()}
-                >
-                  Xóa CV
+                  Làm mới form
                 </button>
                 <button
                   type="button"
                   className={`${s.btn} ${s.btnPrimary}`}
                   disabled={saving}
-                  onClick={() => void handleUpdateCv()}
+                  onClick={() => void handleAddDetail()}
                 >
-                  Lưu thay đổi
+                  Thêm bản ghi
+                </button>
+                <button
+                  type="button"
+                  className={`${s.btn} ${s.btnGhost}`}
+                  disabled={saving || selectedDetailId === null}
+                  onClick={() => void handleUpdateDetail()}
+                >
+                  Cập nhật bản ghi
+                </button>
+                <button
+                  type="button"
+                  className={`${s.btn} ${s.btnDanger}`}
+                  disabled={saving || selectedDetailId === null}
+                  onClick={() => void handleDeleteDetail()}
+                >
+                  Xóa bản ghi
+                </button>
+              </div>
+            </section>
+          </div>
+        ) : null}
+
+        {isPreviewModalOpen && currentCvFileUrl ? (
+          <div className={m.overlay} role="dialog" aria-modal="true" onClick={closePreviewModal}>
+            <div className={m.modal} onClick={(event) => event.stopPropagation()}>
+              <div className={m.modalHead}>
+                <h4 className={m.modalTitle}>Review file CV đã upload</h4>
+                <button type="button" className={m.closeBtn} onClick={closePreviewModal}>
+                  Đóng
                 </button>
               </div>
 
-              <div className={s.field}>
-                <label className={s.label}>Upload file PDF CV</label>
-                <input
-                  className={s.input}
-                  type="file"
-                  accept="application/pdf"
-                  onChange={(e) => setUploadFile(e.target.files?.[0] ?? null)}
+              {previewLoading ? <div className={s.alert}>Đang tải nội dung file để preview...</div> : null}
+              {previewError ? <div className={`${s.alert} ${s.alertError}`}>{previewError}</div> : null}
+              {!previewLoading && previewBlobUrl ? (
+                <iframe
+                  title="CV preview"
+                  src={previewBlobUrl}
+                  style={{ width: '100%', height: '70vh', border: '1px solid #dbe4f2', borderRadius: 12 }}
                 />
-                <div className={s.actions}>
-                  <button
-                    type="button"
-                    className={`${s.btn} ${s.btnGhost}`}
-                    disabled={saving || !uploadFile}
-                    onClick={() => void handleUploadFile()}
-                  >
-                    Upload file
-                  </button>
-                </div>
-              </div>
-            </>
-          ) : null}
-        </section>
+              ) : null}
 
-        <div className={s.grid2}>
-          <section className={s.card}>
-            <h3 className={s.cardTitle}>Kỹ năng trong CV</h3>
-            <AppDataTable
-              columns={[
-                {
-                  key: 'tenKyNang',
-                  header: 'Kỹ năng',
-                  render: (row: CvSkillItem) => (
-                    <div style={{ display: 'grid', gap: 4 }}>
-                      <strong>{row.tenKyNang}</strong>
-                      <span className={s.meta}>Mức thành thạo: {row.mucThanhThao}/5</span>
-                    </div>
-                  ),
-                },
-                {
-                  key: 'moTa',
-                  header: 'Mô tả',
-                  render: (row: CvSkillItem) => row.moTa || '-',
-                },
-                {
-                  key: 'actions',
-                  header: 'Tác vụ',
-                  width: '120px',
-                  align: 'center',
-                  render: (row: CvSkillItem) => (
-                    <button
-                      type="button"
-                      className={`${s.btn} ${s.btnGhost}`}
-                      onClick={() => handlePickSkill(row)}
-                    >
-                      Sửa
-                    </button>
-                  ),
-                },
-              ]}
-              data={skills}
-              rowKey={(row) => `${row.cvId}-${row.kyNangId}`}
-              emptyMessage="CV này chưa có kỹ năng nào."
-            />
-
-            <div className={s.grid2}>
-              <div className={s.field}>
-                <label className={s.label}>Kỹ năng</label>
-                <select
-                  className={s.select}
-                  disabled={selectedSkillKey !== null}
-                  value={skillForm.kyNangId}
-                  onChange={(e) => setSkillForm((prev) => ({ ...prev, kyNangId: e.target.value }))}
-                >
-                  <option value="">Chọn kỹ năng</option>
-                  {skillOptions.map((skill) => (
-                    <option key={skill.value} value={skill.value}>{skill.label}</option>
-                  ))}
-                </select>
-              </div>
-              <div className={s.field}>
-                <label className={s.label}>Mức thành thạo</label>
-                <select
-                  className={s.select}
-                  value={skillForm.mucThanhThao}
-                  onChange={(e) => setSkillForm((prev) => ({ ...prev, mucThanhThao: e.target.value }))}
-                >
-                  <option value="1">1 - Sơ cấp</option>
-                  <option value="2">2 - Cơ bản</option>
-                  <option value="3">3 - Trung bình</option>
-                  <option value="4">4 - Nâng cao</option>
-                  <option value="5">5 - Chuyên gia</option>
-                </select>
+              <div className={s.actions}>
+                <a className={s.inlineLink} href={currentCvFileUrl} target="_blank" rel="noreferrer">
+                  Nếu không hiển thị, bấm mở file ở tab mới
+                </a>
               </div>
             </div>
-
-            <div className={s.field}>
-              <label className={s.label}>Mô tả kỹ năng</label>
-              <textarea
-                className={s.textarea}
-                value={skillForm.moTa}
-                onChange={(e) => setSkillForm((prev) => ({ ...prev, moTa: e.target.value }))}
-                placeholder="Mô tả ngắn cách bạn sử dụng kỹ năng này"
-              />
-            </div>
-
-            <div className={s.actions}>
-              <button
-                type="button"
-                className={`${s.btn} ${s.btnGhost}`}
-                disabled={saving}
-                onClick={handleResetSkillForm}
-              >
-                Làm mới form
-              </button>
-              <button
-                type="button"
-                className={`${s.btn} ${s.btnPrimary}`}
-                disabled={saving || catalogLoading}
-                onClick={() => void handleAddSkill()}
-              >
-                Thêm kỹ năng
-              </button>
-              <button
-                type="button"
-                className={`${s.btn} ${s.btnGhost}`}
-                disabled={saving || selectedSkillKey === null}
-                onClick={() => void handleUpdateSkill()}
-              >
-                Cập nhật kỹ năng
-              </button>
-              <button
-                type="button"
-                className={`${s.btn} ${s.btnDanger}`}
-                disabled={saving || selectedSkillKey === null}
-                onClick={() => void handleDeleteSkill()}
-              >
-                Xóa kỹ năng
-              </button>
-            </div>
-          </section>
-
-          <section className={s.card}>
-            <h3 className={s.cardTitle}>Học vấn/Kinh nghiệm/Chứng chỉ</h3>
-            <div className={s.topBar}>
-              <div className={s.tags}>
-                <span className={s.tag}>Bản ghi: {details.length}</span>
-              </div>
-              <div className={s.field} style={{ minWidth: 220 }}>
-                <label className={s.label}>Lọc theo loại</label>
-                <select
-                  className={s.select}
-                  value={String(detailTypeFilter)}
-                  onChange={(e) => {
-                    const value = e.target.value;
-                    setDetailTypeFilter(value === 'ALL' ? 'ALL' : (Number(value) as LoaiBanGhiCv));
-                    setSelectedDetailId(null);
-                  }}
-                >
-                  <option value="ALL">Tất cả</option>
-                  <option value="1">Học vấn</option>
-                  <option value="2">Kinh nghiệm</option>
-                  <option value="3">Chứng chỉ</option>
-                </select>
-              </div>
-            </div>
-            <AppDataTable
-              columns={[
-                {
-                  key: 'loaiBanGhi',
-                  header: 'Loại',
-                  width: '130px',
-                  render: (row: CvDetailItem) => loaiBanGhiLabel(row.loaiBanGhi),
-                },
-                {
-                  key: 'tenToChuc',
-                  header: 'Tổ chức',
-                  render: (row: CvDetailItem) => (
-                    <div style={{ display: 'grid', gap: 4 }}>
-                      <strong>{row.tenToChuc}</strong>
-                      <span className={s.meta}>{row.chuyenNganhHoacViTri || '-'}</span>
-                    </div>
-                  ),
-                },
-                {
-                  key: 'ngayBatDau',
-                  header: 'Thời gian',
-                  width: '170px',
-                  render: (row: CvDetailItem) => `${row.ngayBatDau} - ${row.ngayKetThuc || 'Hiện tại'}`,
-                },
-                {
-                  key: 'actions',
-                  header: 'Tác vụ',
-                  width: '120px',
-                  align: 'center',
-                  render: (row: CvDetailItem) => (
-                    <button
-                      type="button"
-                      className={`${s.btn} ${s.btnGhost}`}
-                      onClick={() => handlePickDetail(row)}
-                    >
-                      Sửa
-                    </button>
-                  ),
-                },
-              ]}
-              data={details}
-              rowKey={(row) => String(row.id)}
-              emptyMessage="CV này chưa có chi tiết học vấn/kinh nghiệm."
-            />
-
-            <div className={s.grid2}>
-              <div className={s.field}>
-                <label className={s.label}>Loại bản ghi</label>
-                <select
-                  className={s.select}
-                  value={String(detailForm.loaiBanGhi)}
-                  onChange={(e) => setDetailForm((prev) => ({
-                    ...prev,
-                    loaiBanGhi: Number(e.target.value) as LoaiBanGhiCv,
-                  }))}
-                >
-                  <option value="1">Học vấn</option>
-                  <option value="2">Kinh nghiệm</option>
-                  <option value="3">Chứng chỉ</option>
-                </select>
-              </div>
-              <div className={s.field}>
-                <label className={s.label}>Tên tổ chức</label>
-                <input
-                  className={s.input}
-                  value={detailForm.tenToChuc}
-                  onChange={(e) => setDetailForm((prev) => ({ ...prev, tenToChuc: e.target.value }))}
-                  placeholder="Ví dụ: Đại học Bách Khoa, ABC Corp"
-                />
-              </div>
-            </div>
-
-            <div className={s.grid2}>
-              <div className={s.field}>
-                <label className={s.label}>Chuyên ngành/Vị trí</label>
-                <input
-                  className={s.input}
-                  value={detailForm.chuyenNganhHoacViTri}
-                  onChange={(e) => setDetailForm((prev) => ({ ...prev, chuyenNganhHoacViTri: e.target.value }))}
-                  placeholder="Ví dụ: Frontend Developer"
-                />
-              </div>
-              <div className={s.field}>
-                <label className={s.label}>Ngày bắt đầu</label>
-                <input
-                  className={s.input}
-                  type="date"
-                  value={detailForm.ngayBatDau}
-                  onChange={(e) => setDetailForm((prev) => ({ ...prev, ngayBatDau: e.target.value }))}
-                />
-              </div>
-            </div>
-
-            <div className={s.grid2}>
-              <div className={s.field}>
-                <label className={s.label}>Ngày kết thúc</label>
-                <input
-                  className={s.input}
-                  type="date"
-                  value={detailForm.ngayKetThuc}
-                  onChange={(e) => setDetailForm((prev) => ({ ...prev, ngayKetThuc: e.target.value }))}
-                />
-              </div>
-              <div className={s.field}>
-                <label className={s.label}>Mô tả chi tiết</label>
-                <textarea
-                  className={s.textarea}
-                  value={detailForm.moTaChiTiet}
-                  onChange={(e) => setDetailForm((prev) => ({ ...prev, moTaChiTiet: e.target.value }))}
-                />
-              </div>
-            </div>
-
-            <div className={s.actions}>
-              <button
-                type="button"
-                className={`${s.btn} ${s.btnGhost}`}
-                disabled={saving}
-                onClick={handleResetDetailForm}
-              >
-                Làm mới form
-              </button>
-              <button
-                type="button"
-                className={`${s.btn} ${s.btnPrimary}`}
-                disabled={saving}
-                onClick={() => void handleAddDetail()}
-              >
-                Thêm bản ghi
-              </button>
-              <button
-                type="button"
-                className={`${s.btn} ${s.btnGhost}`}
-                disabled={saving || selectedDetailId === null}
-                onClick={() => void handleUpdateDetail()}
-              >
-                Cập nhật bản ghi
-              </button>
-              <button
-                type="button"
-                className={`${s.btn} ${s.btnDanger}`}
-                disabled={saving || selectedDetailId === null}
-                onClick={() => void handleDeleteDetail()}
-              >
-                Xóa bản ghi
-              </button>
-            </div>
-          </section>
-        </div>
+          </div>
+        ) : null}
       </div>
     </MainLayout>
   );

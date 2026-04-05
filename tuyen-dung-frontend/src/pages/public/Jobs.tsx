@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ROUTES } from '@/constants/routes';
 import { useAuthStore } from '@/store/auth.store';
-import { savedJobsLocal } from '@/services/local/saved-jobs.local';
 import { jobService } from '@/services/modules/job.module';
 import { lookupService } from '@/services/modules/lookup.module';
 import type { PageResponse } from '@/types/api.types';
@@ -83,18 +82,9 @@ export default function JobsPage({ embedded = false }: JobsPageProps) {
   const [catalogLoading, setCatalogLoading] = useState(false);
   const [error, setError] = useState('');
   const [page, setPage] = useState(0);
-  const [savedJobIds, setSavedJobIds] = useState<number[]>([]);
 
   const isSearchMode = useMemo(() => hasSearchFilters(queryFilters), [queryFilters]);
   const isCandidate = useMemo(() => userRole === 'UNG_VIEN', [userRole]);
-
-  useEffect(() => {
-    if (!isCandidate) {
-      setSavedJobIds([]);
-      return;
-    }
-    setSavedJobIds(savedJobsLocal.listIds());
-  }, [isCandidate]);
 
   useEffect(() => {
     let mounted = true;
@@ -173,11 +163,6 @@ export default function JobsPage({ embedded = false }: JobsPageProps) {
     setQueryFilters(DEFAULT_FILTERS);
   };
 
-  const handleToggleSaved = (jobId: number) => {
-    const ids = savedJobsLocal.toggle(jobId);
-    setSavedJobIds(ids);
-  };
-
   const content = (
     <div className={s.container}>
         <section className={s.hero}>
@@ -240,7 +225,6 @@ export default function JobsPage({ embedded = false }: JobsPageProps) {
                 <span className={s.tag}>Ngành nghề: {industries.length}</span>
                 <span className={s.tag}>Khu vực: {locations.length}</span>
                 {isSearchMode ? <span className={s.tag}>Đang bật bộ lọc</span> : null}
-                {isCandidate ? <span className={s.tag}>Đã lưu: {savedJobIds.length}</span> : null}
               </>
             )}
           </div>
@@ -265,15 +249,6 @@ export default function JobsPage({ embedded = false }: JobsPageProps) {
                     <Link className={`${s.linkBtn} ${s.linkSecondary}`} to={detailPath}>
                       Xem chi tiết
                     </Link>
-                    {isCandidate ? (
-                      <button
-                        type="button"
-                        className={`${s.btn} ${savedJobIds.includes(job.id) ? s.btnGhost : s.btnPrimary}`}
-                        onClick={() => handleToggleSaved(job.id)}
-                      >
-                        {savedJobIds.includes(job.id) ? 'Bỏ lưu' : 'Lưu việc'}
-                      </button>
-                    ) : null}
                   </div>
                 </div>
                 <div className={s.jobMeta}>

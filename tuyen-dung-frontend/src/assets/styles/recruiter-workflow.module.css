@@ -60,6 +60,12 @@
   padding: 14px;
   display: grid;
   gap: 10px;
+  transition: transform 160ms ease, box-shadow 180ms ease;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 20px rgba(15, 23, 42, 0.08);
 }
 
 .cardTitle {
@@ -210,8 +216,194 @@
   color: #991b1b;
 }
 
+.jobStatusOpen {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.jobStatusClosed {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.metricsGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.metricCard {
+  border: 1px solid #dbeafe;
+  border-radius: 12px;
+  background: #f8fbff;
+  padding: 10px;
+  display: grid;
+  gap: 4px;
+}
+
+.metricCard strong {
+  color: #0f172a;
+  font-size: 20px;
+  line-height: 1.2;
+}
+
+.metricSkeleton {
+  width: 100%;
+  height: 140px;
+  border-radius: 12px;
+}
+
+.skeletonShimmerLocal {
+  background: linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 37%, #e2e8f0 63%);
+  background-size: 320px 100%;
+  animation: shimmer 1.35s linear infinite;
+}
+
+.floatingActions {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 15;
+  background: #ffffff;
+  border-radius: 999px;
+  border: 1px solid #dbe4f2;
+  padding: 8px;
+  box-shadow: 0 18px 28px rgba(15, 23, 42, 0.18);
+}
+
+.panelLayout {
+  display: grid;
+  grid-template-columns: 0.95fr 1.05fr 1fr;
+  gap: 12px;
+}
+
+.leftPanel,
+.middlePanel,
+.rightPanel {
+  display: grid;
+  gap: 12px;
+  align-content: start;
+}
+
+.compactList {
+  display: grid;
+  gap: 8px;
+}
+
+.compactItem {
+  border: 1px solid #dbe4f2;
+  border-radius: 10px;
+  background: #ffffff;
+  padding: 10px;
+  display: grid;
+  gap: 6px;
+}
+
+.compactItemActive {
+  border-color: #93c5fd;
+  background: #eff6ff;
+}
+
+.timeline {
+  display: grid;
+  gap: 10px;
+  position: relative;
+}
+
+.timeline::before {
+  content: '';
+  position: absolute;
+  left: 14px;
+  top: 4px;
+  bottom: 4px;
+  width: 2px;
+  background: #dbe4f2;
+}
+
+.timelineItem {
+  position: relative;
+  margin-left: 28px;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background: #ffffff;
+  padding: 10px;
+  display: grid;
+  gap: 4px;
+}
+
+.timelineItem::before {
+  content: '';
+  position: absolute;
+  left: -20px;
+  top: 12px;
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: #3b82f6;
+  box-shadow: 0 0 0 2px #ffffff;
+}
+
+.statusStepper {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.statusStep {
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+  padding: 8px;
+  text-align: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: #64748b;
+}
+
+.statusStepActive {
+  border-color: #86efac;
+  background: #ecfdf5;
+  color: #166534;
+}
+
+.formAccordion {
+  border: 1px dashed #cbd5e1;
+  border-radius: 12px;
+  padding: 10px;
+  display: grid;
+  gap: 10px;
+}
+
+.accordionToggle {
+  border: none;
+  border-radius: 8px;
+  background: #e2e8f0;
+  color: #1e293b;
+  padding: 8px 10px;
+  font-size: 12px;
+  font-weight: 700;
+  justify-self: start;
+}
+
+.accordionToggle:hover {
+  background: #cbd5e1;
+}
+
 @media (max-width: 1000px) {
   .grid2 {
     grid-template-columns: 1fr;
+  }
+
+  .metricsGrid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .panelLayout {
+    grid-template-columns: 1fr;
+  }
+
+  .floatingActions {
+    right: 12px;
+    bottom: 12px;
   }
 }

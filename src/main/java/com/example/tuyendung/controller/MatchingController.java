@@ -105,7 +105,7 @@ public class MatchingController {
 
         return ResponseEntity.ok(
                 ApiResponse.success(
-                        String.format("Match score: %.0f%% (%s)", 
+                        String.format("Match score: %d%% (%s)", 
                                 score.getMatchPercentage(), 
                                 score.getMatchLevel()),
                         score
@@ -136,7 +136,7 @@ public class MatchingController {
 
         return ResponseEntity.ok(
                 ApiResponse.success(
-                        String.format("Match score (%s): %.0f%%", strategy, score.getMatchPercentage()),
+                        String.format("Match score (%s): %d%%", strategy, score.getMatchPercentage()),
                         score
                 )
         );

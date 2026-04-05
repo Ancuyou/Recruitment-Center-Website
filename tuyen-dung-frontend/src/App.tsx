@@ -19,20 +19,17 @@ const CandidateDashboard = lazy(() => import('@/pages/candidate/Dashboard'));
 const CandidateJobsPage = lazy(() => import('@/pages/candidate/Jobs'));
 const CandidateJobDetailPage = lazy(() => import('@/pages/candidate/JobDetail'));
 const CandidateApplicationsPage = lazy(() => import('@/pages/candidate/Applications'));
-const CandidateSavedJobsPage = lazy(() => import('@/pages/candidate/SavedJobs'));
 const CandidateCvManagementPage = lazy(() => import('@/pages/candidate/CvManagement'));
 const RecruiterDashboard = lazy(() => import('@/pages/recruiter/Dashboard'));
 const RecruiterJobsManagementPage = lazy(() => import('@/pages/recruiter/JobsManagement'));
 const RecruiterApplicantsRoutePage = lazy(() => import('@/pages/recruiter/Applicants'));
 const RecruiterCandidateProfilesPage = lazy(() => import('@/pages/recruiter/CandidateProfiles'));
 const RecruiterCompanyProfilePage = lazy(() => import('@/pages/recruiter/CompanyProfile'));
-const RecruiterPlansPage = lazy(() => import('@/pages/recruiter/Plans'));
 const AdminDashboard = lazy(() => import('@/pages/admin/Dashboard'));
 const AdminUsersPage = lazy(() => import('@/pages/admin/Users'));
 const AdminJobsPage = lazy(() => import('@/pages/admin/Jobs'));
 const AdminCompaniesPage = lazy(() => import('@/pages/admin/Companies'));
 const AdminSkillsPage = lazy(() => import('@/pages/admin/Skills'));
-const PlaceholderPage = lazy(() => import('@/pages/common/PlaceholderPage'));
 
 // ── Shared pages ──────────────────────────────────────────────────
 const ProfilePage = lazy(() => import('@/pages/shared/Profile'));
@@ -110,10 +107,6 @@ export default function App() {
               element={<CandidateApplicationsPage />}
             />
             <Route
-              path={ROUTES.candidate.savedJobs}
-              element={<CandidateSavedJobsPage />}
-            />
-            <Route
               path={ROUTES.candidate.profile}
               element={<ProfilePage />}
             />
@@ -151,10 +144,6 @@ export default function App() {
               element={<RecruiterCompanyProfilePage />}
             />
             <Route
-              path={ROUTES.recruiter.plans}
-              element={<RecruiterPlansPage />}
-            />
-            <Route
               path={ROUTES.recruiter.notifications}
               element={<NotificationsPage />}
             />
@@ -167,18 +156,6 @@ export default function App() {
             <Route path={ROUTES.admin.jobs} element={<AdminJobsPage />} />
             <Route path={ROUTES.admin.companies} element={<AdminCompaniesPage />} />
             <Route path={ROUTES.admin.skills} element={<AdminSkillsPage />} />
-            <Route
-              path={ROUTES.admin.reports}
-              element={<PlaceholderPage title="Báo cáo" breadcrumb="Trang chủ / Admin / Báo cáo" />}
-            />
-            <Route
-              path={ROUTES.admin.settings}
-              element={<PlaceholderPage title="Cài đặt" breadcrumb="Trang chủ / Admin / Cài đặt" />}
-            />
-            <Route
-              path={ROUTES.admin.logs}
-              element={<PlaceholderPage title="Nhật ký" breadcrumb="Trang chủ / Admin / Nhật ký" />}
-            />
           </Route>
 
           {/* ── Misc ── */}

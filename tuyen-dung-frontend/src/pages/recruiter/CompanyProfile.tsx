@@ -36,7 +36,6 @@ export default function RecruiterCompanyProfilePage() {
   const [taxChecking, setTaxChecking] = useState(false);
   const [taxInput, setTaxInput] = useState('');
   const [taxResult, setTaxResult] = useState('');
-  const [manualCompanyId, setManualCompanyId] = useState('');
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
 
@@ -90,7 +89,7 @@ export default function RecruiterCompanyProfilePage() {
       await loadCompanyData(resolvedCompanyId);
 
       if (!resolvedCompanyId) {
-        setError('Không xác định được công ty liên kết từ backend. Bạn có thể nhập Company ID để tải thủ công.');
+        setError('Không xác định được công ty liên kết từ backend. Bạn có thể tạo công ty mới ngay bên dưới.');
       }
     } catch (err) {
       setError(mapError(err, 'Không thể tải dữ liệu công ty.'));
@@ -111,7 +110,7 @@ export default function RecruiterCompanyProfilePage() {
 
   const handleSave = async () => {
     if (!companyId) {
-      setError('Chưa có Company ID hợp lệ để cập nhật. Hãy tải công ty thủ công hoặc đảm bảo recruiter có dữ liệu backend đầy đủ.');
+      setError('Chưa có Company ID hợp lệ để cập nhật. Vui lòng tạo công ty mới trước.');
       return;
     }
     if (!form.tenCongTy?.trim()) {
@@ -205,26 +204,6 @@ export default function RecruiterCompanyProfilePage() {
     }
   };
 
-  const handleLoadManualCompany = async () => {
-    const id = Number(manualCompanyId);
-    if (!Number.isInteger(id) || id <= 0) {
-      setError('Company ID không hợp lệ.');
-      return;
-    }
-
-    setLoading(true);
-    setError('');
-    setMessage('');
-    try {
-      await loadCompanyData(id);
-      setMessage('Đã tải công ty theo Company ID.');
-    } catch (err) {
-      setError(mapError(err, 'Không thể tải công ty theo Company ID.'));
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const companyTag = useMemo(() => {
     if (!companyId) return 'Chưa xác định Company ID';
     return `Company ID: ${companyId}`;
@@ -248,22 +227,6 @@ export default function RecruiterCompanyProfilePage() {
         {loading ? <div className={s.alert}>Đang tải dữ liệu công ty...</div> : null}
         {error ? <div className={`${s.alert} ${s.alertError}`}>{error}</div> : null}
         {message ? <div className={`${s.alert} ${s.alertSuccess}`}>{message}</div> : null}
-
-        <section className={s.card}>
-          <h3 className={s.cardTitle}>Nạp công ty theo ID (khi không auto-resolve được)</h3>
-          <div className={s.actions}>
-            <input
-              className={s.input}
-              style={{ maxWidth: 220 }}
-              value={manualCompanyId}
-              onChange={(e) => setManualCompanyId(e.target.value)}
-              placeholder="Nhập Company ID"
-            />
-            <button type="button" className={`${s.btn} ${s.btnGhost}`} onClick={() => void handleLoadManualCompany()}>
-              Tải công ty
-            </button>
-          </div>
-        </section>
 
         <div className={s.grid2}>
           <section className={s.card}>

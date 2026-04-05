@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { ROUTES } from '@/constants/routes';
-import { savedJobsLocal } from '@/services/local/saved-jobs.local';
 import { applicationService } from '@/services/modules/application.module';
 import { cvService } from '@/services/modules/cv.module';
 import { jobService } from '@/services/modules/job.module';
@@ -43,7 +42,6 @@ export default function JobDetailPage({ embedded = false }: JobDetailPageProps) 
   const [candidateCvs, setCandidateCvs] = useState<CvItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [cvLoading, setCvLoading] = useState(false);
-  const [saved, setSaved] = useState(false);
   const [selectedCvId, setSelectedCvId] = useState<number | null>(null);
   const [thuNgo, setThuNgo] = useState('');
   const [submitLoading, setSubmitLoading] = useState(false);
@@ -95,14 +93,6 @@ export default function JobDetailPage({ embedded = false }: JobDetailPageProps) 
   }, [jobId]);
 
   useEffect(() => {
-    if (!isCandidate || !Number.isFinite(jobId)) {
-      setSaved(false);
-      return;
-    }
-    setSaved(savedJobsLocal.isSaved(jobId));
-  }, [isCandidate, jobId]);
-
-  useEffect(() => {
     let mounted = true;
 
     const fetchCvs = async () => {
@@ -136,12 +126,6 @@ export default function JobDetailPage({ embedded = false }: JobDetailPageProps) 
       mounted = false;
     };
   }, [isCandidate]);
-
-  const handleToggleSaved = () => {
-    if (!Number.isFinite(jobId)) return;
-    const ids = savedJobsLocal.toggle(jobId);
-    setSaved(ids.includes(jobId));
-  };
 
   const handleSubmitApplication = async () => {
     if (!job || !selectedCvId) {
@@ -294,15 +278,6 @@ export default function JobDetailPage({ embedded = false }: JobDetailPageProps) 
                   Đăng nhập để ứng tuyển
                 </Link>
               )}
-              {isCandidate ? (
-                <button
-                  type="button"
-                  className={`${s.btn} ${saved ? s.btnGhost : s.btnPrimary}`}
-                  onClick={handleToggleSaved}
-                >
-                  {saved ? 'Bỏ lưu tin này' : 'Lưu tin này'}
-                </button>
-              ) : null}
               {authUser && !isCandidate ? (
                 <span className={s.tag}>Vai trò hiện tại không thể nộp đơn trực tiếp.</span>
               ) : null}

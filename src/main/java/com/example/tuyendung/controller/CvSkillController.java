@@ -4,6 +4,10 @@ import com.example.tuyendung.common.ApiResponse;
 import com.example.tuyendung.common.Constants;
 import com.example.tuyendung.dto.request.CvSkillRequest;
 import com.example.tuyendung.dto.response.CvSkillResponse;
+import com.example.tuyendung.entity.UngVien;
+import com.example.tuyendung.exception.BaseBusinessException;
+import com.example.tuyendung.exception.ErrorCode;
+import com.example.tuyendung.repository.UngVienRepository;
 import com.example.tuyendung.security.CustomUserDetails;
 import com.example.tuyendung.service.CvSkillService;
 import com.example.tuyendung.service.HoSoCvService;
@@ -33,6 +37,15 @@ public class CvSkillController {
 
     private final CvSkillService cvSkillService;
     private final HoSoCvService hoSoCvService;
+    private final UngVienRepository ungVienRepository;
+
+    private Long resolveUngVienId(Long taiKhoanId) {
+        UngVien ungVien = ungVienRepository.findByTaiKhoanId(taiKhoanId)
+                .orElseThrow(() -> new BaseBusinessException(
+                        ErrorCode.CANDIDATE_NOT_FOUND,
+                        "Không tìm thấy ứng viên cho tài khoản ID: " + taiKhoanId));
+        return ungVien.getId();
+    }
 
     /** E4: Thêm kỹ năng vào CV (POST) */
     @PostMapping
@@ -42,7 +55,8 @@ public class CvSkillController {
             @Valid @RequestBody CvSkillRequest request,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
         log.info("POST /api/cvs/{}/skills - Thêm kỹ năng", cvId);
-        hoSoCvService.getCvById(cvId, userDetails.getId()); // Verify ownership
+        Long ungVienId = resolveUngVienId(userDetails.getId());
+        hoSoCvService.getCvById(cvId, ungVienId); // Verify ownership
         CvSkillResponse response = cvSkillService.addSkillToCv(cvId, request);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success("Thêm kỹ năng vào CV thành công", response));
@@ -55,7 +69,8 @@ public class CvSkillController {
             @PathVariable Long cvId,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
         log.info("GET /api/cvs/{}/skills - Danh sách kỹ năng", cvId);
-        hoSoCvService.getCvById(cvId, userDetails.getId()); // Verify ownership
+        Long ungVienId = resolveUngVienId(userDetails.getId());
+        hoSoCvService.getCvById(cvId, ungVienId); // Verify ownership
         List<CvSkillResponse> skills = cvSkillService.getCvSkills(cvId);
         return ResponseEntity.ok(ApiResponse.success("Lấy danh sách kỹ năng thành công", skills));
     }
@@ -69,7 +84,8 @@ public class CvSkillController {
             @Valid @RequestBody CvSkillRequest request,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
         log.info("PUT /api/cvs/{}/skills/{} - Cập nhật mức thành thạo", cvId, skillId);
-        hoSoCvService.getCvById(cvId, userDetails.getId()); // Verify ownership
+        Long ungVienId = resolveUngVienId(userDetails.getId());
+        hoSoCvService.getCvById(cvId, ungVienId); // Verify ownership
         CvSkillResponse response = cvSkillService.updateCvSkillProficiency(cvId, skillId, request);
         return ResponseEntity.ok(ApiResponse.success("Cập nhật kỹ năng thành công", response));
     }
@@ -82,7 +98,8 @@ public class CvSkillController {
             @PathVariable Long skillId,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
         log.info("DELETE /api/cvs/{}/skills/{} - Xóa kỹ năng", cvId, skillId);
-        hoSoCvService.getCvById(cvId, userDetails.getId()); // Verify ownership
+        Long ungVienId = resolveUngVienId(userDetails.getId());
+        hoSoCvService.getCvById(cvId, ungVienId); // Verify ownership
         cvSkillService.deleteCvSkill(cvId, skillId);
         return ResponseEntity.ok(ApiResponse.success("Xóa kỹ năng thành công", null));
     }
