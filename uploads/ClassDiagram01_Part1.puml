@@ -1,0 +1,94 @@
+@startuml ClassDiagram_Page2_Part1
+top to bottom direction
+skinparam classAttributeIconSize 0
+skinparam linetype ortho
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam nodesep 20
+skinparam ranksep 50
+skinparam packageStyle rectangle
+skinparam dpi 150
+
+skinparam class {
+  BorderColor #2C3E50
+  ArrowColor #2C3E50
+  FontColor #1F2937
+  BackgroundColor White
+  FontSize 9
+}
+
+skinparam package<<repository>> {
+  BackgroundColor #E3F2FD
+  BorderColor #1565C0
+  FontSize 10
+}
+skinparam package<<service>> {
+  BackgroundColor #F3E5F5
+  BorderColor #7B1FA2
+  FontSize 10
+}
+skinparam package<<controller>> {
+  BackgroundColor #FCE4EC
+  BorderColor #C2185B
+  FontSize 10
+}
+
+' ============ TANG 1: CONTROLLER ============
+package "controller (Part 1: Auth, User, Company, Admin)" as P_Controller <<controller>> {
+  class AuthCtrl
+  class UserCtrl
+  class AdminUserCtrl
+  class CompanyCtrl
+  class SkillsCtrl
+  class NganhNgheCtrl
+  class KhuVucCtrl
+}
+
+' ============ TANG 2: SERVICE ============
+package "service (Part 1)" as P_Service <<service>> {
+  interface AuthService
+  interface RegistrationSvc
+  interface AccountWorkflowSvc
+  interface UserService
+  interface AdminUserSvc
+  interface CongTyService
+  interface KyNangSvc
+}
+
+' ============ TANG 3: REPOSITORY ============
+package "repository (Part 1)" as P_Repository <<repository>> {
+  interface TaiKhoanRepo
+  interface UngVienRepo
+  interface NhaTuyenDungRepo
+  interface PendingRegRepo
+  interface PendingPwdRepo
+  interface CongTyRepo
+  interface KyNangRepo
+}
+
+' ============ QUY ĐỊNH BỐ CỤC 3 TẦNG ============
+P_Controller -[hidden]down-> P_Service
+P_Service -[hidden]down-> P_Repository
+
+' ============ CONTROLLER -> SERVICE ============
+AuthCtrl --> AuthService
+AuthCtrl --> RegistrationSvc
+AuthCtrl --> AccountWorkflowSvc
+UserCtrl --> UserService
+AdminUserCtrl --> AdminUserSvc
+CompanyCtrl --> CongTyService
+SkillsCtrl --> KyNangSvc
+
+' ============ SERVICE -> REPOSITORY ============
+AuthService --> TaiKhoanRepo
+RegistrationSvc --> TaiKhoanRepo
+RegistrationSvc --> PendingRegRepo
+AccountWorkflowSvc --> PendingPwdRepo
+UserService --> TaiKhoanRepo
+AdminUserSvc --> TaiKhoanRepo
+AdminUserSvc --> UngVienRepo
+AdminUserSvc --> NhaTuyenDungRepo
+CongTyService --> CongTyRepo
+KyNangSvc --> KyNangRepo
+
+@enduml

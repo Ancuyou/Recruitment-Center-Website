@@ -1,0 +1,268 @@
+@startuml
+' Cấu hình giao diện ERD mức vật lý
+hide circle
+skinparam linetype ortho
+skinparam roundcorner 5
+skinparam shadowing false
+skinparam nodesep 40
+skinparam ranksep 50
+
+skinparam entity {
+    BackgroundColor #F8F9FA
+    BorderColor #343A40
+    FontColor #212529
+    FontSize 14
+    BorderThickness 1.5
+}
+
+' Chú thích ký hiệu:
+' * Khóa chính (PK)
+' ~ Khóa ngoại (FK)
+' ||--o{ : 1 - Nhiều
+' ||--o| : 1 - 1
+
+' ==========================================
+' CÁC BẢNG (ENTITIES)
+' ==========================================
+
+entity "tai_khoan" as TaiKhoan {
+  * id : BIGINT <<PK>>
+  --
+  email : VARCHAR(255) <<UNIQUE>>
+  mat_khau_hash : VARCHAR(255)
+  vai_tro : ENUM
+  la_kich_hoat : BOOLEAN
+  ngay_tao : TIMESTAMP
+  ngay_cap_nhat : TIMESTAMP
+}
+
+entity "cong_ty" as CongTy {
+  * id : BIGINT <<PK>>
+  --
+  ten_cong_ty : VARCHAR(255)
+  ma_so_thue : VARCHAR(50) <<UNIQUE>>
+  logo_url : VARCHAR(255)
+  website : VARCHAR(255)
+  mo_ta : TEXT
+  ngay_tao : TIMESTAMP
+  ngay_cap_nhat : TIMESTAMP
+}
+
+entity "ung_vien" as UngVien {
+  * id : BIGINT <<PK>>
+  --
+  ~ tai_khoan_id : BIGINT <<FK, UNIQUE>>
+  ho_ten : VARCHAR(150)
+  so_dien_thoai : VARCHAR(20) <<UNIQUE>>
+  ngay_sinh : DATE
+  gioi_tinh : ENUM
+  anh_dai_dien : VARCHAR(255)
+  ngay_tao : TIMESTAMP
+  ngay_cap_nhat : TIMESTAMP
+}
+
+entity "nha_tuyen_dung" as NhaTuyenDung {
+  * id : BIGINT <<PK>>
+  --
+  ~ tai_khoan_id : BIGINT <<FK, UNIQUE>>
+  ~ cong_ty_id : BIGINT <<FK>>
+  ho_ten : VARCHAR(150)
+  chuc_vu : VARCHAR(100)
+  so_dien_thoai : VARCHAR(20)
+  ngay_tao : TIMESTAMP
+  ngay_cap_nhat : TIMESTAMP
+}
+
+entity "ky_nang" as KyNang {
+  * id : BIGINT <<PK>>
+  --
+  ten_ky_nang : VARCHAR(100) <<UNIQUE>>
+  ngay_tao : TIMESTAMP
+}
+
+entity "ho_so_cv" as HoSoCv {
+  * id : BIGINT <<PK>>
+  --
+  ~ ung_vien_id : BIGINT <<FK>>
+  tieu_de_cv : VARCHAR(100)
+  muc_tieu_nghe_nghiep : TEXT
+  file_cv_url : VARCHAR(255)
+  la_cv_chinh : BOOLEAN
+  da_xoa : BOOLEAN
+  ngay_tao : TIMESTAMP
+  ngay_cap_nhat : TIMESTAMP
+}
+
+entity "tin_tuyen_dung" as TinTuyenDung {
+  * id : BIGINT <<PK>>
+  --
+  ~ nha_tuyen_dung_id : BIGINT <<FK>>
+  ~ cong_ty_id : BIGINT <<FK>>
+  tieu_de : VARCHAR(255)
+  mo_ta_cong_viec : TEXT
+  yeu_cau_ung_vien : TEXT
+  muc_luong_min : DECIMAL(10,2)
+  muc_luong_max : DECIMAL(10,2)
+  dia_diem : VARCHAR(100)
+  cap_bac_yeu_cau : ENUM
+  hinh_thuc_lam_viec : ENUM
+  han_nop : DATE
+  trang_thai : ENUM
+  ngay_tao : TIMESTAMP
+  ngay_cap_nhat : TIMESTAMP
+}
+
+entity "ct_cty_nganh" as CtCtyNganh {
+  * cong_ty_id : BIGINT <<PK, FK>>
+  * nganh_nghe : VARCHAR(50) <<PK>>
+  --
+}
+
+entity "ct_kv_tin" as CtKvTin {
+  * tin_tuyen_dung_id : BIGINT <<PK, FK>>
+  * khu_vuc : VARCHAR(30) <<PK>>
+  --
+}
+
+entity "chi_tiet_cv" as ChiTietCv {
+  * id : BIGINT <<PK>>
+  --
+  ~ ho_so_cv_id : BIGINT <<FK>>
+  loai_ban_ghi : TINYINT
+  ten_to_chuc : VARCHAR(200)
+  chuyen_nganh_hoac_vi_tri : VARCHAR(200)
+  ngay_bat_dau : DATE
+  ngay_ket_thuc : DATE
+  mo_ta_chi_tiet : TEXT
+  ngay_tao : TIMESTAMP
+}
+
+entity "chi_tiet_ky_nang_cv" as ChiTietKyNangCv {
+  * ho_so_cv_id : BIGINT <<PK, FK>>
+  * ky_nang_id : BIGINT <<PK, FK>>
+  --
+  muc_thanh_thao : TINYINT
+  mo_ta : VARCHAR(500)
+  ngay_tao : TIMESTAMP
+  ngay_cap_nhat : BIGINT
+  da_xoa : BOOLEAN
+}
+
+entity "ct_ky_nang_tin" as CtKyNangTin {
+  * id : BIGINT <<PK>>
+  --
+  ~ tin_tuyendung_id : BIGINT <<FK>>
+  ~ ky_nang_id : BIGINT <<FK>>
+  yeucau : TINYINT
+  mo_ta : VARCHAR(500)
+  ngay_tao : TIMESTAMP
+  ngay_cap_nhat : TIMESTAMP
+  da_xoa : BOOLEAN
+}
+
+entity "don_ung_tuyen" as DonUngTuyen {
+  * id : BIGINT <<PK>>
+  --
+  ~ tin_tuyen_dung_id : BIGINT <<FK>>
+  ~ ho_so_cv_id : BIGINT <<FK>>
+  ban_sao_cv_url : VARCHAR(255)
+  thu_ngo : TEXT
+  trang_thai_hien_tai : ENUM
+  ngay_nop : TIMESTAMP
+}
+
+entity "lich_su_trang_thai" as LichSuTrangThai {
+  * id : BIGINT <<PK>>
+  --
+  ~ don_ung_tuyen_id : BIGINT <<FK>>
+  ~ nguoi_thuc_hien_id : BIGINT <<FK>>
+  trang_thai_cu : TINYINT
+  trang_thai_moi : TINYINT
+  ghi_chu : TEXT
+  thoi_gian_chuyen : TIMESTAMP
+}
+
+entity "lich_phong_van" as LichPhongVan {
+  * id : BIGINT <<PK>>
+  --
+  ~ don_ung_tuyen_id : BIGINT <<FK>>
+  ~ nguoi_phong_van_id : BIGINT <<FK>>
+  tieu_de_vong : VARCHAR(150)
+  thoi_gian_bat_dau : TIMESTAMP
+  thoi_gian_ket_thuc : TIMESTAMP
+  hinh_thuc : ENUM
+  dia_diem_hoac_link : VARCHAR(255)
+  trang_thai_phong_van : ENUM
+  ngay_tao : TIMESTAMP
+}
+
+entity "thong_bao" as ThongBao {
+  * id : BIGINT <<PK>>
+  --
+  ~ tai_khoan_id : BIGINT <<FK>>
+  tieu_de : VARCHAR(255)
+  noi_dung : TEXT
+  loai_thong_bao : ENUM
+  lien_ket : VARCHAR(255)
+  da_doc : BOOLEAN
+  ngay_tao : TIMESTAMP
+}
+
+entity "pending_registration" as PendingRegistration {
+  * id : BIGINT <<PK>>
+  --
+  token : VARCHAR(255) <<UNIQUE>>
+  ~ tai_khoan_id : BIGINT <<FK, UNIQUE>>
+  ngay_het_han : DATETIME
+  ngay_tao : TIMESTAMP
+}
+
+entity "pending_password_reset" as PendingPasswordReset {
+  * id : BIGINT <<PK>>
+  --
+  token : VARCHAR(255) <<UNIQUE>>
+  ~ tai_khoan_id : BIGINT <<FK, UNIQUE>>
+  ngay_het_han : DATETIME
+  ngay_tao : TIMESTAMP
+}
+
+' ==========================================
+' MỐI QUAN HỆ (RELATIONSHIPS)
+' ==========================================
+
+' Nhóm Tài khoản và Phân quyền
+TaiKhoan ||--o| UngVien : "1-1 (tai_khoan_id)"
+TaiKhoan ||--o| NhaTuyenDung : "1-1 (tai_khoan_id)"
+TaiKhoan ||--o{ ThongBao : "1-N (tai_khoan_id)"
+TaiKhoan ||--o{ LichSuTrangThai : "1-N (nguoi_thuc_hien_id)"
+TaiKhoan ||--o| PendingRegistration : "1-1 (tai_khoan_id)"
+TaiKhoan ||--o| PendingPasswordReset : "1-1 (tai_khoan_id)"
+
+' Nhóm Công ty và Tuyển dụng
+CongTy ||--o{ NhaTuyenDung : "1-N (cong_ty_id)"
+CongTy ||--o{ TinTuyenDung : "1-N (cong_ty_id)"
+CongTy ||--o{ CtCtyNganh : "1-N (cong_ty_id)"
+
+NhaTuyenDung ||--o{ TinTuyenDung : "1-N (nha_tuyen_dung_id)"
+NhaTuyenDung ||--o{ LichPhongVan : "1-N (nguoi_phong_van_id)"
+
+' Nhóm Ứng viên và Hồ sơ CV
+UngVien ||--o{ HoSoCv : "1-N (ung_vien_id)"
+HoSoCv ||--o{ ChiTietCv : "1-N (ho_so_cv_id)"
+HoSoCv ||--o{ ChiTietKyNangCv : "1-N (ho_so_cv_id)"
+
+' Nhóm Kỹ năng
+KyNang ||--o{ ChiTietKyNangCv : "1-N (ky_nang_id)"
+KyNang ||--o{ CtKyNangTin : "1-N (ky_nang_id)"
+
+' Nhóm Tin tuyển dụng
+TinTuyenDung ||--o{ CtKvTin : "1-N (tin_tuyen_dung_id)"
+TinTuyenDung ||--o{ CtKyNangTin : "1-N (tin_tuyendung_id)"
+TinTuyenDung ||--o{ DonUngTuyen : "1-N (tin_tuyen_dung_id)"
+
+' Nhóm Đơn ứng tuyển và Xử lý đơn
+HoSoCv ||--o{ DonUngTuyen : "1-N (ho_so_cv_id)"
+DonUngTuyen ||--o{ LichSuTrangThai : "1-N (don_ung_tuyen_id)"
+DonUngTuyen ||--o{ LichPhongVan : "1-N (don_ung_tuyen_id)"
+
+@enduml

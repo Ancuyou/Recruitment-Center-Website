@@ -27,8 +27,17 @@ public class TuyendungApplication {
             String rawPass = "123";
             String hashed = new BCryptPasswordEncoder().encode(rawPass);
             System.out.println("--------------------------------------------------");
-            System.out.println("🔑 RAW PASSWORD: " + rawPass);
-            System.out.println("🔑 HASHED PASSWORD (BCRYPT): " + hashed);
+            System.out.println("✅ HỆ THỐNG ĐÃ KHỞI ĐỘNG XONG.");
+            System.out.println("--------------------------------------------------");
+            System.out.println("🔑 RAW PASSWORD CHO MOCK DATA: " + rawPass);
+            System.out.println("🔑 HASH EXAMPLE (BCRYPT): " + hashed);
+            System.out.println("--------------------------------------------------");
+            System.out.println("🎯 DANH SÁCH TÀI KHOẢN MẪU DÀNH CHO GIẢNG VIÊN REVIEW:");
+            System.out.println("   [ADMIN]          Email: admin@system.local       | Password: 123");
+            System.out.println("   [NHÀ TUYỂN DỤNG] Email: hr1@fsoft.local          | Password: 123");
+            System.out.println("                    Email: hr2@vng.local            | Password: 123");
+            System.out.println("   [ỨNG VIÊN]       Email: candidate1@mail.local    | Password: 123");
+            System.out.println("                    Email: candidate2@mail.local    | Password: 123");
             System.out.println("--------------------------------------------------");
         };
     }

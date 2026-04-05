@@ -1,0 +1,109 @@
+@startuml UC00_TongQuan
+left to right direction
+skinparam actorStyle awesome
+skinparam defaultFontName Arial
+skinparam nodesep 50
+skinparam ranksep 100
+skinparam linetype ortho
+skinparam dpi 150
+
+skinparam usecase {
+  BackgroundColor #FFFDE7
+  BorderColor #E65100
+  FontSize 11
+}
+skinparam package {
+  BackgroundColor #FAFAFA
+  BorderColor #90A4AE
+  FontSize 11
+  FontStyle bold
+  Padding 12
+}
+skinparam rectangle {
+  BackgroundColor #EDE7F6
+  BorderColor #5E35B1
+  FontSize 13
+  FontStyle bold
+}
+
+actor "Ung vien"       as UV
+actor "Nha tuyen dung" as NTD
+actor "Quan tri vien"  as ADMIN
+
+rectangle "He thong Tuyen dung Truc tuyen" {
+
+  package "Dung chung" {
+    usecase "UC01\nXem/tim viec"     as UC01
+    usecase "UC02\nTra cuu DM"       as UC02
+    usecase "UC03\nDang ky"          as UC03
+    usecase "UC04\nDang nhap"        as UC04
+    usecase "UC05\nKhoi phuc TK"     as UC05
+  }
+
+  package "Ung vien" {
+    usecase "UC06\nQL ho so"         as UC06
+    usecase "UC07\nQL CV"            as UC07
+    usecase "UC08\nUng tuyen"        as UC08
+    usecase "UC09\nLich PV"          as UC09
+    usecase "UC10\nThong bao"        as UC10
+    usecase "UC11\nDashboard"        as UC11
+    usecase "UC12\nGoi y viec"       as UC12
+  }
+
+  package "Nha tuyen dung" {
+    usecase "UC13\nQL cong ty"       as UC13
+    usecase "UC14\nQL tin TD"        as UC14
+    usecase "UC15\nXu ly don"        as UC15
+    usecase "UC16\nQL lich PV"       as UC16
+    usecase "UC17\nThong bao"        as UC17
+    usecase "UC18\nDashboard"        as UC18
+    usecase "UC19\nGoi y UV"         as UC19
+  }
+
+  package "Quan tri" {
+    usecase "UC20\nQL ky nang"       as UC20
+    usecase "UC21\nKiem duyet"       as UC21
+    usecase "UC22\nQL cong ty"       as UC22
+    usecase "UC23\nQL nguoi dung"    as UC23
+    usecase "UC24\nDashboard"        as UC24
+  }
+}
+
+' UNG VIEN
+UV -[#2E7D32]-> UC01
+UV -[#2E7D32]-> UC02
+UV -[#2E7D32]-> UC03
+UV -[#2E7D32]-> UC04
+UV -[#2E7D32]-> UC05
+UV -[#2E7D32]-> UC06
+UV -[#2E7D32]-> UC07
+UV -[#2E7D32]-> UC08
+UV -[#2E7D32]-> UC09
+UV -[#2E7D32]-> UC10
+UV -[#2E7D32]-> UC11
+UV -[#2E7D32]-> UC12
+
+' NHA TUYEN DUNG
+NTD -[#1565C0]-> UC01
+NTD -[#1565C0]-> UC02
+NTD -[#1565C0]-> UC03
+NTD -[#1565C0]-> UC04
+NTD -[#1565C0]-> UC05
+NTD -[#1565C0]-> UC13
+NTD -[#1565C0]-> UC14
+NTD -[#1565C0]-> UC15
+NTD -[#1565C0]-> UC16
+NTD -[#1565C0]-> UC17
+NTD -[#1565C0]-> UC18
+NTD -[#1565C0]-> UC19
+
+' QUAN TRI VIEN
+ADMIN -[#880E4F]-> UC04
+ADMIN -[#880E4F]-> UC05
+ADMIN -[#880E4F]-> UC20
+ADMIN -[#880E4F]-> UC21
+ADMIN -[#880E4F]-> UC22
+ADMIN -[#880E4F]-> UC23
+ADMIN -[#880E4F]-> UC24
+
+@enduml

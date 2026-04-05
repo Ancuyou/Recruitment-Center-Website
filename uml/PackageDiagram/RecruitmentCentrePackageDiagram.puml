@@ -1,0 +1,56 @@
+@startuml
+skinparam packageStyle rectangle
+skinparam linetype ortho
+skinparam shadowing false
+skinparam defaultFontName Arial
+
+package "tuyen-dung-frontend (View)" {
+}
+
+package "controller" {
+}
+
+package "service" {
+}
+
+package "repository" {
+}
+
+package "entity" {
+}
+
+package "dto" {
+}
+
+package "entity.enums" {
+}
+
+package "security" {
+}
+
+package "config" {
+}
+
+package "common" {
+}
+
+package "exception" {
+}
+
+' ============ QUAN HỆ CÁC PACKAGE ============
+"tuyen-dung-frontend (View)" -[#Blue]-> controller : <color:Blue>HTTP Request
+controller -[#DarkGreen]-> service : <color:DarkGreen>Điều phối logic
+controller -[#DarkOrange]-> dto : <color:DarkOrange>Dữ liệu vào/ra
+service -[#Purple]-> repository : <color:Purple>Lấy/Lưu dữ liệu
+service -[#Brown]-> entity : <color:Brown>Xử lý nghiệp vụ
+service -[#Teal]-> dto : <color:Teal>Chuyển đổi dữ liệu
+repository -[#MediumVioletRed]-> entity : <color:MediumVioletRed>Ánh xạ CSDL
+entity -[#Olive]-> "entity.enums" : <color:Olive>Sử dụng Enum
+security -[#Crimson]-> controller : <color:Crimson>Phân quyền/Xác thực
+security -[#Navy]-> service : <color:Navy>Xác thực nghiệp vụ
+controller -[#DarkCyan]-> exception : <color:DarkCyan>Xử lý lỗi toàn cục
+service -[#SaddleBrown]-> exception : <color:SaddleBrown>Ném lỗi nghiệp vụ
+controller -[#DarkMagenta]-> common : <color:DarkMagenta>Định dạng Data
+service -[#Chocolate]-> common : <color:Chocolate>File chung
+
+@enduml

@@ -1,0 +1,146 @@
+@startuml ClassDiagram_Page2_ApplicationLayer
+top to bottom direction
+skinparam classAttributeIconSize 0
+skinparam linetype ortho
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam nodesep 40
+skinparam ranksep 80
+skinparam packageStyle rectangle
+skinparam dpi 150
+
+skinparam class {
+  BorderColor #2C3E50
+  ArrowColor #2C3E50
+  FontColor #1F2937
+  BackgroundColor White
+  FontSize 9
+}
+
+skinparam package<<repository>> {
+  BackgroundColor #E3F2FD
+  BorderColor #1565C0
+  FontSize 10
+}
+skinparam package<<service>> {
+  BackgroundColor #F3E5F5
+  BorderColor #7B1FA2
+  FontSize 10
+}
+skinparam package<<controller>> {
+  BackgroundColor #FCE4EC
+  BorderColor #C2185B
+  FontSize 10
+}
+
+' ============ TANG 1: CONTROLLER ============
+package "controller" <<controller>> {
+  class AuthCtrl
+  class UserCtrl
+  class CompanyCtrl
+  class TinTuyenDungCtrl
+  class HoSoCvCtrl
+  class ChiTietCvCtrl
+  class CvSkillCtrl
+  class JobSkillCtrl
+  class DonUngTuyenCtrl
+  class LichPhongVanCtrl
+  class ThongBaoCtrl
+  class DashboardCtrl
+  class MatchingCtrl
+  class SkillsCtrl
+  class AdminUserCtrl
+  class NganhNgheCtrl
+  class KhuVucCtrl
+}
+
+' ============ TANG 2: SERVICE ============
+package "service" <<service>> {
+  interface AuthService
+  interface RegistrationSvc
+  interface AccountWorkflowSvc
+  interface UserService
+  interface CongTyService
+  interface TinTuyenDungSvc
+  interface HoSoCvService
+  interface ChiTietCvSvc
+  interface CvSkillSvc
+  interface JobSkillSvc
+  interface DonUngTuyenSvc
+  interface LichSuTrangThaiSvc
+  interface LichPhongVanSvc
+  interface ThongBaoSvc
+  interface DashboardSvc
+  interface MatchingSvc
+  interface KyNangSvc
+  interface AdminUserSvc
+  interface FileStorageSvc
+}
+
+' ============ TANG 3: REPOSITORY ============
+package "repository" <<repository>> {
+  interface TaiKhoanRepo
+  interface UngVienRepo
+  interface NhaTuyenDungRepo
+  interface CongTyRepo
+  interface TinTuyenDungRepo
+  interface HoSoCvRepo
+  interface ChiTietCvRepo
+  interface KyNangRepo
+  interface ChiTietKyNangCvRepo
+  interface CtKyNangTinRepo
+  interface DonUngTuyenRepo
+  interface LichSuTrangThaiRepo
+  interface LichPhongVanRepo
+  interface ThongBaoRepo
+  interface PendingRegRepo
+  interface PendingPwdRepo
+  interface MatchingRepo
+}
+
+' ============ CONTROLLER -> SERVICE ============
+AuthCtrl --> AuthService
+AuthCtrl --> RegistrationSvc
+AuthCtrl --> AccountWorkflowSvc
+UserCtrl --> UserService
+CompanyCtrl --> CongTyService
+TinTuyenDungCtrl --> TinTuyenDungSvc
+HoSoCvCtrl --> HoSoCvService
+ChiTietCvCtrl --> ChiTietCvSvc
+CvSkillCtrl --> CvSkillSvc
+JobSkillCtrl --> JobSkillSvc
+DonUngTuyenCtrl --> DonUngTuyenSvc
+DonUngTuyenCtrl --> LichSuTrangThaiSvc
+LichPhongVanCtrl --> LichPhongVanSvc
+ThongBaoCtrl --> ThongBaoSvc
+DashboardCtrl --> DashboardSvc
+MatchingCtrl --> MatchingSvc
+SkillsCtrl --> KyNangSvc
+AdminUserCtrl --> AdminUserSvc
+
+' ============ SERVICE -> REPOSITORY ============
+AuthService --> TaiKhoanRepo
+RegistrationSvc --> TaiKhoanRepo
+RegistrationSvc --> PendingRegRepo
+AccountWorkflowSvc --> PendingPwdRepo
+UserService --> TaiKhoanRepo
+CongTyService --> CongTyRepo
+TinTuyenDungSvc --> TinTuyenDungRepo
+HoSoCvService --> HoSoCvRepo
+HoSoCvService --> FileStorageSvc
+ChiTietCvSvc --> ChiTietCvRepo
+CvSkillSvc --> ChiTietKyNangCvRepo
+JobSkillSvc --> CtKyNangTinRepo
+DonUngTuyenSvc --> DonUngTuyenRepo
+LichSuTrangThaiSvc --> LichSuTrangThaiRepo
+LichPhongVanSvc --> LichPhongVanRepo
+ThongBaoSvc --> ThongBaoRepo
+DashboardSvc --> DonUngTuyenRepo
+DashboardSvc --> TinTuyenDungRepo
+MatchingSvc --> MatchingRepo
+KyNangSvc --> KyNangRepo
+AdminUserSvc --> TaiKhoanRepo
+AdminUserSvc --> UngVienRepo
+AdminUserSvc --> NhaTuyenDungRepo
+
+@enduml
