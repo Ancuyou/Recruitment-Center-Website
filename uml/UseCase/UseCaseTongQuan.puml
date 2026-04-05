@@ -54,7 +54,7 @@ rectangle "He thong Tuyen dung Truc tuyen" {
 
   package "Rieng - Ung vien" {
     usecase "UC06\nQuan ly ho so CV"               as UC06
-    usecase "UC07\nNop don & Theo doi ung tuyen"   as UC07
+    usecase "UC07\nQuan ly don ung tuyen cua toi"  as UC07
     usecase "UC08\nXem lich phong van"             as UC08
     usecase "UC09\nXem dashboard ung vien"         as UC09
     usecase "UC10\nNhan goi y viec lam phu hop"    as UC10

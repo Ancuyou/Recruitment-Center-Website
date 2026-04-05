@@ -1,6 +1,7 @@
 package com.example.tuyendung.controller;
 
 import com.example.tuyendung.common.ApiResponse;
+import com.example.tuyendung.common.Constants;
 import com.example.tuyendung.dto.request.MatchScoreRequest;
 import com.example.tuyendung.dto.response.CandidateSuggestionResponse;
 import com.example.tuyendung.dto.response.JobSuggestionResponse;
@@ -10,6 +11,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -45,6 +47,7 @@ public class MatchingController {
      * @return Danh sách ứng viên với match score
      */
     @GetMapping("/candidates/{jobId}")
+    @PreAuthorize(Constants.ROLE_NTD_EXPR)
     public ResponseEntity<ApiResponse<List<CandidateSuggestionResponse>>> suggestCandidatesForJob(
             @PathVariable Long jobId,
             @RequestParam(required = false) Integer limit) {
@@ -69,6 +72,7 @@ public class MatchingController {
      * @return Danh sách công việc với match score
      */
     @GetMapping("/jobs/{candidateId}")
+    @PreAuthorize(Constants.ROLE_UV_EXPR)
     public ResponseEntity<ApiResponse<List<JobSuggestionResponse>>> suggestJobsForCandidate(
             @PathVariable Long candidateId,
             @RequestParam(required = false) Integer limit) {
@@ -92,6 +96,7 @@ public class MatchingController {
      * @return MatchScore với chi tiết kỹ năng trùng/thiếu
      */
     @PostMapping("/score")
+    @PreAuthorize(Constants.ROLE_UV_OR_NTD_EXPR)
     public ResponseEntity<ApiResponse<MatchScoreResponse>> calculateMatchScore(
             @Valid @RequestBody MatchScoreRequest request) {
         log.info("E3: POST /api/matching/score - CV {} vs Job {}", request.getCvId(), request.getJobId());
@@ -117,6 +122,7 @@ public class MatchingController {
      * @return MatchScore theo strategy chọn
      */
     @PostMapping("/score/{strategy}")
+    @PreAuthorize(Constants.ROLE_UV_OR_NTD_EXPR)
     public ResponseEntity<ApiResponse<MatchScoreResponse>> calculateMatchScoreWithStrategy(
             @Valid @RequestBody MatchScoreRequest request,
             @PathVariable String strategy) {
