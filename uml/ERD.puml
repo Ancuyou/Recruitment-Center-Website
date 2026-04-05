@@ -1,196 +1,85 @@
 @startuml
+left to right direction
 hide circle
-hide methods
+hide empty members
 
-' Cấu hình giao diện (Theme & Style) để biểu đồ đẹp và hiện đại hơn
-skinparam linetype ortho
-skinparam roundcorner 8
 skinparam shadowing false
+skinparam linetype ortho
+skinparam nodesep 130
+skinparam ranksep 150
+skinparam minClassWidth 190
 skinparam defaultFontName Arial
 
-skinparam class {
-    BackgroundColor White
-    ArrowColor #2C3E50
-    BorderColor #2C3E50
-    HeaderBackgroundColor #ECF0F1
-    FontColor #2C3E50
+skinparam entity {
+  BackgroundColor #F8F9FA
+  BorderColor #343A40
+  FontColor #212529
+  FontSize 16
+  BorderThickness 1.5
+  RoundCorner 8
 }
 
-skinparam package {
-    BackgroundColor #FAFAFA
-    BorderColor #BDC3C7
-    FontColor #34495E
-    FontSize 14
-    Style rectangle
+package "Nhom A: Tai khoan va dinh danh" {
+  entity TaiKhoan
+  entity UngVien
+  entity NhaTuyenDung
+  entity ThongBao
+  entity PendingRegistration
+  entity PendingPasswordReset
 }
 
-package "Nhóm 1: Phân quyền & Định danh" {
-    entity "tai_khoan" as TK {
-        *id : BIGINT <<PK>>
-        --
-        email : VARCHAR(255) <<UK>>
-        mat_khau_hash : VARCHAR(255)
-        vai_tro : ENUM
-        la_kich_hoat : BOOLEAN
-        ngay_tao : TIMESTAMP
-    }
-
-    entity "ung_vien" as UV {
-        *id : BIGINT <<PK>>
-        --
-        *tai_khoan_id : BIGINT <<FK,UK>>
-        ho_ten : VARCHAR(150)
-        so_dien_thoai : VARCHAR(20) <<UK>>
-        ngay_sinh : DATE
-        gioi_tinh : ENUM
-        anh_dai_dien : VARCHAR(255)
-    }
-
-    entity "nha_tuyen_dung" as NTD {
-        *id : BIGINT <<PK>>
-        --
-        *tai_khoan_id : BIGINT <<FK,UK>>
-        *cong_ty_id : BIGINT <<FK>>
-        ho_ten : VARCHAR(150)
-        chuc_vu : VARCHAR(100)
-        so_dien_thoai : VARCHAR(20)
-    }
+package "Nhom B: Doanh nghiep va tin tuyen dung" {
+  entity CongTy
+  entity CtCtyNganh
+  entity TinTuyenDung
+  entity CtKvTin
+  entity KyNang
+  entity ChiTietKyNangTin
 }
 
-package "Nhóm 2: Doanh nghiệp & Tin tuyển dụng" {
-    entity "cong_ty" as CT {
-        *id : BIGINT <<PK>>
-        --
-        ten_cong_ty : VARCHAR(255)
-        ma_so_thue : VARCHAR(50) <<UK>>
-        logo_url : VARCHAR(255)
-        nganh_nghe : VARCHAR(100)
-        website : VARCHAR(255)
-        mo_ta : TEXT
-    }
-
-    entity "tin_tuyen_dung" as TTD {
-        *id : BIGINT <<PK>>
-        --
-        *nha_tuyen_dung_id : BIGINT <<FK>>
-        *cong_ty_id : BIGINT <<FK>>
-        tieu_de : VARCHAR(255)
-        mo_ta_cong_viec : TEXT
-        yeu_cau_ung_vien : TEXT
-        muc_luong_min : DECIMAL
-        muc_luong_max : DECIMAL
-        dia_diem : VARCHAR(100)
-        cap_bac_yeu_cau : ENUM
-        hinh_thuc_lam_viec : ENUM
-        han_nop : DATE
-        trang_thai : TINYINT
-    }
+package "Nhom C: Ho so va quy trinh ung tuyen" {
+  entity HoSoCv
+  entity ChiTietCv
+  entity ChiTietKyNangCv
+  entity DonUngTuyen
+  entity LichSuTrangThai
+  entity LichPhongVan
 }
 
-package "Nhóm 3: Kỹ năng & Matching" {
-    entity "ky_nang" as KN {
-        *id : BIGINT <<PK>>
-        --
-        ten_ky_nang : VARCHAR(100) <<UK>>
-    }
+' Hidden links to keep 3-column layout stable and less overlapping
+TaiKhoan -[hidden]right-> CongTy
+CongTy -[hidden]right-> HoSoCv
 
-    entity "chi_tiet_ky_nang_tin" as CT_KN_TIN {
-        *tin_tuyen_dung_id : BIGINT <<PK,FK>>
-        *ky_nang_id : BIGINT <<PK,FK>>
-        --
-        muc_yeu_cau : TINYINT
-    }
+' Quan he tu TaiKhoan
+TaiKhoan ||--o| UngVien : "1-1"
+TaiKhoan ||--o| NhaTuyenDung : "1-1"
+TaiKhoan ||--o{ ThongBao : "1-N"
+TaiKhoan ||--o| PendingRegistration : "1-1"
+TaiKhoan ||--o| PendingPasswordReset : "1-1"
+TaiKhoan ||--o{ LichSuTrangThai : "1-N"
 
-    entity "chi_tiet_ky_nang_cv" as CT_KN_CV {
-        *ho_so_cv_id : BIGINT <<PK,FK>>
-        *ky_nang_id : BIGINT <<PK,FK>>
-        --
-        muc_thanh_thao : TINYINT
-    }
-}
+' Cong ty, NTD, Tin
+CongTy ||--o{ NhaTuyenDung : "1-N"
+CongTy ||--o{ TinTuyenDung : "1-N"
+CongTy ||--o{ CtCtyNganh : "1-N"
+NhaTuyenDung ||--o{ TinTuyenDung : "1-N"
+TinTuyenDung ||--o{ CtKvTin : "1-N"
 
-package "Nhóm 4: Hồ sơ ứng viên" {
-    entity "ho_so_cv" as CV {
-        *id : BIGINT <<PK>>
-        --
-        *ung_vien_id : BIGINT <<FK>>
-        tieu_de_cv : VARCHAR(100)
-        muc_tieu_nghe_nghiep : TEXT
-        file_cv_url : VARCHAR(255)
-        la_cv_chinh : BOOLEAN
-        da_xoa : BOOLEAN
-    }
+' Tin tuyen dung va ky nang yeu cau
+TinTuyenDung ||--o{ ChiTietKyNangTin : "1-N"
+KyNang ||--o{ ChiTietKyNangTin : "1-N"
 
-    entity "chi_tiet_cv" as CT_CV {
-        *id : BIGINT <<PK>>
-        --
-        *ho_so_cv_id : BIGINT <<FK>>
-        loai_ban_ghi : TINYINT
-        ten_to_chuc : VARCHAR(200)
-        chuyen_nganh_hoac_vi_tri : VARCHAR(200)
-        ngay_bat_dau : DATE
-        ngay_ket_thuc : DATE
-        mo_ta_chi_tiet : TEXT
-    }
-}
+' Ung vien, CV, ky nang
+UngVien ||--o{ HoSoCv : "1-N"
+HoSoCv ||--o{ ChiTietCv : "1-N"
+HoSoCv ||--o{ ChiTietKyNangCv : "1-N"
+KyNang ||--o{ ChiTietKyNangCv : "1-N"
 
-package "Nhóm 5: Ứng tuyển & Phỏng vấn" {
-    entity "don_ung_tuyen" as DUT {
-        *id : BIGINT <<PK>>
-        --
-        *tin_tuyen_dung_id : BIGINT <<FK>>
-        *ho_so_cv_id : BIGINT <<FK>>
-        ban_sao_cv_url : VARCHAR(255)
-        thu_ngo : TEXT
-        trang_thai_hien_tai : TINYINT
-        ngay_nop : TIMESTAMP
-    }
+' Don ung tuyen va phong van
+TinTuyenDung ||--o{ DonUngTuyen : "1-N"
+HoSoCv ||--o{ DonUngTuyen : "1-N"
+DonUngTuyen ||--o{ LichSuTrangThai : "1-N"
+DonUngTuyen ||--o{ LichPhongVan : "1-N"
+NhaTuyenDung ||--o{ LichPhongVan : "1-N"
 
-    entity "lich_su_trang_thai" as LS_TT {
-        *id : BIGINT <<PK>>
-        --
-        *don_ung_tuyen_id : BIGINT <<FK>>
-        *nguoi_thuc_hien_id : BIGINT <<FK>>
-        trang_thai_cu : TINYINT
-        trang_thai_moi : TINYINT
-        ghi_chu : TEXT
-        thoi_gian_chuyen : TIMESTAMP
-    }
-
-    entity "lich_phong_van" as LPV {
-        *id : BIGINT <<PK>>
-        --
-        *don_ung_tuyen_id : BIGINT <<FK>>
-        *nguoi_phong_van_id : BIGINT <<FK>>
-        tieu_de_vong : VARCHAR(150)
-        thoi_gian_bat_dau : TIMESTAMP
-        thoi_gian_ket_thuc : TIMESTAMP
-        hinh_thuc : ENUM
-        dia_diem_hoac_link : VARCHAR(255)
-        trang_thai_phong_van : ENUM
-    }
-}
-
-' Relationships
-TK ||--|| UV : "1:1"
-TK ||--|| NTD : "1:1"
-NTD }|--|| CT : "n:1"
-
-CT ||--|{ TTD : "1:n"
-NTD ||--|{ TTD : "1:n"
-
-TTD ||--|{ CT_KN_TIN : "1:n"
-KN ||--|{ CT_KN_TIN : "1:n"
-CV ||--|{ CT_KN_CV : "1:n"
-KN ||--|{ CT_KN_CV : "1:n"
-
-UV ||--|{ CV : "1:n"
-CV ||--|{ CT_CV : "1:n"
-
-TTD ||--|{ DUT : "1:n"
-CV ||--|{ DUT : "1:n"
-DUT ||--|{ LS_TT : "1:n"
-DUT ||--|{ LPV : "1:n"
-TK ||--|{ LS_TT : "1:n"
-NTD ||--|{ LPV : "1:n"
 @enduml

@@ -32,7 +32,6 @@ rectangle "He thong Tuyen dung - Goc nhin Quan tri vien" {
   package "Use case dung chung" {
     usecase "UC01\nXem va tim kiem viec lam"          as UC01
     usecase "UC02\nTra cuu danh muc he thong"         as UC02
-    usecase "UC03\nDang ky"                           as UC03
     usecase "UC04\nDang nhap"                         as UC04
     usecase "UC05\nKhoi phuc tai khoan"               as UC05
   }
@@ -54,5 +53,7 @@ ADMIN -[#880E4F]-> UC21
 ADMIN -[#880E4F]-> UC22
 ADMIN -[#880E4F]-> UC23
 ADMIN -[#880E4F]-> UC24
+ADMIN -[#880E4F]-> UC01
+ADMIN -[#880E4F]-> UC02
 
 @enduml

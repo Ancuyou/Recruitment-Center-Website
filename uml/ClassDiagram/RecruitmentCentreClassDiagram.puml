@@ -1,0 +1,324 @@
+@startuml
+left to right direction
+skinparam classAttributeIconSize 0
+skinparam linetype ortho
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam nodesep 90
+skinparam ranksep 340
+skinparam packageStyle rectangle
+
+skinparam class {
+  BorderColor #2C3E50
+  ArrowColor #2C3E50
+  FontColor #1F2937
+  BackgroundColor White
+  HeaderBackgroundColor #F3F4F6
+}
+
+skinparam package<<enums>> {
+  BackgroundColor #FFF8E1
+  BorderColor #E0A800
+}
+skinparam package<<entity>> {
+  BackgroundColor #E8F5E9
+  BorderColor #2E7D32
+}
+skinparam package<<repository>> {
+  BackgroundColor #E3F2FD
+  BorderColor #1565C0
+}
+skinparam package<<service>> {
+  BackgroundColor #F3E5F5
+  BorderColor #7B1FA2
+}
+skinparam package<<controller>> {
+  BackgroundColor #FCE4EC
+  BorderColor #C2185B
+}
+
+package "model.enums" <<enums>> {
+  enum VaiTroTaiKhoan {
+    UNG_VIEN
+    NHA_TUYEN_DUNG
+    ADMIN
+  }
+
+  enum GioiTinh {
+    NAM
+    NU
+    KHAC
+  }
+
+  enum TrangThaiTin {
+    NHAP
+    MO
+    DONG
+  }
+
+  enum TrangThaiDon {
+    MOI
+    REVIEW
+    PHONG_VAN
+    OFFER
+    TU_CHOI
+  }
+
+  enum TrangThaiPhongVan {
+    CHO_PHONG_VAN
+    HOAN_THANH
+    HUY
+  }
+
+  enum HinhThucLamViec {
+    ONLINE
+    OFFICE
+    HYBRID
+  }
+
+  enum HinhThucPhongVan {
+    ONLINE
+    OFFLINE
+  }
+}
+
+package "model.entity" <<entity>> {
+  class TaiKhoan {
+    - Long id
+    - String email
+    - String matKhauHash
+    - VaiTroTaiKhoan vaiTro
+    - Boolean laKichHoat
+  }
+
+  class UngVien {
+    - Long id
+    - String hoTen
+    - String soDienThoai
+    - GioiTinh gioiTinh
+  }
+
+  class NhaTuyenDung {
+    - Long id
+    - String hoTen
+    - String chucVu
+    - String soDienThoai
+  }
+
+  class CongTy {
+    - Long id
+    - String tenCongTy
+    - String maSoThue
+    - String website
+  }
+
+  class TinTuyenDung {
+    - Long id
+    - String tieuDe
+    - TrangThaiTin trangThai
+    - HinhThucLamViec hinhThucLamViec
+  }
+
+  class HoSoCv {
+    - Long id
+    - String tieuDeCv
+    - String fileCvUrl
+    - Boolean laCvChinh
+  }
+
+  class ChiTietCv {
+    - Long id
+    - Integer loaiBanGhi
+    - String tenToChuc
+    - String chuyenNganhHoacViTri
+  }
+
+  class KyNang {
+    - Long id
+    - String tenKyNang
+  }
+
+  class ChiTietKyNangCv {
+    - ChiTietKyNangCvId id
+    - Integer mucThanhThao
+    - Boolean daXoa
+  }
+
+  class ChiTietKyNangTin {
+    - Long id
+    - Integer yeucau
+    - Boolean daXoa
+  }
+
+  class DonUngTuyen {
+    - Long id
+    - TrangThaiDon trangThaiHienTai
+    - String banSaoCvUrl
+  }
+
+  class LichSuTrangThai {
+    - Long id
+    - Integer trangThaiCu
+    - Integer trangThaiMoi
+    - String ghiChu
+  }
+
+  class LichPhongVan {
+    - Long id
+    - String tieuDeVong
+    - HinhThucPhongVan hinhThuc
+    - TrangThaiPhongVan trangThaiPhongVan
+  }
+
+  class ThongBao {
+    - Long id
+    - String tieuDe
+    - Boolean daDoc
+  }
+
+  class PendingRegistration {
+    - Long id
+    - String token
+  }
+
+  class PendingPasswordReset {
+    - Long id
+    - String token
+  }
+}
+
+package "repository" as REPO <<repository>> {
+  interface TaiKhoanRepository
+  interface UngVienRepository
+  interface NhaTuyenDungRepository
+  interface CongTyRepository
+  interface TinTuyenDungRepository
+  interface HoSoCvRepository
+  interface ChiTietCvRepository
+  interface KyNangRepository
+  interface ChiTietKyNangCvRepository
+  interface CtKyNangTinRepository
+  interface DonUngTuyenRepository
+  interface LichSuTrangThaiRepository
+  interface LichPhongVanRepository
+  interface ThongBaoRepository
+  interface PendingRegistrationRepository
+  interface PendingPasswordResetRepository
+  interface MatchingRepository
+}
+
+package "service" as SVC <<service>> {
+  interface AuthService
+  interface RegistrationService
+  interface AccountWorkflowService
+  interface UserService
+  interface CongTyService
+  interface TinTuyenDungService
+  interface HoSoCvService
+  interface ChiTietCvService
+  interface CvSkillService
+  interface JobSkillService
+  interface DonUngTuyenService
+  interface LichSuTrangThaiService
+  interface LichPhongVanService
+  interface ThongBaoService
+  interface DashboardService
+  interface MatchingService
+  interface KyNangService
+  interface AdminUserService
+  interface FileStorageService
+}
+
+package "controller" <<controller>> {
+  class AuthController
+  class UserController
+  class CompanyController
+  class TinTuyenDungController
+  class HoSoCvController
+  class ChiTietCvController
+  class CvSkillController
+  class JobSkillController
+  class DonUngTuyenController
+  class LichPhongVanController
+  class ThongBaoController
+  class DashboardController
+  class MatchingController
+  class SkillsController
+  class AdminUserController
+  class NganhNgheController
+  class KhuVucController
+}
+
+' Tang khoang cach ngang giua 2 cot Service va Repository
+SVC -[hidden]right-> REPO
+
+TaiKhoan "1" <-- "0..1" UngVien : profile
+TaiKhoan "1" <-- "0..1" NhaTuyenDung : profile
+TaiKhoan "1" <-- "0..*" LichSuTrangThai : actor
+TaiKhoan "1" <-- "0..*" ThongBao : receiver
+TaiKhoan "1" <-- "0..1" PendingRegistration : verify
+TaiKhoan "1" <-- "0..1" PendingPasswordReset : reset
+
+CongTy "1" <-- "0..*" NhaTuyenDung : members
+CongTy "1" <-- "0..*" TinTuyenDung : posts
+NhaTuyenDung "1" <-- "0..*" TinTuyenDung : owner
+
+UngVien "1" <-- "0..*" HoSoCv : cvs
+HoSoCv "1" <-- "0..*" ChiTietCv : details
+HoSoCv "1" <-- "0..*" ChiTietKyNangCv : cvSkills
+KyNang "1" <-- "0..*" ChiTietKyNangCv : skill
+
+TinTuyenDung "1" <-- "0..*" ChiTietKyNangTin : jobSkills
+KyNang "1" <-- "0..*" ChiTietKyNangTin : skill
+
+TinTuyenDung "1" <-- "0..*" DonUngTuyen : applications
+HoSoCv "1" <-- "0..*" DonUngTuyen : appliedCv
+DonUngTuyen "1" <-- "0..*" LichSuTrangThai : history
+DonUngTuyen "1" <-- "0..*" LichPhongVan : interviews
+NhaTuyenDung "1" <-- "0..*" LichPhongVan : interviewer
+
+AuthController --> AuthService
+AuthController --> RegistrationService
+AuthController --> AccountWorkflowService
+AuthController --> UserService
+UserController --> UserService
+CompanyController --> CongTyService
+TinTuyenDungController --> TinTuyenDungService
+HoSoCvController --> HoSoCvService
+ChiTietCvController --> ChiTietCvService
+CvSkillController --> CvSkillService
+JobSkillController --> JobSkillService
+DonUngTuyenController --> DonUngTuyenService
+DonUngTuyenController --> LichSuTrangThaiService
+LichPhongVanController --> LichPhongVanService
+ThongBaoController --> ThongBaoService
+DashboardController --> DashboardService
+MatchingController --> MatchingService
+SkillsController --> KyNangService
+AdminUserController --> AdminUserService
+
+AuthService -[#6D4C41]-> TaiKhoanRepository
+RegistrationService -[#FB8C00]-> TaiKhoanRepository
+RegistrationService -[#FB8C00]-> PendingRegistrationRepository
+AccountWorkflowService -[#8E24AA]-> PendingPasswordResetRepository
+UserService -[#3949AB]-> TaiKhoanRepository
+CongTyService -[#1E88E5]-> CongTyRepository
+TinTuyenDungService -[#00897B]-> TinTuyenDungRepository
+HoSoCvService -[#43A047]-> HoSoCvRepository
+HoSoCvService -[#43A047]-> FileStorageService
+ChiTietCvService -[#7CB342]-> ChiTietCvRepository
+CvSkillService -[#C0CA33]-> ChiTietKyNangCvRepository
+JobSkillService -[#FDD835]-> CtKyNangTinRepository
+DonUngTuyenService -[#E53935]-> DonUngTuyenRepository
+LichSuTrangThaiService -[#D81B60]-> LichSuTrangThaiRepository
+LichPhongVanService -[#5E35B1]-> LichPhongVanRepository
+ThongBaoService -[#00ACC1]-> ThongBaoRepository
+DashboardService -[#546E7A]-> DonUngTuyenRepository
+DashboardService -[#546E7A]-> TinTuyenDungRepository
+MatchingService -[#039BE5]-> MatchingRepository
+KyNangService -[#8BC34A]-> KyNangRepository
+AdminUserService -[#F4511E]-> TaiKhoanRepository
+AdminUserService -[#F4511E]-> UngVienRepository
+AdminUserService -[#F4511E]-> NhaTuyenDungRepository
+
+@enduml
