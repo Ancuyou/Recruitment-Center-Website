@@ -1,0 +1,16 @@
+@startuml UC09_Activity
+'https://plantuml.com/activity-diagram-beta
+
+start
+:Ung vien mo lich phong van;
+:He thong lay danh sach lich hen;
+if (Co lich phong van?) then (yes)
+  :Hien thi thoi gian va hinh thuc phong van;
+  :Ung vien xac nhan tham gia;
+else (no)
+  :Thong bao chua co lich phong van;
+endif
+
+stop
+
+@enduml

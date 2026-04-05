@@ -1,0 +1,18 @@
+@startuml UC08_Activity
+'https://plantuml.com/activity-diagram-beta
+
+start
+:Ung vien xem chi tiet viec lam;
+:Chon ung tuyen;
+if (Ung vien da co CV hop le?) then (yes)
+  :Gui ho so ung tuyen;
+  :He thong ghi nhan don ung tuyen;
+  :Cap nhat trang thai don ban dau;
+  :Ung vien theo doi trang thai don;
+else (no)
+  :Yeu cau cap nhat CV truoc khi ung tuyen;
+endif
+
+stop
+
+@enduml

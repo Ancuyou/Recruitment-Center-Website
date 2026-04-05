@@ -1,0 +1,36 @@
+@startuml
+actor "UngVien" as Candidate
+participant "CandidateDashboardPage" as View
+participant "DashboardController" as Controller
+participant "DashboardService" as Service
+participant "DonUngTuyenRepository" as AppRepo
+participant "LichPhongVanRepository" as InterviewRepo
+database "MySQL" as DB
+
+Candidate -> View : Mo dashboard ung vien
+View -> Controller : getCandidateDashboard()
+Controller -> Service : getCandidateDashboard(candidateId)
+
+Service -> AppRepo : countByCandidate(candidateId)
+AppRepo -> DB : SELECT COUNT(*) FROM don_ung_tuyen ...
+DB --> AppRepo : total applications
+AppRepo --> Service : total applications
+
+Service -> AppRepo : countByStatus(candidateId)
+AppRepo -> DB : SELECT trang_thai, COUNT(*) ...
+DB --> AppRepo : status counts
+AppRepo --> Service : status counts
+
+Service -> InterviewRepo : countUpcomingByCandidate(candidateId)
+InterviewRepo -> DB : SELECT COUNT(*) FROM lich_phong_van ...
+DB --> InterviewRepo : upcoming interviews
+InterviewRepo --> Service : upcoming interviews
+
+Service --> Controller : dashboard data
+
+alt Co du lieu thong ke
+    Controller --> View : show charts and metrics
+else Chua co du lieu
+    Controller --> View : show empty dashboard
+end
+@enduml

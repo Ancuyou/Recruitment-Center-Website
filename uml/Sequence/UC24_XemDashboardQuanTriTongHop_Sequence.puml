@@ -1,0 +1,38 @@
+@startuml
+actor "QuanTriVien" as Admin
+participant "AdminDashboardPage" as View
+participant "DashboardController" as Controller
+participant "DashboardService" as Service
+participant "TaiKhoanRepository" as UserRepo
+participant "TinTuyenDungRepository" as JobRepo
+participant "DonUngTuyenRepository" as AppRepo
+database "MySQL" as DB
+
+Admin -> View : Mo dashboard quan tri tong hop
+View -> Controller : getAdminDashboard()
+Controller -> Service : getAdminDashboard()
+
+Service -> UserRepo : countUsersByRole()
+UserRepo -> DB : SELECT vai_tro, COUNT(*) FROM tai_khoan ...
+DB --> UserRepo : user metrics
+UserRepo --> Service : user metrics
+
+Service -> JobRepo : countPostsByStatus()
+JobRepo -> DB : SELECT trang_thai, COUNT(*) FROM tin_tuyen_dung ...
+DB --> JobRepo : post metrics
+JobRepo --> Service : post metrics
+
+Service -> AppRepo : countApplicationsByStatus()
+AppRepo -> DB : SELECT trang_thai, COUNT(*) FROM don_ung_tuyen ...
+DB --> AppRepo : application metrics
+AppRepo --> Service : application metrics
+
+Service -> Service : detectSystemAlerts(user metrics, post metrics, application metrics)
+Service --> Controller : admin dashboard data
+
+alt Co du lieu phan tich
+    Controller --> View : show charts + alert cards
+else Chua co du lieu
+    Controller --> View : show empty dashboard
+end
+@enduml

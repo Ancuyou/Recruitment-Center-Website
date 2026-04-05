@@ -1,0 +1,32 @@
+@startuml
+actor "UngVien" as Candidate
+participant "LichPhongVanPage" as View
+participant "LichPhongVanController" as Controller
+participant "LichPhongVanService" as Service
+participant "LichPhongVanRepository" as Repo
+database "MySQL" as DB
+
+Candidate -> View : Mo trang lich phong van
+View -> Controller : getMyInterviews()
+Controller -> Service : getMyInterviews(candidateId)
+Service -> Repo : findByCandidateId(candidateId)
+Repo -> DB : SELECT * FROM lich_phong_van ...
+DB --> Repo : interview list
+Repo --> Service : interview list
+Service --> Controller : interview list
+
+alt Co lich phong van
+    Controller --> View : show interview list
+    Candidate -> View : Chon lich va xac nhan tham gia
+    View -> Controller : confirmInterview(interviewId)
+    Controller -> Service : confirmInterview(interviewId, candidateId)
+    Service -> Repo : updateCandidateConfirmation(interviewId, CONFIRMED)
+    Repo -> DB : UPDATE lich_phong_van SET xac_nhan_uv = 'CONFIRMED' ...
+    DB --> Repo : updated
+    Repo --> Service : success
+    Service --> Controller : success
+    Controller --> View : xac nhan tham gia thanh cong
+else Chua co lich phong van
+    Controller --> View : thong bao chua co lich phong van
+end
+@enduml

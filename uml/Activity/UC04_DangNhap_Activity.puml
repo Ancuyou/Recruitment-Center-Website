@@ -1,0 +1,21 @@
+@startuml UC04_Activity
+'https://plantuml.com/activity-diagram-beta
+
+start
+:Mo man hinh dang nhap;
+:Nhap ten dang nhap va mat khau;
+if (Thong tin day du?) then (yes)
+  :He thong xac thuc thong tin;
+  if (Dang nhap thanh cong?) then (yes)
+    :Tao phien dang nhap;
+    :Dieu huong vao trang chuc nang;
+  else (no)
+    :Thong bao dang nhap that bai;
+  endif
+else (no)
+  :Yeu cau nhap day du thong tin;
+endif
+
+stop
+
+@enduml

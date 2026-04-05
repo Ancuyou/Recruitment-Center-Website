@@ -1,0 +1,21 @@
+@startuml UC01_Activity
+'https://plantuml.com/activity-diagram-beta
+
+start
+:Mo trang danh sach viec lam;
+:Nhap tu khoa va bo loc;
+if (Dieu kien tim kiem hop le?) then (yes)
+  :He thong tim kiem tin tuyen dung;
+  if (Co ket qua?) then (yes)
+    :Hien thi danh sach viec lam;
+    :Chon viec lam de xem chi tiet;
+  else (no)
+    :Thong bao khong co ket qua phu hop;
+  endif
+else (no)
+  :Thong bao du lieu tim kiem khong hop le;
+endif
+
+stop
+
+@enduml

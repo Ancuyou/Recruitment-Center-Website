@@ -1,0 +1,17 @@
+@startuml UC24_Activity
+'https://plantuml.com/activity-diagram-beta
+
+start
+:Quan tri vien mo dashboard tong hop;
+:He thong tong hop so lieu toan he thong;
+if (Co du lieu phan tich?) then (yes)
+  :Hien thi bieu do nguoi dung, tin dang va ung tuyen;
+  :Hien thi canh bao bat thuong neu co;
+  :Quan tri vien xem chi tiet theo tung chi so;
+else (no)
+  :Thong bao chua co du lieu tong hop;
+endif
+
+stop
+
+@enduml

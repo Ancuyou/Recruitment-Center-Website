@@ -1,0 +1,53 @@
+@startuml
+actor "QuanTriVien" as Admin
+participant "QuanLyNguoiDungPage" as View
+participant "NguoiDungController" as Controller
+participant "NguoiDungService" as Service
+participant "TaiKhoanRepository" as Repo
+database "MySQL" as DB
+
+Admin -> View : Mo quan ly nguoi dung
+Admin -> View : Tim kiem tai khoan
+View -> Controller : searchUsers(keyword)
+Controller -> Service : searchUsers(keyword)
+Service -> Repo : findByKeyword(keyword)
+Repo -> DB : SELECT * FROM tai_khoan WHERE ...
+DB --> Repo : user list
+Repo --> Service : user list
+Service --> Controller : user list
+
+alt Tim thay tai khoan
+    Controller --> View : show user list
+    Admin -> View : Chon tai khoan de xu ly
+    View -> Controller : getUserDetail(userId)
+    Controller -> Service : getUserDetail(userId)
+    Service -> Repo : findById(userId)
+    Repo -> DB : SELECT * FROM tai_khoan WHERE id = ?
+    DB --> Repo : user detail
+    Repo --> Service : user detail
+    Service --> Controller : user detail
+    Controller --> View : show user detail
+
+    alt Khoa/mo tai khoan
+        View -> Controller : toggleUserLock(userId, isLocked)
+        Controller -> Service : toggleUserLock(userId, isLocked)
+        Service -> Repo : updateLockStatus(userId, isLocked)
+        Repo -> DB : UPDATE tai_khoan SET bi_khoa = ...
+        DB --> Repo : updated
+        Repo --> Service : success
+        Service --> Controller : success
+        Controller --> View : cap nhat trang thai khoa thanh cong
+    else Cap nhat vai tro/thong tin quan tri
+        View -> Controller : updateUser(userId, payload)
+        Controller -> Service : updateUser(userId, payload)
+        Service -> Repo : update(user)
+        Repo -> DB : UPDATE tai_khoan SET ...
+        DB --> Repo : updated
+        Repo --> Service : user
+        Service --> Controller : user
+        Controller --> View : cap nhat nguoi dung thanh cong
+    end
+else Khong tim thay tai khoan
+    Controller --> View : thong bao khong tim thay tai khoan
+end
+@enduml

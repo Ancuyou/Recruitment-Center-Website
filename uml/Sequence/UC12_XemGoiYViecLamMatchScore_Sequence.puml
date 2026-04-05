@@ -1,0 +1,33 @@
+@startuml
+actor "UngVien" as Candidate
+participant "GoiYViecLamPage" as View
+participant "MatchingController" as Controller
+participant "MatchingService" as Service
+participant "UngVienRepository" as ProfileRepo
+participant "TinTuyenDungRepository" as JobRepo
+database "MySQL" as DB
+
+Candidate -> View : Mo chuc nang goi y viec lam
+View -> Controller : suggestJobs()
+Controller -> Service : suggestJobs(candidateId)
+Service -> ProfileRepo : findProfileAndSkills(candidateId)
+ProfileRepo -> DB : SELECT profile + skills ...
+DB --> ProfileRepo : profile data
+ProfileRepo --> Service : profile data
+
+Service -> JobRepo : findOpenJobsForMatching()
+JobRepo -> DB : SELECT * FROM tin_tuyen_dung WHERE trang_thai = 'OPEN'
+DB --> JobRepo : open jobs
+JobRepo --> Service : open jobs
+
+Service -> Service : calculateMatchScores(profileData, openJobs)
+
+alt Co viec lam phu hop
+    Service --> Controller : recommended jobs with score
+    Controller --> View : show recommendation list
+    Candidate -> View : Xem chi tiet viec lam
+else Khong co viec lam phu hop
+    Service --> Controller : empty list
+    Controller --> View : thong bao cap nhat ho so de nhan goi y tot hon
+end
+@enduml

@@ -139,6 +139,7 @@ export default function CandidateCvManagementPage() {
   const [detailTypeFilter, setDetailTypeFilter] = useState<DetailTypeFilter>('ALL');
   const [uploadFile, setUploadFile] = useState<File | null>(null);
   const [activeTab, setActiveTab] = useState<CvTab>('overview');
+  const [createFlowCvId, setCreateFlowCvId] = useState<number | null>(null);
   const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
   const [previewBlobUrl, setPreviewBlobUrl] = useState('');
   const [previewLoading, setPreviewLoading] = useState(false);
@@ -197,6 +198,10 @@ export default function CandidateCvManagementPage() {
       const data = await cvService.getMyCvs();
       setCvs(data);
 
+      if (createFlowCvId && !data.some((cv) => cv.id === createFlowCvId)) {
+        setCreateFlowCvId(null);
+      }
+
       if (data.length === 0) {
         setSelectedCvId(null);
       } else if (!selectedCvId || !data.some((cv) => cv.id === selectedCvId)) {
@@ -207,7 +212,7 @@ export default function CandidateCvManagementPage() {
     } finally {
       setLoading(false);
     }
-  }, [selectedCvId]);
+  }, [selectedCvId, createFlowCvId]);
 
   useEffect(() => {
     void fetchCvList();
@@ -256,6 +261,11 @@ export default function CandidateCvManagementPage() {
   }, [selectedCvId, fetchCvBundle]);
 
   const handleCreateCv = async () => {
+    if (createFlowCvId) {
+      setError('Bạn đang có một CV mới chưa hoàn tất 4 bước. Vui lòng hoàn tất trước khi tạo CV khác.');
+      return;
+    }
+
     if (!createForm.tieuDeCv.trim()) {
       setError('Tiêu đề CV không được để trống.');
       return;
@@ -267,12 +277,37 @@ export default function CandidateCvManagementPage() {
     try {
       const created = await cvService.createCv(normalizeCvPayload({ ...createForm, fileCvUrl: '' }));
       createCvDraft.clearDraft(EMPTY_CV_FORM);
-      setMessage('Tạo CV thành công.');
+      setCreateFlowCvId(created.id);
+      setMessage('Đã tạo CV mới (Bước 1/4). Tiếp tục Bước 2: cập nhật thông tin và upload file CV.');
       await fetchCvList();
       setSelectedCvId(created.id);
       setActiveTab('profile');
     } catch (err) {
       setError(mapError(err, 'Không thể tạo CV mới.'));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const saveCvProfile = async (successMessage = 'Cập nhật CV thành công.'): Promise<boolean> => {
+    if (!selectedCvId) return false;
+    if (!editForm.tieuDeCv.trim()) {
+      setError('Tiêu đề CV không được để trống.');
+      return false;
+    }
+
+    setSaving(true);
+    setMessage('');
+    setError('');
+    try {
+      await cvService.updateCv(selectedCvId, normalizeCvPayload(editForm));
+      setMessage(successMessage);
+      await fetchCvList();
+      await fetchCvBundle(selectedCvId);
+      return true;
+    } catch (err) {
+      setError(mapError(err, 'Không thể cập nhật CV.'));
+      return false;
     } finally {
       setSaving(false);
     }
@@ -487,25 +522,59 @@ export default function CandidateCvManagementPage() {
   };
 
   const handleUpdateCv = async () => {
-    if (!selectedCvId) return;
-    if (!editForm.tieuDeCv.trim()) {
-      setError('Tiêu đề CV không được để trống.');
+    await saveCvProfile();
+  };
+
+  const handleCompleteProfileStep = async () => {
+    if (!selectedCvId) {
+      setError('Hãy tạo hoặc chọn một CV để tiếp tục Bước 2.');
+      return;
+    }
+    if (!currentCvFileUrl) {
+      setError('Bước 2 yêu cầu upload file CV trước khi chuyển sang Bước 3.');
       return;
     }
 
-    setSaving(true);
-    setMessage('');
+    const saved = await saveCvProfile('Đã hoàn tất Bước 2/4. Tiếp tục thêm kỹ năng ở Bước 3.');
+    if (!saved) return;
     setError('');
-    try {
-      await cvService.updateCv(selectedCvId, normalizeCvPayload(editForm));
-      setMessage('Cập nhật CV thành công.');
-      await fetchCvList();
-      await fetchCvBundle(selectedCvId);
-    } catch (err) {
-      setError(mapError(err, 'Không thể cập nhật CV.'));
-    } finally {
-      setSaving(false);
+    setActiveTab('skills');
+  };
+
+  const handleCompleteSkillsStep = () => {
+    if (!selectedCvId) {
+      setError('Hãy tạo hoặc chọn một CV trước khi hoàn tất Bước 3.');
+      return;
     }
+    if (skills.length === 0) {
+      setError('Bước 3 yêu cầu tối thiểu 1 kỹ năng trong CV.');
+      return;
+    }
+
+    setError('');
+    setMessage('Đã hoàn tất Bước 3/4. Tiếp tục thêm học vấn/kinh nghiệm ở Bước 4.');
+    setActiveTab('details');
+  };
+
+  const handleCompleteDetailsStep = () => {
+    if (!selectedCvId) {
+      setError('Hãy tạo hoặc chọn một CV trước khi hoàn tất Bước 4.');
+      return;
+    }
+    if (details.length === 0) {
+      setError('Bước 4 yêu cầu tối thiểu 1 bản ghi học vấn/kinh nghiệm/chứng chỉ.');
+      return;
+    }
+
+    setError('');
+    if (createFlowCvId && selectedCvId === createFlowCvId) {
+      setCreateFlowCvId(null);
+      setActiveTab('overview');
+      setMessage('Hoàn tất 4 bước tạo CV. CV mới đã sẵn sàng để ứng tuyển.');
+      return;
+    }
+
+    setMessage('Đã xác nhận hoàn tất bước học vấn/kinh nghiệm cho CV.');
   };
 
   const handleSetDefaultCv = async () => {
@@ -537,6 +606,9 @@ export default function CandidateCvManagementPage() {
     setError('');
     try {
       await cvService.deleteCv(selectedCvId);
+      if (createFlowCvId && selectedCvId === createFlowCvId) {
+        setCreateFlowCvId(null);
+      }
       setMessage('Xóa CV thành công.');
       await fetchCvList();
     } catch (err) {
@@ -650,6 +722,35 @@ export default function CandidateCvManagementPage() {
 
   const activeStepIndex = tabItems.findIndex((tab) => tab.key === activeTab);
 
+  const isCreateFlowActive = createFlowCvId !== null && selectedCvId === createFlowCvId;
+
+  const stepStatus = useMemo(
+    () => ({
+      overview: selectedCvId !== null,
+      profile: Boolean(selectedCvId && editForm.tieuDeCv.trim() && currentCvFileUrl),
+      skills: Boolean(selectedCvId && skills.length > 0),
+      details: Boolean(selectedCvId && details.length > 0),
+    }),
+    [selectedCvId, editForm.tieuDeCv, currentCvFileUrl, skills.length, details.length]
+  );
+
+  const createFlowProgress = useMemo(() => {
+    if (!isCreateFlowActive) return 0;
+    let completed = 1;
+    if (stepStatus.profile) completed += 1;
+    if (stepStatus.skills) completed += 1;
+    if (stepStatus.details) completed += 1;
+    return completed;
+  }, [isCreateFlowActive, stepStatus.profile, stepStatus.skills, stepStatus.details]);
+
+  const canOpenTab = (tabKey: CvTab): boolean => {
+    if (!isCreateFlowActive) return true;
+    if (tabKey === 'overview' || tabKey === 'profile') return true;
+    if (tabKey === 'skills') return stepStatus.profile;
+    if (tabKey === 'details') return stepStatus.profile && stepStatus.skills;
+    return true;
+  };
+
   const groupedDetails = useMemo(() => {
     const groups: Record<LoaiBanGhiCv, CvDetailItem[]> = {
       1: [],
@@ -681,6 +782,8 @@ export default function CandidateCvManagementPage() {
           <div className={s.tags}>
             <span className={s.tag}>Tổng CV: {cvs.length}</span>
             {selectedCv?.laCvChinh ? <span className={s.tag}>CV đang chọn là CV chính</span> : null}
+            {isCreateFlowActive ? <span className={s.tag}>Tiến độ CV mới: {createFlowProgress}/4 bước</span> : null}
+            {createFlowCvId && !isCreateFlowActive ? <span className={s.tag}>Đang có CV mới chờ hoàn tất 4 bước</span> : null}
           </div>
           <button type="button" className={`${s.btn} ${s.btnGhost}`} onClick={() => void fetchCvList()}>
             Làm mới
@@ -698,13 +801,33 @@ export default function CandidateCvManagementPage() {
                 key={tab.key}
                 type="button"
                 className={`${t.tabBtn} ${activeTab === tab.key ? t.tabBtnActive : ''}`}
-                onClick={() => setActiveTab(tab.key)}
+                disabled={!canOpenTab(tab.key)}
+                title={!canOpenTab(tab.key) ? 'Hoàn tất bước trước để mở tab này.' : undefined}
+                onClick={() => {
+                  if (!canOpenTab(tab.key)) {
+                    setError('Hãy hoàn tất bước trước để mở tab này.');
+                    return;
+                  }
+                  setError('');
+                  setActiveTab(tab.key);
+                }}
               >
                 {tab.label}
               </button>
             ))}
           </div>
           <p className={t.tabHint}>{tabItems.find((tab) => tab.key === activeTab)?.hint}</p>
+
+          {isCreateFlowActive ? (
+            <div className={s.alert}>
+              Bạn đang hoàn thiện CV mới theo 4 bước. Hoàn tất lần lượt để đảm bảo CV đủ dữ liệu trước khi ứng tuyển.
+            </div>
+          ) : null}
+          {createFlowCvId && !isCreateFlowActive ? (
+            <div className={s.alert}>
+              Quy trình tạo CV mới đang tạm dừng. Hãy chọn lại CV vừa tạo trong danh sách để hoàn tất đủ 4 bước.
+            </div>
+          ) : null}
 
           <div className={t.stepper}>
             {tabItems.map((tab, index) => (
@@ -731,6 +854,11 @@ export default function CandidateCvManagementPage() {
 
             <section className={s.card}>
               <h3 className={s.cardTitle}>Tạo CV mới</h3>
+              {isCreateFlowActive ? (
+                <div className={s.alert}>
+                  Bạn đang có CV mới chưa hoàn tất 4 bước. Hãy tiếp tục ở các tab tiếp theo trước khi tạo CV khác.
+                </div>
+              ) : null}
               <div className={s.field}>
                 <label className={s.label}>Tiêu đề CV</label>
                 <input
@@ -782,7 +910,7 @@ export default function CandidateCvManagementPage() {
                 <button
                   type="button"
                   className={`${s.btn} ${s.btnPrimary}`}
-                  disabled={saving}
+                  disabled={saving || isCreateFlowActive}
                   onClick={() => void handleCreateCv()}
                 >
                   Tạo CV
@@ -795,6 +923,9 @@ export default function CandidateCvManagementPage() {
         {activeTab === 'profile' ? (
           <section className={s.card}>
             <h3 className={s.cardTitle}>Chỉnh sửa CV đang chọn</h3>
+            {isCreateFlowActive ? (
+              <div className={s.alert}>Bước 2/4: lưu thông tin CV và upload file PDF trước khi sang Bước 3.</div>
+            ) : null}
             {!selectedCvId ? <div className={s.alert}>Hãy tạo hoặc chọn một CV để chỉnh sửa.</div> : null}
             {detailLoading ? <div className={s.alert}>Đang tải chi tiết CV...</div> : null}
 
@@ -879,6 +1010,17 @@ export default function CandidateCvManagementPage() {
                     )}
                   </div>
                 </div>
+
+                <div className={s.actions}>
+                  <button
+                    type="button"
+                    className={`${s.btn} ${s.btnPrimary}`}
+                    disabled={saving}
+                    onClick={() => void handleCompleteProfileStep()}
+                  >
+                    Hoàn tất bước 2
+                  </button>
+                </div>
               </>
             ) : null}
           </section>
@@ -887,6 +1029,9 @@ export default function CandidateCvManagementPage() {
         {activeTab === 'skills' ? (
           <section className={s.card}>
             <h3 className={s.cardTitle}>Kỹ năng trong CV</h3>
+            {isCreateFlowActive ? (
+              <div className={s.alert}>Bước 3/4: thêm tối thiểu 1 kỹ năng rồi xác nhận hoàn tất bước.</div>
+            ) : null}
             {!selectedCvId ? <div className={s.alert}>Hãy chọn một CV ở tab Tổng quan trước.</div> : null}
             {selectedCvId && detailLoading ? <div className={s.alert}>Đang tải dữ liệu kỹ năng...</div> : null}
 
@@ -1012,6 +1157,14 @@ export default function CandidateCvManagementPage() {
                   >
                     Xóa kỹ năng
                   </button>
+                  <button
+                    type="button"
+                    className={`${s.btn} ${s.btnPrimary}`}
+                    disabled={saving || skills.length === 0}
+                    onClick={handleCompleteSkillsStep}
+                  >
+                    Hoàn tất bước 3
+                  </button>
                 </div>
               </>
             ) : null}
@@ -1022,6 +1175,11 @@ export default function CandidateCvManagementPage() {
           <div className={s.stack}>
             <section className={s.card}>
               <h3 className={s.cardTitle}>Nhóm học vấn/kinh nghiệm/chứng chỉ</h3>
+              {isCreateFlowActive ? (
+                <div className={s.alert}>
+                  Bước 4/4: thêm tối thiểu 1 bản ghi học vấn/kinh nghiệm/chứng chỉ để hoàn tất tạo CV.
+                </div>
+              ) : null}
               {!selectedCvId ? <div className={s.alert}>Hãy chọn một CV ở tab Tổng quan trước.</div> : null}
               {selectedCvId && detailLoading ? <div className={s.alert}>Đang tải timeline chi tiết...</div> : null}
 
@@ -1223,6 +1381,14 @@ export default function CandidateCvManagementPage() {
                   onClick={() => void handleDeleteDetail()}
                 >
                   Xóa bản ghi
+                </button>
+                <button
+                  type="button"
+                  className={`${s.btn} ${s.btnPrimary}`}
+                  disabled={saving || details.length === 0}
+                  onClick={handleCompleteDetailsStep}
+                >
+                  {isCreateFlowActive ? 'Hoàn tất tạo CV 4 bước' : 'Xác nhận bước 4'}
                 </button>
               </div>
             </section>

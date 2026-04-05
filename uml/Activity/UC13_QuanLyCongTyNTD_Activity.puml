@@ -1,0 +1,16 @@
+@startuml UC13_Activity
+'https://plantuml.com/activity-diagram-beta
+
+start
+:Nha tuyen dung mo quan ly cong ty;
+:Nhap hoac cap nhat thong tin cong ty;
+if (Thong tin cong ty hop le?) then (yes)
+  :Luu thong tin cong ty;
+  :Thong bao cap nhat thanh cong;
+else (no)
+  :Thong bao loi du lieu cong ty;
+endif
+
+stop
+
+@enduml

@@ -1,0 +1,63 @@
+@startuml
+actor "NhaTuyenDung" as Recruiter
+participant "LichPhongVanPage" as View
+participant "LichPhongVanController" as Controller
+participant "LichPhongVanService" as Service
+participant "LichPhongVanRepository" as Repo
+participant "ThongBaoService" as NotificationService
+database "MySQL" as DB
+
+Recruiter -> View : Mo quan ly lich phong van
+
+alt Tao lich moi
+    Recruiter -> View : Nhap thoi gian, dia diem, nguoi phong van
+    View -> Controller : createInterview(payload)
+    Controller -> Service : createInterview(payload, recruiterId)
+    Service -> Service : validateInterviewTime(payload)
+
+    alt Lich hop le
+        Service -> Repo : save(interview)
+        Repo -> DB : INSERT INTO lich_phong_van ...
+        DB --> Repo : created
+        Repo --> Service : interview
+        Service -> NotificationService : notifyCandidate(interviewId, "Lich phong van moi")
+        NotificationService -> DB : INSERT INTO thong_bao ...
+        DB --> NotificationService : sent
+        NotificationService --> Service : success
+        Service --> Controller : interview
+        Controller --> View : tao lich thanh cong
+    else Lich khong hop le
+        Service --> Controller : throw validation error
+        Controller --> View : thong bao trung lich hoac du lieu khong hop le
+    end
+
+else Quan ly lich da tao
+    Recruiter -> View : Chon lich da tao
+
+    alt Cap nhat lich
+        Recruiter -> View : Cap nhat thong tin lich
+        View -> Controller : updateInterview(interviewId, payload)
+        Controller -> Service : updateInterview(interviewId, payload, recruiterId)
+        Service -> Service : validateInterviewTime(payload)
+        Service -> Repo : update(interview)
+        Repo -> DB : UPDATE lich_phong_van SET ...
+        DB --> Repo : updated
+        Repo --> Service : interview
+    else Huy lich
+        Recruiter -> View : Xac nhan huy lich
+        View -> Controller : cancelInterview(interviewId)
+        Controller -> Service : cancelInterview(interviewId, recruiterId)
+        Service -> Repo : updateStatus(interviewId, HUY)
+        Repo -> DB : UPDATE lich_phong_van SET trang_thai = 'HUY' ...
+        DB --> Repo : updated
+        Repo --> Service : success
+    end
+
+    Service -> NotificationService : notifyCandidate(interviewId, "Thay doi lich phong van")
+    NotificationService -> DB : INSERT INTO thong_bao ...
+    DB --> NotificationService : sent
+    NotificationService --> Service : success
+    Service --> Controller : thao tac thanh cong
+    Controller --> View : thong bao cap nhat lich
+end
+@enduml

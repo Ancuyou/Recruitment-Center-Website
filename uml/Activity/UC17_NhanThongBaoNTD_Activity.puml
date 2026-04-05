@@ -1,0 +1,17 @@
+@startuml UC17_Activity
+'https://plantuml.com/activity-diagram-beta
+
+start
+:Phat sinh su kien lien quan den tin hoac ung vien;
+:He thong tao thong bao cho nha tuyen dung;
+:Nha tuyen dung mo trang thong bao;
+if (Co thong bao moi?) then (yes)
+  :Hien thi noi dung va muc uu tien;
+  :Danh dau da doc hoac xu ly;
+else (no)
+  :Thong bao khong co thong bao moi;
+endif
+
+stop
+
+@enduml

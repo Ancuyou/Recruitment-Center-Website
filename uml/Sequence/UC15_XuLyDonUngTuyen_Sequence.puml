@@ -1,0 +1,77 @@
+@startuml
+actor "NhaTuyenDung" as Recruiter
+participant "XuLyDonUngTuyenPage" as View
+participant "DonUngTuyenController" as Controller
+participant "DonUngTuyenService" as Service
+participant "DonUngTuyenRepository" as Repo
+participant "LichPhongVanService" as InterviewService
+participant "ThongBaoService" as NotificationService
+database "MySQL" as DB
+
+Recruiter -> View : Mo danh sach don ung tuyen
+Recruiter -> View : Loc don theo tin tuyen dung
+View -> Controller : getApplications(jobPostId, filters)
+Controller -> Service : getApplications(jobPostId, filters)
+Service -> Repo : findByTinTuyenDung(jobPostId, filters)
+Repo -> DB : SELECT * FROM don_ung_tuyen ...
+DB --> Repo : application list
+Repo --> Service : applications
+Service --> Controller : applications
+Controller --> View : applications
+
+alt Co don ung tuyen
+    Recruiter -> View : Chon don de xem CV va ho so
+    View -> Controller : getApplicationDetail(applicationId)
+    Controller -> Service : getApplicationDetail(applicationId)
+    Service -> Repo : findDetailById(applicationId)
+    Repo -> DB : SELECT cv, profile, status ...
+    DB --> Repo : detail
+    Repo --> Service : detail
+    Service --> Controller : detail
+    Controller --> View : detail
+
+    alt Dat yeu cau
+        Recruiter -> View : Danh dau Dat va tao lich phong van
+        View -> Controller : approveApplication(applicationId, interviewData)
+        Controller -> Service : approveApplication(applicationId, interviewData)
+        Service -> Repo : updateStatus(applicationId, DAT)
+        Repo -> DB : UPDATE don_ung_tuyen SET trang_thai = 'DAT' ...
+        DB --> Repo : updated
+        Repo --> Service : success
+
+        Service -> InterviewService : createInterview(applicationId, interviewData)
+        InterviewService -> DB : INSERT INTO lich_phong_van ...
+        DB --> InterviewService : created
+        InterviewService --> Service : success
+
+        Service -> NotificationService : notifyCandidate(applicationId, DAT)
+        NotificationService -> DB : INSERT INTO thong_bao ...
+        DB --> NotificationService : sent
+        NotificationService --> Service : success
+
+        Service --> Controller : Xu ly thanh cong
+        Controller --> View : Cap nhat trang thai Dat
+        View --> Recruiter : Hien thi ket qua xu ly
+    else Khong dat
+        Recruiter -> View : Danh dau Khong dat
+        View -> Controller : rejectApplication(applicationId, reason)
+        Controller -> Service : rejectApplication(applicationId, reason)
+        Service -> Repo : updateStatus(applicationId, KHONG_DAT)
+        Repo -> DB : UPDATE don_ung_tuyen SET trang_thai = 'KHONG_DAT' ...
+        DB --> Repo : updated
+        Repo --> Service : success
+
+        Service -> NotificationService : notifyCandidate(applicationId, KHONG_DAT)
+        NotificationService -> DB : INSERT INTO thong_bao ...
+        DB --> NotificationService : sent
+        NotificationService --> Service : success
+
+        Service --> Controller : Xu ly thanh cong
+        Controller --> View : Cap nhat trang thai Khong dat
+        View --> Recruiter : Hien thi ket qua xu ly
+    end
+else Khong co don ung tuyen
+    View --> Recruiter : Thong bao chua co don ung tuyen
+end
+
+@enduml

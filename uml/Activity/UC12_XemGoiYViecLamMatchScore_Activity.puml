@@ -1,0 +1,17 @@
+@startuml UC12_Activity
+'https://plantuml.com/activity-diagram-beta
+
+start
+:Ung vien mo chuc nang goi y viec lam;
+:He thong lay ho so, CV va ky nang;
+if (Co viec lam phu hop?) then (yes)
+  :Tinh match score cho tung viec lam;
+  :Hien thi danh sach goi y theo do phu hop;
+  :Ung vien xem chi tiet viec lam;
+else (no)
+  :Yeu cau cap nhat ho so de nhan goi y tot hon;
+endif
+
+stop
+
+@enduml

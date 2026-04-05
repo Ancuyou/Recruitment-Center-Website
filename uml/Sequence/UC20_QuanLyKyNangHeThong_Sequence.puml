@@ -1,0 +1,55 @@
+@startuml
+actor "QuanTriVien" as Admin
+participant "QuanLyKyNangPage" as View
+participant "KyNangController" as Controller
+participant "KyNangService" as Service
+participant "KyNangRepository" as Repo
+database "MySQL" as DB
+
+Admin -> View : Mo quan ly ky nang he thong
+
+alt Them ky nang moi
+    Admin -> View : Nhap ten ky nang va bam Them
+    View -> Controller : createSkill(payload)
+    Controller -> Service : createSkill(payload)
+    Service -> Repo : existsByTenKyNang(payload.tenKyNang)
+    Repo -> DB : SELECT COUNT(*) FROM ky_nang ...
+    DB --> Repo : exists or not
+    Repo --> Service : exists or not
+
+    alt Ky nang da ton tai
+        Service --> Controller : throw duplicated skill error
+        Controller --> View : thong bao trung ky nang
+    else Ky nang chua ton tai
+        Service -> Repo : save(skill)
+        Repo -> DB : INSERT INTO ky_nang ...
+        DB --> Repo : created
+        Repo --> Service : skill
+        Service --> Controller : skill
+        Controller --> View : them ky nang thanh cong
+    end
+
+else Cap nhat hoac xoa ky nang
+    Admin -> View : Chon ky nang da co
+
+    alt Cap nhat ky nang
+        View -> Controller : updateSkill(skillId, payload)
+        Controller -> Service : updateSkill(skillId, payload)
+        Service -> Repo : update(skill)
+        Repo -> DB : UPDATE ky_nang SET ...
+        DB --> Repo : updated
+        Repo --> Service : skill
+        Service --> Controller : skill
+        Controller --> View : cap nhat ky nang thanh cong
+    else Xoa ky nang
+        View -> Controller : deleteSkill(skillId)
+        Controller -> Service : deleteSkill(skillId)
+        Service -> Repo : deleteById(skillId)
+        Repo -> DB : DELETE FROM ky_nang WHERE id = ?
+        DB --> Repo : deleted
+        Repo --> Service : success
+        Service --> Controller : success
+        Controller --> View : xoa ky nang thanh cong
+    end
+end
+@enduml

@@ -1,0 +1,106 @@
+@startuml
+actor "UngVien" as Candidate
+participant "QuanLyCVPage" as View
+participant "CvController" as Controller
+participant "CvService" as Service
+participant "CvRepository" as Repo
+database "MySQL" as DB
+collections "FileStorage" as Storage
+
+Candidate -> View : Mo chuc nang quan ly CV
+
+group Buoc 1 - Tao CV nhap
+    Candidate -> View : Nhap tieu de, muc tieu va bam Tao CV
+    View -> Controller : createCv(candidateId, cvDraft)
+    Controller -> Service : createCv(candidateId, cvDraft)
+    Service -> Service : validateStep1(cvDraft)
+
+    alt Du lieu Buoc 1 hop le
+        Service -> Repo : save(cv)
+        Repo -> DB : INSERT INTO cvs ...
+        DB --> Repo : created(cvId)
+        Repo --> Service : Cv
+        Service --> Controller : Cv
+        Controller --> View : Tao CV thanh cong (cvId)
+        View --> Candidate : Chuyen sang Buoc 2
+    else Du lieu Buoc 1 khong hop le
+        Service --> Controller : throw validation error
+        Controller --> View : Loi du lieu Buoc 1
+        View --> Candidate : Hien thi thong bao loi
+    end
+end
+
+group Buoc 2 - Cap nhat thong tin va upload file
+    Candidate -> View : Cap nhat thong tin va bam Luu
+    View -> Controller : updateCv(cvId, profileData)
+    Controller -> Service : updateCv(cvId, profileData)
+    Service -> Service : validateStep2(profileData)
+
+    alt Du lieu Buoc 2 hop le
+        Service -> Repo : update(cv)
+        Repo -> DB : UPDATE cvs SET ...
+        DB --> Repo : updated
+        Repo --> Service : Cv
+        Service --> Controller : Cv
+        Controller --> View : Luu thong tin thanh cong
+
+        Candidate -> View : Chon file PDF va bam Upload
+        View -> Controller : uploadCvFile(cvId, pdfFile)
+        Controller -> Service : uploadCvFile(cvId, pdfFile)
+        Service -> Storage : store(pdfFile)
+        Storage --> Service : fileUrl
+        Service -> Repo : updateFileUrl(cvId, fileUrl)
+        Repo -> DB : UPDATE cvs SET file_cv_url = ...
+        DB --> Repo : updated
+        Repo --> Service : Cv
+        Service --> Controller : Cv
+        Controller --> View : Buoc 2 hoan tat
+    else Du lieu Buoc 2 khong hop le hoac chua co file
+        Service --> Controller : throw validation error
+        Controller --> View : Loi Buoc 2
+        View --> Candidate : Yeu cau bo sung du lieu Buoc 2
+    end
+end
+
+group Buoc 3 - Them ky nang
+    Candidate -> View : Them ky nang va bam Hoan tat Buoc 3
+    View -> Controller : addCvSkill(cvId, skillPayload)
+    Controller -> Service : addCvSkill(cvId, skillPayload)
+    Service -> Service : validateStep3(skillPayload)
+
+    alt Du lieu Buoc 3 hop le
+        Service -> Repo : saveSkill(cvId, skillPayload)
+        Repo -> DB : INSERT INTO cv_skills ...
+        DB --> Repo : inserted
+        Repo --> Service : CvSkill
+        Service --> Controller : CvSkill
+        Controller --> View : Buoc 3 hoan tat
+    else Du lieu Buoc 3 khong hop le
+        Service --> Controller : throw validation error
+        Controller --> View : Loi Buoc 3
+        View --> Candidate : Yeu cau them it nhat 1 ky nang
+    end
+end
+
+group Buoc 4 - Them hoc van/kinh nghiem/chung chi
+    Candidate -> View : Them ban ghi va bam Hoan tat tao CV
+    View -> Controller : addCvDetail(cvId, detailPayload)
+    Controller -> Service : addCvDetail(cvId, detailPayload)
+    Service -> Service : validateStep4(detailPayload)
+
+    alt Du lieu Buoc 4 hop le
+        Service -> Repo : saveDetail(cvId, detailPayload)
+        Repo -> DB : INSERT INTO cv_details ...
+        DB --> Repo : inserted
+        Repo --> Service : CvDetail
+        Service --> Controller : CvDetail
+        Controller --> View : Hoan tat tao CV 4 buoc
+        View --> Candidate : CV san sang de ung tuyen
+    else Du lieu Buoc 4 khong hop le
+        Service --> Controller : throw validation error
+        Controller --> View : Loi Buoc 4
+        View --> Candidate : Yeu cau them it nhat 1 ban ghi
+    end
+end
+
+@enduml

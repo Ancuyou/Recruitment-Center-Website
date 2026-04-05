@@ -11,7 +11,6 @@ import type {
   ApplicationItem,
   ApplicationStatusHistoryItem,
   InterviewItem,
-  InterviewRescheduleRequest,
   InterviewUpsertRequest,
   TrangThaiDon,
   UpdateApplicationStatusRequest,
@@ -483,52 +482,6 @@ export function RecruiterApplicantsPage({ viewMode = 'applicants' }: { viewMode?
     }
   };
 
-  const handleRescheduleInterview = async () => {
-    if (!isInterviewStage) {
-      setError('Chỉ có thể dời lịch khi đơn đang ở trạng thái Phỏng vấn.');
-      return;
-    }
-
-    if (!selectedInterviewId) {
-      setError('Hãy chọn một lịch phỏng vấn để dời lịch.');
-      return;
-    }
-    if (!interviewForm.thoiGianBatDau || !interviewForm.thoiGianKetThuc) {
-      setError('Vui lòng nhập thời gian bắt đầu và kết thúc mới.');
-      return;
-    }
-
-    const dateError = validateInterviewDateRange(
-      interviewForm.thoiGianBatDau,
-      interviewForm.thoiGianKetThuc
-    );
-    if (dateError) {
-      setError(dateError);
-      return;
-    }
-
-    setSaving(true);
-    setMessage('');
-    setError('');
-
-    try {
-      const payload: InterviewRescheduleRequest = {
-        thoiGianBatDau: interviewForm.thoiGianBatDau,
-        thoiGianKetThuc: interviewForm.thoiGianKetThuc,
-        diaDiemHoacLink: interviewForm.diaDiemHoacLink.trim() || undefined,
-      };
-      await applicationService.rescheduleInterview(selectedInterviewId, payload);
-      setMessage('Dời lịch phỏng vấn thành công.');
-      if (selectedApplicationId) {
-        await fetchApplicationBundle(selectedApplicationId);
-      }
-    } catch (err) {
-      setError(mapError(err, 'Không thể dời lịch phỏng vấn.'));
-    } finally {
-      setSaving(false);
-    }
-  };
-
   const handleCancelInterview = async () => {
     if (!isInterviewStage) {
       setError('Chỉ có thể hủy lịch khi đơn đang ở trạng thái Phỏng vấn.');
@@ -960,14 +913,6 @@ export function RecruiterApplicantsPage({ viewMode = 'applicants' }: { viewMode?
                           onClick={() => void handleUpdateInterview()}
                         >
                           Cập nhật lịch
-                        </button>
-                        <button
-                          type="button"
-                          className={`${s.btn} ${s.btnGhost}`}
-                          disabled={saving || !isInterviewStage || selectedInterviewId === null}
-                          onClick={() => void handleRescheduleInterview()}
-                        >
-                          Dời lịch
                         </button>
                         <button
                           type="button"

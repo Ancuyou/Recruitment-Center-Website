@@ -1,0 +1,54 @@
+@startuml
+actor "NhaTuyenDung" as Recruiter
+participant "TinTuyenDungPage" as View
+participant "TinTuyenDungController" as Controller
+participant "TinTuyenDungService" as Service
+participant "TinTuyenDungRepository" as Repo
+database "MySQL" as DB
+
+Recruiter -> View : Mo quan ly tin tuyen dung
+
+alt Tao tin moi
+    Recruiter -> View : Nhap noi dung tin va bam Dang tin
+    View -> Controller : createJobPost(payload)
+    Controller -> Service : createJobPost(recruiterId, payload)
+    Service -> Service : validateJobPostPayload(payload)
+
+    alt Noi dung hop le
+        Service -> Repo : save(jobPost)
+        Repo -> DB : INSERT INTO tin_tuyen_dung ...
+        DB --> Repo : created
+        Repo --> Service : job post
+        Service --> Controller : job post
+        Controller --> View : dang tin thanh cong
+    else Noi dung khong hop le
+        Service --> Controller : throw validation error
+        Controller --> View : thong bao loi noi dung tin
+    end
+
+else Quan ly tin da co
+    Recruiter -> View : Chon tin da tao
+
+    alt Dong tin
+        View -> Controller : closeJobPost(jobId)
+        Controller -> Service : closeJobPost(recruiterId, jobId)
+        Service -> Repo : updateStatus(jobId, CLOSED)
+        Repo -> DB : UPDATE tin_tuyen_dung SET trang_thai = 'CLOSED' ...
+        DB --> Repo : updated
+        Repo --> Service : success
+        Service --> Controller : success
+        Controller --> View : dong tin thanh cong
+    else Cap nhat tin
+        Recruiter -> View : Sua noi dung tin
+        View -> Controller : updateJobPost(jobId, payload)
+        Controller -> Service : updateJobPost(recruiterId, jobId, payload)
+        Service -> Service : validateJobPostPayload(payload)
+        Service -> Repo : update(jobPost)
+        Repo -> DB : UPDATE tin_tuyen_dung SET ...
+        DB --> Repo : updated
+        Repo --> Service : job post
+        Service --> Controller : job post
+        Controller --> View : cap nhat tin thanh cong
+    end
+end
+@enduml

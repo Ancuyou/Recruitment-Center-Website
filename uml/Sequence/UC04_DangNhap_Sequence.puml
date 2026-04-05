@@ -1,0 +1,30 @@
+@startuml
+actor "NguoiDung" as User
+participant "LoginPage" as View
+participant "AuthController" as Controller
+participant "AuthService" as Service
+participant "TaiKhoanRepository" as Repo
+participant "TokenProvider" as Token
+database "MySQL" as DB
+
+User -> View : Nhap ten dang nhap va mat khau
+User -> View : Bam Dang nhap
+View -> Controller : login(username, password)
+Controller -> Service : authenticate(username, password)
+Service -> Repo : findActiveByUsernameOrEmail(username)
+Repo -> DB : SELECT * FROM tai_khoan ...
+DB --> Repo : account or null
+Repo --> Service : account or null
+
+alt Dang nhap thanh cong
+    Service -> Token : generateAccessToken(account)
+    Token --> Service : access token
+    Service --> Controller : auth result
+    Controller --> View : login success + token
+    View --> User : dieu huong vao trang chuc nang
+else Dang nhap that bai
+    Service --> Controller : throw auth error
+    Controller --> View : error message
+    View --> User : thong bao dang nhap that bai
+end
+@enduml

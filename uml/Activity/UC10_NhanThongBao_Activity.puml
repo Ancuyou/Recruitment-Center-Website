@@ -1,0 +1,17 @@
+@startuml UC10_Activity
+'https://plantuml.com/activity-diagram-beta
+
+start
+:Phat sinh su kien he thong;
+:He thong tao thong bao cho ung vien;
+:Ung vien mo trung tam thong bao;
+if (Co thong bao moi?) then (yes)
+  :Hien thi noi dung thong bao;
+  :Danh dau thong bao da doc;
+else (no)
+  :Hien thi trang thai khong co thong bao moi;
+endif
+
+stop
+
+@enduml

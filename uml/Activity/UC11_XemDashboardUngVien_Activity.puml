@@ -1,0 +1,16 @@
+@startuml UC11_Activity
+'https://plantuml.com/activity-diagram-beta
+
+start
+:Ung vien mo dashboard;
+:He thong tong hop so lieu ung tuyen;
+if (Co du lieu thong ke?) then (yes)
+  :Hien thi thong ke ho so va trang thai;
+  :Ung vien xem chi tiet theo tung muc;
+else (no)
+  :Hien thi dashboard rong;
+endif
+
+stop
+
+@enduml

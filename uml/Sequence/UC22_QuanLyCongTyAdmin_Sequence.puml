@@ -1,0 +1,53 @@
+@startuml
+actor "QuanTriVien" as Admin
+participant "QuanLyCongTyAdminPage" as View
+participant "CongTyController" as Controller
+participant "CongTyService" as Service
+participant "CongTyRepository" as Repo
+database "MySQL" as DB
+
+Admin -> View : Mo quan ly cong ty
+Admin -> View : Tim kiem cong ty
+View -> Controller : searchCompanies(keyword)
+Controller -> Service : searchCompanies(keyword)
+Service -> Repo : findByKeyword(keyword)
+Repo -> DB : SELECT * FROM cong_ty WHERE ...
+DB --> Repo : company list
+Repo --> Service : company list
+Service --> Controller : company list
+
+alt Tim thay cong ty
+    Controller --> View : show company list
+    Admin -> View : Chon cong ty can xu ly
+    View -> Controller : getCompanyDetail(companyId)
+    Controller -> Service : getCompanyDetail(companyId)
+    Service -> Repo : findById(companyId)
+    Repo -> DB : SELECT * FROM cong_ty WHERE id = ?
+    DB --> Repo : company
+    Repo --> Service : company
+    Service --> Controller : company
+    Controller --> View : show company detail
+
+    alt Khoa hoat dong cong ty
+        View -> Controller : lockCompany(companyId)
+        Controller -> Service : lockCompany(companyId)
+        Service -> Repo : updateStatus(companyId, BLOCKED)
+        Repo -> DB : UPDATE cong_ty SET trang_thai = 'BLOCKED' ...
+        DB --> Repo : updated
+        Repo --> Service : success
+        Service --> Controller : success
+        Controller --> View : khoa cong ty thanh cong
+    else Cap nhat thong tin quan tri
+        View -> Controller : updateCompany(companyId, payload)
+        Controller -> Service : updateCompany(companyId, payload)
+        Service -> Repo : update(company)
+        Repo -> DB : UPDATE cong_ty SET ...
+        DB --> Repo : updated
+        Repo --> Service : company
+        Service --> Controller : company
+        Controller --> View : cap nhat cong ty thanh cong
+    end
+else Khong tim thay cong ty
+    Controller --> View : thong bao khong tim thay cong ty
+end
+@enduml

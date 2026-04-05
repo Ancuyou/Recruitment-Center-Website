@@ -1,0 +1,34 @@
+@startuml
+actor "Khach" as Guest
+participant "RegisterPage" as View
+participant "AuthController" as Controller
+participant "AuthService" as Service
+participant "TaiKhoanRepository" as Repo
+participant "EmailService" as Mailer
+database "MySQL" as DB
+
+Guest -> View : Nhap thong tin dang ky va bam Dang ky
+View -> Controller : register(payload)
+Controller -> Service : register(payload)
+Service -> Service : validateRegisterData(payload)
+Service -> Repo : existsByEmailOrSoDienThoai(...)
+Repo -> DB : SELECT COUNT(*) FROM tai_khoan ...
+DB --> Repo : exists or not
+Repo --> Service : exists or not
+
+alt Tai khoan da ton tai
+    Service --> Controller : throw duplicated error
+    Controller --> View : error message
+    View --> Guest : thong bao tai khoan da ton tai
+else Tai khoan chua ton tai
+    Service -> Repo : save(newAccount)
+    Repo -> DB : INSERT INTO tai_khoan ...
+    DB --> Repo : created
+    Repo --> Service : account
+    Service -> Mailer : sendVerifyOrWelcomeEmail(account)
+    Mailer --> Service : queued
+    Service --> Controller : register success
+    Controller --> View : success
+    View --> Guest : dang ky thanh cong
+end
+@enduml

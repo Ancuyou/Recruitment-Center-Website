@@ -1,0 +1,54 @@
+@startuml
+actor "UngVien" as Candidate
+participant "JobDetailPage" as View
+participant "DonUngTuyenController" as Controller
+participant "DonUngTuyenService" as Service
+participant "HoSoCvRepository" as CvRepo
+participant "DonUngTuyenRepository" as AppRepo
+participant "TrangThaiDonRepository" as StatusRepo
+database "MySQL" as DB
+
+Candidate -> View : Chon viec lam va bam Ung tuyen
+View -> Controller : createApplication(jobId, cvId)
+Controller -> Service : createApplication(candidateId, jobId, cvId)
+Service -> CvRepo : findByIdAndOwner(cvId, candidateId)
+CvRepo -> DB : SELECT * FROM ho_so_cv ...
+DB --> CvRepo : cv or null
+CvRepo --> Service : cv or null
+
+alt CV hop le
+    Service -> AppRepo : existsByJobAndCandidate(jobId, candidateId)
+    AppRepo -> DB : SELECT COUNT(*) FROM don_ung_tuyen ...
+    DB --> AppRepo : exists or not
+    AppRepo --> Service : exists or not
+
+    alt Chua ung tuyen
+        Service -> AppRepo : save(application)
+        AppRepo -> DB : INSERT INTO don_ung_tuyen ...
+        DB --> AppRepo : created
+        AppRepo --> Service : application
+        Service -> StatusRepo : saveInitialStatus(applicationId, MOI_NOP)
+        StatusRepo -> DB : INSERT INTO lich_su_trang_thai_don ...
+        DB --> StatusRepo : saved
+        StatusRepo --> Service : status history
+        Service --> Controller : create success
+        Controller --> View : thong bao ung tuyen thanh cong
+
+        Candidate -> View : Mo theo doi trang thai don
+        View -> Controller : getMyApplicationStatus(applicationId)
+        Controller -> Service : getMyApplicationStatus(applicationId, candidateId)
+        Service -> StatusRepo : findByApplicationId(applicationId)
+        StatusRepo -> DB : SELECT * FROM lich_su_trang_thai_don ...
+        DB --> StatusRepo : status history list
+        StatusRepo --> Service : status history list
+        Service --> Controller : status history list
+        Controller --> View : show status timeline
+    else Da tung ung tuyen
+        Service --> Controller : throw duplicated application error
+        Controller --> View : thong bao da ung tuyen truoc do
+    end
+else CV khong hop le
+    Service --> Controller : throw invalid cv error
+    Controller --> View : yeu cau cap nhat CV hop le truoc khi ung tuyen
+end
+@enduml

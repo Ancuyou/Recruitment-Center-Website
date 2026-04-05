@@ -1,0 +1,21 @@
+@startuml UC22_Activity
+'https://plantuml.com/activity-diagram-beta
+
+start
+:Quan tri vien mo quan ly cong ty;
+:Tim kiem va chon cong ty;
+if (Cong ty ton tai?) then (yes)
+  :Xem chi tiet ho so cong ty;
+  if (Can khoa hoat dong?) then (yes)
+    :Cap nhat trang thai khoa;
+  else (no)
+    :Cap nhat thong tin quan tri cong ty;
+  endif
+  :Luu thay doi;
+else (no)
+  :Thong bao khong tim thay cong ty;
+endif
+
+stop
+
+@enduml

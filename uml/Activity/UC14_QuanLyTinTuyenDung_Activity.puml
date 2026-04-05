@@ -1,0 +1,26 @@
+@startuml UC14_Activity
+'https://plantuml.com/activity-diagram-beta
+
+start
+:Nha tuyen dung mo quan ly tin tuyen dung;
+if (Tao tin moi?) then (yes)
+  :Nhap thong tin tin tuyen dung;
+  if (Noi dung hop le?) then (yes)
+    :Luu va dang tin tuyen dung;
+    :Thong bao dang tin thanh cong;
+  else (no)
+    :Thong bao loi noi dung tin;
+  endif
+else (no)
+  :Chon tin da co;
+  if (Chon dong tin?) then (yes)
+    :Cap nhat trang thai dong tin;
+  else (no)
+    :Cap nhat noi dung tin;
+  endif
+  :Luu thay doi;
+endif
+
+stop
+
+@enduml

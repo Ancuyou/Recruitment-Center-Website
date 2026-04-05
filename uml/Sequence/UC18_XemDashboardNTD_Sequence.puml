@@ -1,0 +1,36 @@
+@startuml
+actor "NhaTuyenDung" as Recruiter
+participant "RecruiterDashboardPage" as View
+participant "DashboardController" as Controller
+participant "DashboardService" as Service
+participant "TinTuyenDungRepository" as JobRepo
+participant "DonUngTuyenRepository" as AppRepo
+database "MySQL" as DB
+
+Recruiter -> View : Mo dashboard nha tuyen dung
+View -> Controller : getRecruiterDashboard()
+Controller -> Service : getRecruiterDashboard(recruiterId)
+
+Service -> JobRepo : countOpenPostsByRecruiter(recruiterId)
+JobRepo -> DB : SELECT COUNT(*) FROM tin_tuyen_dung ...
+DB --> JobRepo : open post count
+JobRepo --> Service : open post count
+
+Service -> AppRepo : countApplicationsByRecruiter(recruiterId)
+AppRepo -> DB : SELECT COUNT(*) FROM don_ung_tuyen ...
+DB --> AppRepo : total applications
+AppRepo --> Service : total applications
+
+Service -> AppRepo : countConversionByRecruiter(recruiterId)
+AppRepo -> DB : SELECT ... GROUP BY trang_thai
+DB --> AppRepo : conversion stats
+AppRepo --> Service : conversion stats
+
+Service --> Controller : dashboard data
+
+alt Co du lieu thong ke
+    Controller --> View : show metrics and charts
+else Chua co du lieu
+    Controller --> View : show empty dashboard
+end
+@enduml

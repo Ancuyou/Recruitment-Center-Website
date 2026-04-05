@@ -5,8 +5,8 @@ spring:
   # ── Database (MySQL) ───────────────────────────────────────────
   datasource:
     url: jdbc:mysql://localhost:3306/he_thong_tuyen_dung?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Ho_Chi_Minh
-    username: root
-    password: root
+    username: duyphan42
+    password: 40938813dD#
     driver-class-name: com.mysql.cj.jdbc.Driver
 
   # ── JPA / Hibernate ───────────────────────────────────────────

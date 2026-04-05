@@ -1,0 +1,21 @@
+@startuml UC15_Activity
+'https://plantuml.com/activity-diagram-beta
+
+start
+:Nha tuyen dung mo danh sach don ung tuyen;
+:Loc don theo tin tuyen dung;
+if (Co don ung tuyen?) then (yes)
+  :Xem thong tin CV va ho so;
+  if (Dat yeu cau?) then (yes)
+    :Chuyen trang thai dat va tao lich phong van;
+  else (no)
+    :Cap nhat trang thai khong dat;
+  endif
+  :Gui thong bao ket qua cho ung vien;
+else (no)
+  :Thong bao chua co don ung tuyen;
+endif
+
+stop
+
+@enduml

@@ -1,0 +1,35 @@
+@startuml
+actor "NhaTuyenDung" as Recruiter
+participant "CompanyProfilePage" as View
+participant "CongTyController" as Controller
+participant "CongTyService" as Service
+participant "CongTyRepository" as Repo
+database "MySQL" as DB
+
+Recruiter -> View : Mo trang quan ly cong ty
+View -> Controller : getMyCompany()
+Controller -> Service : getMyCompany(taiKhoanId)
+Service -> Repo : findByTaiKhoanId(taiKhoanId)
+Repo -> DB : SELECT * FROM cong_ty ...
+DB --> Repo : company profile
+Repo --> Service : company profile
+Service --> Controller : company profile
+Controller --> View : show company profile
+
+Recruiter -> View : Cap nhat thong tin cong ty
+View -> Controller : updateMyCompany(payload)
+Controller -> Service : updateMyCompany(taiKhoanId, payload)
+Service -> Service : validateCompanyData(payload)
+
+alt Du lieu hop le
+    Service -> Repo : update(company)
+    Repo -> DB : UPDATE cong_ty SET ...
+    DB --> Repo : updated
+    Repo --> Service : company profile
+    Service --> Controller : company profile
+    Controller --> View : cap nhat thanh cong
+else Du lieu khong hop le
+    Service --> Controller : throw validation error
+    Controller --> View : thong bao loi du lieu
+end
+@enduml

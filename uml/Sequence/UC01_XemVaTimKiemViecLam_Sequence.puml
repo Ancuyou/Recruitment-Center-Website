@@ -1,0 +1,33 @@
+@startuml
+actor "NguoiDung" as User
+participant "JobListPage" as View
+participant "JobController" as Controller
+participant "JobService" as Service
+participant "JobRepository" as Repo
+database "MySQL" as DB
+
+User -> View : Mo trang tim kiem viec lam
+User -> View : Nhap tu khoa va bo loc
+View -> Controller : searchJobs(criteria)
+Controller -> Service : searchJobs(criteria)
+Service -> Repo : findOpenJobs(criteria)
+Repo -> DB : SELECT * FROM tin_tuyen_dung ...
+DB --> Repo : job list
+Repo --> Service : job list
+Service --> Controller : job list
+Controller --> View : show job list
+
+alt Co ket qua
+    User -> View : Chon tin de xem chi tiet
+    View -> Controller : getJobDetail(jobId)
+    Controller -> Service : getJobDetail(jobId)
+    Service -> Repo : findById(jobId)
+    Repo -> DB : SELECT * FROM tin_tuyen_dung WHERE id = ?
+    DB --> Repo : job detail
+    Repo --> Service : job detail
+    Service --> Controller : job detail
+    Controller --> View : show detail
+else Khong co ket qua
+    View --> User : Thong bao khong co viec phu hop
+end
+@enduml

@@ -1,0 +1,35 @@
+@startuml
+actor "UngVien" as Candidate
+participant "ProfilePage" as View
+participant "UngVienController" as Controller
+participant "UngVienService" as Service
+participant "UngVienRepository" as Repo
+database "MySQL" as DB
+
+Candidate -> View : Mo trang ho so ca nhan
+View -> Controller : getMyProfile()
+Controller -> Service : getMyProfile(accountId)
+Service -> Repo : findByTaiKhoanId(accountId)
+Repo -> DB : SELECT * FROM ung_vien ...
+DB --> Repo : profile
+Repo --> Service : profile
+Service --> Controller : profile
+Controller --> View : show profile
+
+Candidate -> View : Chinh sua thong tin ho so
+View -> Controller : updateMyProfile(payload)
+Controller -> Service : updateMyProfile(accountId, payload)
+Service -> Service : validateProfileData(payload)
+
+alt Du lieu hop le
+    Service -> Repo : update(profile)
+    Repo -> DB : UPDATE ung_vien SET ...
+    DB --> Repo : updated
+    Repo --> Service : profile
+    Service --> Controller : profile
+    Controller --> View : cap nhat thanh cong
+else Du lieu khong hop le
+    Service --> Controller : throw validation error
+    Controller --> View : thong bao loi du lieu
+end
+@enduml

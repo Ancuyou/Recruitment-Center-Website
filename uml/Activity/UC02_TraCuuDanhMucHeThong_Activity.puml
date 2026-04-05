@@ -1,0 +1,20 @@
+@startuml UC02_Activity
+'https://plantuml.com/activity-diagram-beta
+
+start
+:Mo trang tra cuu danh muc;
+:Chon loai danh muc can tra cuu;
+if (Loai danh muc ton tai?) then (yes)
+  :He thong tai du lieu danh muc;
+  if (Co du lieu danh muc?) then (yes)
+    :Hien thi danh sach muc tra cuu;
+  else (no)
+    :Thong bao danh muc chua co du lieu;
+  endif
+else (no)
+  :Thong bao loai danh muc khong hop le;
+endif
+
+stop
+
+@enduml

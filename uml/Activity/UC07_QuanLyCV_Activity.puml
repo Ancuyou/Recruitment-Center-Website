@@ -1,0 +1,44 @@
+@startuml UC07_Activity
+'https://plantuml.com/activity-diagram-beta
+
+start
+:Ung vien mo chuc nang quan ly CV;
+if (Tao CV moi?) then (yes)
+  :Buoc 1 - Nhap tieu de CV va muc tieu nghe nghiep;
+  if (Du lieu Buoc 1 hop le?) then (yes)
+    :He thong tao CV nhap;
+    :Buoc 2 - Chinh sua thong tin CV va upload file PDF;
+    if (Da luu thong tin va co file CV?) then (yes)
+      :Buoc 3 - Them it nhat 1 ky nang;
+      if (Da co ky nang?) then (yes)
+        :Buoc 4 - Them it nhat 1 ban ghi hoc van/kinh nghiem/chung chi;
+        if (Da co ban ghi?) then (yes)
+          :Hoan tat tao CV 4 buoc;
+        else (no)
+          :Yeu cau bo sung du lieu Buoc 4;
+        endif
+      else (no)
+        :Yeu cau bo sung du lieu Buoc 3;
+      endif
+  else (no)
+      :Yeu cau hoan tat Buoc 2;
+    endif
+  else (no)
+    :Thong bao loi du lieu Buoc 1;
+  endif
+else (no)
+  :Chon CV da co;
+  if (Cap nhat thong tin CV?) then (yes)
+    :Luu thay doi thong tin CV;
+  else (no)
+    if (Xoa CV?) then (yes)
+      :Xac nhan va xoa CV;
+    else (no)
+      :Xem va quan ly ky nang/chi tiet CV;
+    endif
+  endif
+endif
+
+stop
+
+@enduml

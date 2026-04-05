@@ -1,0 +1,32 @@
+@startuml
+actor "NguoiDung" as User
+participant "DanhMucPage" as View
+participant "LookupController" as Controller
+participant "LookupService" as Service
+participant "LookupRepository" as Repo
+database "MySQL" as DB
+
+User -> View : Mo trang tra cuu danh muc
+User -> View : Chon loai danh muc can tra cuu
+View -> Controller : getLookup(type)
+Controller -> Service : getLookup(type)
+Service -> Service : validateLookupType(type)
+
+alt Loai danh muc hop le
+    Service -> Repo : findByType(type)
+    Repo -> DB : SELECT * FROM danh_muc WHERE loai = ?
+    DB --> Repo : lookup items
+    Repo --> Service : lookup items
+    Service --> Controller : lookup items
+
+    alt Co du lieu danh muc
+        Controller --> View : show lookup items
+    else Danh muc rong
+        Controller --> View : thong bao danh muc chua co du lieu
+    end
+else Loai danh muc khong hop le
+    Service --> Controller : throw validation error
+    Controller --> View : error message
+    View --> User : thong bao loai danh muc khong hop le
+end
+@enduml

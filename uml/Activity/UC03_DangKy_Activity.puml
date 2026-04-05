@@ -1,0 +1,21 @@
+@startuml UC03_Activity
+'https://plantuml.com/activity-diagram-beta
+
+start
+:Mo form dang ky;
+:Nhap thong tin tai khoan;
+if (Thong tin dang ky hop le?) then (yes)
+  :Kiem tra trung email va so dien thoai;
+  if (Tai khoan da ton tai?) then (yes)
+    :Thong bao tai khoan da ton tai;
+  else (no)
+    :Tao tai khoan moi;
+    :Thong bao dang ky thanh cong;
+  endif
+else (no)
+  :Thong bao loi du lieu dau vao;
+endif
+
+stop
+
+@enduml

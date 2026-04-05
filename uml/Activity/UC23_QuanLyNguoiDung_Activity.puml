@@ -1,0 +1,21 @@
+@startuml UC23_Activity
+'https://plantuml.com/activity-diagram-beta
+
+start
+:Quan tri vien mo quan ly nguoi dung;
+:Tim kiem tai khoan;
+if (Tai khoan ton tai?) then (yes)
+  :Xem thong tin va lich su hoat dong;
+  if (Can khoa tai khoan?) then (yes)
+    :Cap nhat trang thai khoa mo;
+  else (no)
+    :Cap nhat vai tro hoac thong tin quan tri;
+  endif
+  :Luu thay doi;
+else (no)
+  :Thong bao khong tim thay tai khoan;
+endif
+
+stop
+
+@enduml

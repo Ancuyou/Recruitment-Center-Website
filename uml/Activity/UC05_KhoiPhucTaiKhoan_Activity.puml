@@ -1,0 +1,22 @@
+@startuml UC05_Activity
+'https://plantuml.com/activity-diagram-beta
+
+start
+:Chon chuc nang khoi phuc tai khoan;
+:Nhap email hoac ten dang nhap;
+if (Tai khoan ton tai?) then (yes)
+  :Gui ma xac minh;
+  :Nhap ma xac minh va mat khau moi;
+  if (Ma xac minh hop le?) then (yes)
+    :Cap nhat mat khau moi;
+    :Thong bao khoi phuc thanh cong;
+  else (no)
+    :Thong bao ma xac minh khong hop le;
+  endif
+else (no)
+  :Thong bao khong tim thay tai khoan;
+endif
+
+stop
+
+@enduml

@@ -1,0 +1,17 @@
+@startuml UC19_Activity
+'https://plantuml.com/activity-diagram-beta
+
+start
+:Nha tuyen dung chon tin tuyen dung;
+:Mo chuc nang goi y ung vien;
+:He thong tinh match score theo yeu cau tin;
+if (Co ung vien phu hop?) then (yes)
+  :Hien thi danh sach ung vien theo diem;
+  :Nha tuyen dung xem ho so va moi phong van;
+else (no)
+  :Thong bao chua co ung vien phu hop;
+endif
+
+stop
+
+@enduml

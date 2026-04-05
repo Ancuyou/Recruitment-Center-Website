@@ -1,0 +1,43 @@
+@startuml
+actor "NhaTuyenDung" as Recruiter
+participant "GoiYUngVienPage" as View
+participant "MatchingController" as Controller
+participant "MatchingService" as Service
+participant "TinTuyenDungRepository" as JobRepo
+participant "UngVienRepository" as CandidateRepo
+participant "ThongBaoService" as NotificationService
+database "MySQL" as DB
+
+Recruiter -> View : Chon tin tuyen dung
+Recruiter -> View : Mo chuc nang goi y ung vien
+View -> Controller : suggestCandidates(jobId)
+Controller -> Service : suggestCandidates(recruiterId, jobId)
+Service -> JobRepo : findRequirementsByJobId(jobId)
+JobRepo -> DB : SELECT yeu_cau_tin ...
+DB --> JobRepo : requirement set
+JobRepo --> Service : requirement set
+
+Service -> CandidateRepo : findCandidatesForMatching(requirement set)
+CandidateRepo -> DB : SELECT profile + skills ...
+DB --> CandidateRepo : candidate pool
+CandidateRepo --> Service : candidate pool
+
+Service -> Service : calculateCandidateMatchScores(candidate pool, requirement set)
+
+alt Co ung vien phu hop
+    Service --> Controller : recommended candidates with score
+    Controller --> View : show candidate list by score
+    Recruiter -> View : Moi ung vien phong van
+    View -> Controller : inviteCandidate(jobId, candidateId)
+    Controller -> Service : inviteCandidate(jobId, candidateId)
+    Service -> NotificationService : notifyCandidate(candidateId, "Loi moi phong van")
+    NotificationService -> DB : INSERT INTO thong_bao ...
+    DB --> NotificationService : sent
+    NotificationService --> Service : success
+    Service --> Controller : invite success
+    Controller --> View : thong bao moi ung vien thanh cong
+else Khong co ung vien phu hop
+    Service --> Controller : empty list
+    Controller --> View : thong bao chua co ung vien phu hop
+end
+@enduml

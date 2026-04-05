@@ -1,0 +1,26 @@
+@startuml UC16_Activity
+'https://plantuml.com/activity-diagram-beta
+
+start
+:Nha tuyen dung mo quan ly lich phong van;
+if (Tao lich moi?) then (yes)
+  :Nhap thoi gian, dia diem, nguoi phong van;
+  if (Lich hop le?) then (yes)
+    :Luu lich phong van;
+    :Gui thong bao lich hen cho ung vien;
+  else (no)
+    :Thong bao trung lich hoac du lieu khong hop le;
+  endif
+else (no)
+  :Chon lich da tao;
+  if (Cap nhat lich?) then (yes)
+    :Luu thong tin lich cap nhat;
+  else (no)
+    :Huy lich phong van;
+  endif
+  :Gui thong bao thay doi lich;
+endif
+
+stop
+
+@enduml

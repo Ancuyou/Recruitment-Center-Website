@@ -1,0 +1,52 @@
+@startuml
+actor "NguoiDung" as User
+participant "ForgotPasswordPage" as View
+participant "AuthController" as Controller
+participant "AuthService" as Service
+participant "TaiKhoanRepository" as AccountRepo
+participant "ResetTokenRepository" as TokenRepo
+participant "EmailService" as Mailer
+database "MySQL" as DB
+
+User -> View : Nhap email/ten dang nhap de khoi phuc
+View -> Controller : requestPasswordReset(identifier)
+Controller -> Service : requestPasswordReset(identifier)
+Service -> AccountRepo : findByEmailOrUsername(identifier)
+AccountRepo -> DB : SELECT * FROM tai_khoan ...
+DB --> AccountRepo : account or null
+AccountRepo --> Service : account or null
+
+alt Tai khoan ton tai
+    Service -> TokenRepo : saveResetToken(account, code)
+    TokenRepo -> DB : INSERT INTO reset_tokens ...
+    DB --> TokenRepo : saved
+    TokenRepo --> Service : token
+    Service -> Mailer : sendResetCode(account, code)
+    Mailer --> Service : sent
+    Service --> Controller : request accepted
+    Controller --> View : thong bao da gui ma xac minh
+
+    User -> View : Nhap ma xac minh va mat khau moi
+    View -> Controller : confirmPasswordReset(code, newPassword)
+    Controller -> Service : confirmPasswordReset(code, newPassword)
+    Service -> TokenRepo : findValidToken(code)
+    TokenRepo -> DB : SELECT * FROM reset_tokens ...
+    DB --> TokenRepo : token or null
+    TokenRepo --> Service : token or null
+
+    alt Ma hop le
+        Service -> AccountRepo : updatePassword(accountId, newPassword)
+        AccountRepo -> DB : UPDATE tai_khoan SET mat_khau = ...
+        DB --> AccountRepo : updated
+        AccountRepo --> Service : success
+        Service --> Controller : reset success
+        Controller --> View : thong bao khoi phuc thanh cong
+    else Ma khong hop le
+        Service --> Controller : throw validation error
+        Controller --> View : thong bao ma xac minh khong hop le
+    end
+else Tai khoan khong ton tai
+    Service --> Controller : throw not found error
+    Controller --> View : thong bao khong tim thay tai khoan
+end
+@enduml

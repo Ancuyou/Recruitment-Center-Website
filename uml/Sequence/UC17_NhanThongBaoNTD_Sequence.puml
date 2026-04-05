@@ -1,0 +1,39 @@
+@startuml
+actor "HeThong" as System
+actor "NhaTuyenDung" as Recruiter
+participant "ThongBaoNTDPage" as View
+participant "ThongBaoController" as Controller
+participant "ThongBaoService" as Service
+participant "ThongBaoRepository" as Repo
+database "MySQL" as DB
+
+System -> Service : createNotification(event, recruiterId)
+Service -> Repo : save(notification)
+Repo -> DB : INSERT INTO thong_bao ...
+DB --> Repo : saved
+Repo --> Service : notification
+
+Recruiter -> View : Mo trang thong bao
+View -> Controller : getMyNotifications()
+Controller -> Service : getMyNotifications(recruiterId)
+Service -> Repo : findByReceiverId(recruiterId)
+Repo -> DB : SELECT * FROM thong_bao ...
+DB --> Repo : notifications
+Repo --> Service : notifications
+Service --> Controller : notifications
+
+alt Co thong bao moi
+    Controller --> View : show notifications
+    Recruiter -> View : Danh dau da doc/da xu ly
+    View -> Controller : markAsRead(notificationId)
+    Controller -> Service : markAsRead(notificationId, recruiterId)
+    Service -> Repo : updateReadStatus(notificationId, true)
+    Repo -> DB : UPDATE thong_bao SET da_doc = true ...
+    DB --> Repo : updated
+    Repo --> Service : success
+    Service --> Controller : success
+    Controller --> View : cap nhat trang thai
+else Khong co thong bao moi
+    Controller --> View : show empty state
+end
+@enduml

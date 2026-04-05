@@ -1,0 +1,17 @@
+@startuml UC06_Activity
+'https://plantuml.com/activity-diagram-beta
+
+start
+:Ung vien mo trang ho so ca nhan;
+:He thong tai thong tin ho so;
+:Chinh sua thong tin ho so;
+if (Thong tin ho so hop le?) then (yes)
+  :Luu cap nhat ho so;
+  :Thong bao cap nhat thanh cong;
+else (no)
+  :Thong bao loi du lieu ho so;
+endif
+
+stop
+
+@enduml

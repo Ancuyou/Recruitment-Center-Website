@@ -1,0 +1,21 @@
+@startuml UC20_Activity
+'https://plantuml.com/activity-diagram-beta
+
+start
+:Quan tri vien mo quan ly ky nang he thong;
+if (Them ky nang moi?) then (yes)
+  :Nhap ten ky nang;
+  if (Ky nang da ton tai?) then (yes)
+    :Thong bao trung ky nang;
+  else (no)
+    :Luu ky nang moi;
+  endif
+else (no)
+  :Chon ky nang de cap nhat hoac xoa;
+  :Luu thay doi danh muc ky nang;
+endif
+:Thong bao thao tac hoan tat;
+
+stop
+
+@enduml
