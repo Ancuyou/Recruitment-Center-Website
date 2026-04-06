@@ -5,7 +5,7 @@ import com.example.tuyendung.dto.response.JobSuggestionResponse;
 import com.example.tuyendung.dto.response.MatchScoreResponse;
 import com.example.tuyendung.entity.ChiTietKyNangCv;
 import com.example.tuyendung.entity.CongTy;
-import com.example.tuyendung.entity.id.ChiTietKyNangTin;
+import com.example.tuyendung.entity.ChiTietKyNangTin;
 import com.example.tuyendung.entity.HoSoCv;
 import com.example.tuyendung.entity.TinTuyenDung;
 import com.example.tuyendung.entity.UngVien;

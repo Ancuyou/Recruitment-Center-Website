@@ -1,6 +1,6 @@
 package com.example.tuyendung.repository;
 
-import com.example.tuyendung.entity.id.ChiTietKyNangTin;
+import com.example.tuyendung.entity.ChiTietKyNangTin;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;

@@ -4,7 +4,6 @@ import com.example.tuyendung.entity.enums.CapBacYeuCau;
 import com.example.tuyendung.entity.enums.HinhThucLamViec;
 import com.example.tuyendung.entity.enums.KhuVucEnum;
 import com.example.tuyendung.entity.enums.TrangThaiTin;
-import com.example.tuyendung.entity.id.ChiTietKyNangTin;
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
 import jakarta.persistence.ElementCollection;

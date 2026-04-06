@@ -2,7 +2,7 @@ package com.example.tuyendung.service.impl;
 
 import com.example.tuyendung.dto.request.JobSkillRequest;
 import com.example.tuyendung.dto.response.JobSkillResponse;
-import com.example.tuyendung.entity.id.ChiTietKyNangTin;
+import com.example.tuyendung.entity.ChiTietKyNangTin;
 import com.example.tuyendung.entity.KyNang;
 import com.example.tuyendung.entity.TinTuyenDung;
 import com.example.tuyendung.exception.BaseBusinessException;

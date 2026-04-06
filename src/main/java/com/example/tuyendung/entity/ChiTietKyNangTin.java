@@ -1,7 +1,5 @@
-package com.example.tuyendung.entity.id;
+package com.example.tuyendung.entity;
 
-import com.example.tuyendung.entity.KyNang;
-import com.example.tuyendung.entity.TinTuyenDung;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
