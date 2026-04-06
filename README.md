@@ -49,6 +49,7 @@ Dự án được tổ chức theo kiến trúc Client-Server (RESTful API):
 * Tra cứu danh mục hệ thống.
 * Đăng ký, Đăng nhập (phân quyền vai trò bằng JWT).
 * Khôi phục tài khoản (Quên mật khẩu).
+* Riêng Admin chỉ có Đăng nhập, Xem và tìm kiếm việc làm và Tra cứu danh mục hệ thống (nếu Admin quên mật khẩu bắt buộc phải liên hệ SuperAdmin hoặc IT Support để reset).
 
 ### 4.2. Dành cho Ứng viên (Candidate)
 * Quản lý hồ sơ cá nhân và quản lý nhiều CV.

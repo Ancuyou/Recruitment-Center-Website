@@ -101,7 +101,8 @@ NTD -[#1565C0]-> UC19
 
 ' ADMIN: chi lien ket Dang nhap + Khoi phuc tai khoan o nhom chung
 ADMIN -[#880E4F]-> UC04
-ADMIN -[#880E4F]-> UC05
+ADMIN -[#880E4F]-> UC01
+ADMIN -[#880E4F]-> UC02
 ADMIN -[#880E4F]-> UC20
 ADMIN -[#880E4F]-> UC21
 ADMIN -[#880E4F]-> UC22
