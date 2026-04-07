@@ -4,15 +4,18 @@ import com.example.tuyendung.dto.request.TinTuyenDungRequest;
 import com.example.tuyendung.dto.response.JobStatisticsResponse;
 import com.example.tuyendung.dto.response.TinTuyenDungResponse;
 import com.example.tuyendung.entity.NhaTuyenDung;
+import com.example.tuyendung.entity.TaiKhoan;
 import com.example.tuyendung.entity.TinTuyenDung;
 import com.example.tuyendung.entity.enums.CapBacYeuCau;
 import com.example.tuyendung.entity.enums.HinhThucLamViec;
 import com.example.tuyendung.entity.enums.KhuVucEnum;
 import com.example.tuyendung.entity.enums.TrangThaiDon;
 import com.example.tuyendung.entity.enums.TrangThaiTin;
+import com.example.tuyendung.entity.enums.VaiTroTaiKhoan;
 import com.example.tuyendung.exception.BaseBusinessException;
 import com.example.tuyendung.exception.ErrorCode;
 import com.example.tuyendung.repository.NhaTuyenDungRepository;
+import com.example.tuyendung.repository.TaiKhoanRepository;
 import com.example.tuyendung.repository.TinTuyenDungRepository;
 import com.example.tuyendung.service.TinTuyenDungService;
 import lombok.RequiredArgsConstructor;
@@ -44,6 +47,7 @@ public class TinTuyenDungServiceImpl implements TinTuyenDungService {
 
     private final TinTuyenDungRepository tinTuyenDungRepository;
     private final NhaTuyenDungRepository nhaTuyenDungRepository;
+    private final TaiKhoanRepository taiKhoanRepository;
 
     // ── B13 ──────────────────────────────────────────────────────────────────
 
@@ -105,9 +109,8 @@ public class TinTuyenDungServiceImpl implements TinTuyenDungService {
     @Transactional
     public void closeTin(Long id, Long taiKhoanId) {
         log.info("B17: Đóng tin ID: {}", id);
-        NhaTuyenDung ntd = findNtdOrThrow(taiKhoanId);
         TinTuyenDung tin = findActiveTinOrThrow(id);
-        verifyTinOwnership(ntd, tin);
+        verifyTinAccess(tin, taiKhoanId);
         tin.setTrangThai(TrangThaiTin.DONG);
         tinTuyenDungRepository.save(tin);
     }
@@ -163,11 +166,10 @@ public class TinTuyenDungServiceImpl implements TinTuyenDungService {
     @Override
     @Transactional(readOnly = true)
     public JobStatisticsResponse getJobStatistics(Long tinId, Long taiKhoanId) {
-        NhaTuyenDung ntd = findNtdOrThrow(taiKhoanId);
         TinTuyenDung tin = tinTuyenDungRepository.findByIdIncludingDeleted(tinId)
                 .orElseThrow(() -> new BaseBusinessException(ErrorCode.JOB_NOT_FOUND,
                         "Không tìm thấy tin tuyển dụng ID: " + tinId));
-        verifyTinOwnership(ntd, tin);
+        verifyTinAccess(tin, taiKhoanId);
         return JobStatisticsResponse.builder()
                 .tinId(tinId)
                 .tieuDe(tin.getTieuDe())
@@ -187,6 +189,11 @@ public class TinTuyenDungServiceImpl implements TinTuyenDungService {
                 .orElseThrow(() -> new BaseBusinessException(ErrorCode.RECRUITER_NOT_FOUND));
     }
 
+    private TaiKhoan findTaiKhoanOrThrow(Long taiKhoanId) {
+        return taiKhoanRepository.findById(taiKhoanId)
+                .orElseThrow(() -> new BaseBusinessException(ErrorCode.USER_NOT_FOUND));
+    }
+
     private TinTuyenDung findActiveTinOrThrow(Long id) {
         return tinTuyenDungRepository.findByIdAndNotDeleted(id)
                 .orElseThrow(() -> new BaseBusinessException(ErrorCode.JOB_NOT_FOUND,
@@ -203,6 +210,22 @@ public class TinTuyenDungServiceImpl implements TinTuyenDungService {
             throw new BaseBusinessException(ErrorCode.UNAUTHORIZED_ACCESS,
                     "Bạn không có quyền thao tác với tin này");
         }
+    }
+
+    /**
+     * Admin được phép thao tác mọi tin; recruiter chỉ thao tác trên tin của mình.
+     */
+    private void verifyTinAccess(TinTuyenDung tin, Long taiKhoanId) {
+        TaiKhoan taiKhoan = findTaiKhoanOrThrow(taiKhoanId);
+        if (taiKhoan.getVaiTro() == VaiTroTaiKhoan.ADMIN) {
+            return;
+        }
+        if (taiKhoan.getVaiTro() == VaiTroTaiKhoan.NHA_TUYEN_DUNG) {
+            NhaTuyenDung ntd = findNtdOrThrow(taiKhoanId);
+            verifyTinOwnership(ntd, tin);
+            return;
+        }
+        throw new BaseBusinessException(ErrorCode.UNAUTHORIZED_ACCESS);
     }
 
     private void validateSalary(BigDecimal min, BigDecimal max) {
