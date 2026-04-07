@@ -46,8 +46,8 @@ INSERT INTO ky_nang (ten_ky_nang) VALUES
 
 -- 6) Ho so CV
 INSERT INTO ho_so_cv (ung_vien_id, tieu_de_cv, muc_tieu_nghe_nghiep, file_cv_url, la_cv_chinh, da_xoa) VALUES
-(1, 'Backend Java CV', 'Tro thanh backend engineer.', 'https://cdn.local/cv-an.pdf', TRUE, FALSE),
-(2, 'Frontend React CV', 'Theo duoi frontend web app.', 'https://cdn.local/cv-binh.pdf', TRUE, FALSE);
+(1, 'Backend Java CV', 'Tro thanh backend engineer.', 'http://localhost:8080/uploads/cv-files/bb0f47d0-db7c-4115-84ca-e979df0bc648-1775568096828.pdf', TRUE, FALSE),
+(2, 'Frontend React CV', 'Theo duoi frontend web app.', 'http://localhost:8080/uploads/cv-files/bb0f47d0-db7c-4115-84ca-e979df0bc648-1775568096828.pdf', TRUE, FALSE);
 
 -- 7) Tin tuyen dung
 INSERT INTO tin_tuyen_dung (
@@ -91,8 +91,8 @@ INSERT INTO chi_tiet_cv (
 
 -- 11) Don ung tuyen + lich su + phong van
 INSERT INTO don_ung_tuyen (tin_tuyen_dung_id, ho_so_cv_id, ban_sao_cv_url, thu_ngo, trang_thai_hien_tai) VALUES
-(1, 1, 'https://cdn.local/cv-an-copy.pdf', 'Toi mong muon dong hanh cung cong ty.', 'REVIEW'),
-(2, 2, 'https://cdn.local/cv-binh-copy.pdf', 'Toi rat quan tam vi tri nay.', 'MOI');
+(1, 1, 'http://localhost:8080/uploads/cv-files/bb0f47d0-db7c-4115-84ca-e979df0bc648-1775568096828.pdf', 'Toi mong muon dong hanh cung cong ty.', 'REVIEW'),
+(2, 2, 'http://localhost:8080/uploads/cv-files/bb0f47d0-db7c-4115-84ca-e979df0bc648-1775568096828.pdf', 'Toi rat quan tam vi tri nay.', 'MOI');
 
 INSERT INTO lich_su_trang_thai (don_ung_tuyen_id, nguoi_thuc_hien_id, trang_thai_cu, trang_thai_moi, ghi_chu) VALUES
 (1, 2, 1, 2, 'HR da chuyen don sang REVIEW'),

@@ -27,33 +27,21 @@ Repo --> Service : post detail
 Service --> Controller : post detail
 Controller --> View : show post detail
 
-alt Tin dat yeu cau
-    Admin -> View : Phe duyet tin
-    View -> Controller : approvePost(postId)
-    Controller -> Service : approvePost(postId, adminId)
-    Service -> Repo : updateStatus(postId, APPROVED)
-    Repo -> DB : UPDATE tin_tuyen_dung SET trang_thai = 'APPROVED' ...
-    DB --> Repo : updated
-    Repo --> Service : success
-    Service -> NotificationService : notifyRecruiter(postId, "Tin da duoc phe duyet")
-    NotificationService -> DB : INSERT INTO thong_bao ...
-    DB --> NotificationService : sent
-    NotificationService --> Service : success
-    Service --> Controller : approve success
-    Controller --> View : thong bao phe duyet thanh cong
-else Tin khong dat yeu cau
-    Admin -> View : Dong/tu choi tin va nhap ly do
-    View -> Controller : rejectOrClosePost(postId, reason)
-    Controller -> Service : rejectOrClosePost(postId, reason, adminId)
+alt Tin vi pham chinh sach
+    Admin -> View : Dong tin va nhap ly do
+    View -> Controller : closePost(postId, reason)
+    Controller -> Service : closePost(postId, reason, adminId)
     Service -> Repo : updateStatus(postId, CLOSED)
     Repo -> DB : UPDATE tin_tuyen_dung SET trang_thai = 'CLOSED', ly_do = ...
     DB --> Repo : updated
     Repo --> Service : success
-    Service -> NotificationService : notifyRecruiter(postId, "Tin bi dong/tu choi")
+    Service -> NotificationService : notifyRecruiter(postId, "Tin da bi dong")
     NotificationService -> DB : INSERT INTO thong_bao ...
     DB --> NotificationService : sent
     NotificationService --> Service : success
-    Service --> Controller : reject success
+    Service --> Controller : close success
     Controller --> View : thong bao da dong tin
+else Tin khong vi pham
+    Admin -> View : Chi xem thong tin, khong thay doi trang thai
 end
 @enduml

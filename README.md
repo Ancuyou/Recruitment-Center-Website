@@ -116,7 +116,7 @@ spring:
 1. Mở terminal tại thư mục `tuyen-dung-frontend`.
 2. Chạy lệnh cài đặt thư viện: `npm install`
 3. Chạy môi trường dev: `npm run dev`
-4. Truy cập frontend thông qua link Vite cung cấp (thường là `http://localhost:5173`).
+4. Truy cập frontend thông qua link Vite cung cấp (thường là `http://localhost:3000`).
 
 ---
 
@@ -172,7 +172,7 @@ Các sơ đồ UML được lưu trong thư mục `uml/`, gồm:
 * Tích hợp API cho cả 3 phân hệ: Ứng viên, Nhà tuyển dụng, Quản trị viên.
 * Xử lý State Management và kiểm soát Routing (Guards).
 * Khảo sát, phân tích nghiệp vụ và vẽ toàn bộ các sơ đồ UML (Use Case, Activity, Sequence, Class).
-* Viết tài liệu báo cáo đồ án và chuẩn bị slide thuyết trình.
+* Viết tài liệu báo cáo đồ án 
 
 ---
 

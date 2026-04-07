@@ -4,14 +4,14 @@
 start
 :Quan tri vien mo danh sach tin cho kiem duyet;
 :Chon tin tuyen dung can xu ly;
-:Kiem tra noi dung va tieu chi chinh sach;
-if (Tin dat yeu cau?) then (yes)
-  :Phe duyet va cho phep hien thi;
-else (no)
-  :Dong hoac tu choi tin;
+:Xem chi tiet tin va doi chieu chinh sach;
+if (Tin vi pham?) then (yes)
+  :Dong tin;
   :Ghi ly do vi pham;
+  :Gui thong bao cho nha tuyen dung;
+else (no)
+  :Khong thay doi trang thai tin;
 endif
-:Gui thong bao ket qua cho nha tuyen dung;
 
 stop
 
